@@ -304,7 +304,7 @@ public class NetworkFragment extends Fragment {
         }
     }
 
-    private class DownloadXmlTask extends AsyncTask<String, Void, String> {
+    private class DownloadXmlTask extends AsyncTask<String, Void, List<XmlParser.Song>> {
         private String TAG = DownloadXmlTask.class.getSimpleName();
         private String mostRecentXML = getResources().getString(R.string.saved_timestamp);
 
@@ -326,46 +326,39 @@ public class NetworkFragment extends Fragment {
         }
 
         @Override
-        protected  String doInBackground(String... urls){
+        protected  List<XmlParser.Song> doInBackground(String... urls){
             Log.v(TAG, "Started loading XML in the background");
             try {
                 return loadXmlFromNetwork(urls[0]);
             } catch (IOException e){
-                return "Unable to load content. Check your network connection";
+                System.err.println("Unable to load content. Check your network connection");
+                return null;
             } catch (XmlPullParserException e){
-                return "Error parsing XML";
+                System.err.println("Error parsing XML");
+                return null;
             }
         }
 
-        private String loadXmlFromNetwork(String urlString) throws
+        private List<XmlParser.Song> loadXmlFromNetwork(String urlString) throws
                 XmlPullParserException, IOException{
-            StringBuilder result = new StringBuilder();
             InputStream stream = null;
             //Instantiate the parser.
             XmlParser parser = new XmlParser();
             List<XmlParser.Song> songs = null;
-            String title = null;
-            String url = null;
-            String summary = null;
-            Calendar rightNow = Calendar.getInstance();
-            DateFormat formatter = new SimpleDateFormat("MMM dd h:mmaa");
-
 
             try {
                 stream = downloadUrl(urlString);
-                songs = parser.parse(stream);
-
                 String timestamp = parser.getXmlTimestamp(stream);
                 if (timestamp.equals(mostRecentXML)){
-                    return "XML up to date";
+                    return null;
                 } else {
-
+                    songs = parser.parse(stream);
                     mostRecentXML = timestamp;
                 }
             } catch(Exception e){
 
             }
-            return result.toString();
+            return songs;
         }
 
         //Given a string representation of a URL, sets up a connection and gets
@@ -387,7 +380,7 @@ public class NetworkFragment extends Fragment {
 
 
         @Override
-        protected void onPostExecute(String result){
+        protected void onPostExecute(List<XmlParser.Song> result){
 
 
         }
