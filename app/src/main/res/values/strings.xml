@@ -6,6 +6,7 @@
     <string name="no_internet_access">An active internet connection is required for Songle. Please switch on your internet and start the app again</string>
     <string name="okay">Okay</string>
     <string name="title_activity_main_settings">MainSettings</string>
+    <string name="url_songs_xml">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/songs.xml</string>
 
     <!-- Strings related to Settings -->
 
