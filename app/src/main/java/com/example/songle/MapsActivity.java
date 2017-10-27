@@ -21,6 +21,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 /**
@@ -38,6 +39,10 @@ public class MapsActivity extends FragmentActivity
     private boolean mLocationPermissionGranted = false;
     private Location mLastLocation;
     private static final String TAG="MapsActivity";
+
+    private LatLngBounds UNIVERSITYEDINBURGH = new LatLngBounds(
+            new LatLng(55.942617, -3.192473), new LatLng(55.946233, -3.184319)
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

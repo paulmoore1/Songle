@@ -14,21 +14,8 @@ import java.util.List;
  * Created by Paul Moore on 18-Oct-17.
  */
 
-public class XmlParser {
-    public static class Song {
-        public final String number;
-        public final String artist;
-        public final String title;
-        public final String link;
+public class XmlSongParser {
 
-        private Song(String number, String artist, String title, String link){
-            this.number = number;
-            this.artist = artist;
-            this.title = title;
-            this.link = link;
-
-        }
-    }
     //Don't use namespaces
     private static final String ns = null;
 
@@ -49,7 +36,7 @@ public class XmlParser {
     // won't use here unless we have time - could save on downloading entire XML
     public int lastSongNumber(List<Song> songs){
         Song lastSong = songs.get(songs.size() - 1);
-        int lastNum = Integer.parseInt(lastSong.number);
+        int lastNum = Integer.parseInt(lastSong.getNumber());
         return lastNum;
     }
 

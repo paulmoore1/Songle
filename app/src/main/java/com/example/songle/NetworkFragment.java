@@ -16,6 +16,7 @@ package com.example.songle;
  * limitations under the License.
  */
 
+import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -31,12 +32,8 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -48,11 +45,14 @@ public class NetworkFragment extends Fragment {
     public static final String TAG = "NetworkFragment";
 
     private static final String URL_KEY = "UrlKey";
+    Activity activity;
+    SharedPreference sharedPreference;
 
     private DownloadCallback mCallback;
     private DownloadTask mDownloadTask;
     private DownloadXmlTask mDownloadXmlTask;
     private String mUrlString;
+    private String mostRecentXMLTimestamp;
 
     /**
      * Static initializer for NetworkFragment that sets the URL of the host it will be downloading
@@ -81,6 +81,9 @@ public class NetworkFragment extends Fragment {
         super.onCreate(savedInstanceState);
         // Retain this Fragment across configuration changes in the host Activity.
         setRetainInstance(true);
+        //load most recent timestamp into fragment
+        activity = getActivity();
+        mostRecentXMLTimestamp = sharedPreference.getTimestamp(activity);
         mUrlString = getArguments().getString(URL_KEY);
     }
 
@@ -304,9 +307,9 @@ public class NetworkFragment extends Fragment {
         }
     }
 
-    private class DownloadXmlTask extends AsyncTask<String, Void, List<XmlParser.Song>> {
+    private class DownloadXmlTask extends AsyncTask<String, Void, String> {
         private String TAG = DownloadXmlTask.class.getSimpleName();
-        private String mostRecentXML = getResources().getString(R.string.saved_timestamp);
+
 
         /**
          * Cancel background network operation if we do not have network connectivity.
@@ -326,10 +329,11 @@ public class NetworkFragment extends Fragment {
         }
 
         @Override
-        protected  List<XmlParser.Song> doInBackground(String... urls){
+        protected String doInBackground(String... urls){
             Log.v(TAG, "Started loading XML in the background");
+            List<Song> songs;
             try {
-                return loadXmlFromNetwork(urls[0]);
+                songs = loadXmlFromNetwork(urls[0]);
             } catch (IOException e){
                 System.err.println("Unable to load content. Check your network connection");
                 return null;
@@ -337,23 +341,31 @@ public class NetworkFragment extends Fragment {
                 System.err.println("Error parsing XML");
                 return null;
             }
+            //songs will not be null if the timestamp is new. In that case save the new songs list
+            if (songs != null){
+                sharedPreference.saveSongs(activity, songs);
+                return "Updated";
+            } else {
+                return "Not updated";
+            }
         }
 
-        private List<XmlParser.Song> loadXmlFromNetwork(String urlString) throws
+        private List<Song> loadXmlFromNetwork(String urlString) throws
                 XmlPullParserException, IOException{
             InputStream stream = null;
             //Instantiate the parser.
-            XmlParser parser = new XmlParser();
-            List<XmlParser.Song> songs = null;
+            XmlSongParser parser = new XmlSongParser();
+            List<Song> songs = null;
 
             try {
                 stream = downloadUrl(urlString);
+                //check the timestamp is the most recent.
                 String timestamp = parser.getXmlTimestamp(stream);
-                if (timestamp.equals(mostRecentXML)){
+                if (timestamp.equals(mostRecentXMLTimestamp)){
                     return null;
                 } else {
                     songs = parser.parse(stream);
-                    mostRecentXML = timestamp;
+                    mostRecentXMLTimestamp = timestamp;
                 }
             } catch(Exception e){
 
@@ -380,7 +392,7 @@ public class NetworkFragment extends Fragment {
 
 
         @Override
-        protected void onPostExecute(List<XmlParser.Song> result){
+        protected void onPostExecute(String result){
 
 
         }
