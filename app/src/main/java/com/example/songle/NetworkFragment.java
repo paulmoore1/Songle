@@ -365,7 +365,8 @@ public class NetworkFragment extends Fragment {
                     return null;
                 } else {
                     songs = parser.parse(stream);
-                    mostRecentXMLTimestamp = timestamp;
+                    //update the timestamp
+                    sharedPreference.saveTimestamp(activity, timestamp);
                 }
             } catch(Exception e){
 
@@ -393,7 +394,12 @@ public class NetworkFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String result){
-
+            if (result != null && mCallback != null) {
+                if (result!= null) {
+                    mCallback.updateFromDownload(result);
+                }
+                mCallback.finishDownloading();
+            }
 
         }
 
