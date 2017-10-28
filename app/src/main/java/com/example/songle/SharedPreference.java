@@ -7,7 +7,6 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,15 +19,15 @@ import java.util.List;
 
 public class SharedPreference {
 
-    public static final String TAG = "SharedPreference";
-    public static final String PREFS_NAME = "SONGLE_APP";
-    public static final String SONGS = "Songs";
-    public static final String MAP_1 = "Map1";
-    public static final String MAP_2 = "Map2";
-    public static final String MAP_3 = "Map3";
-    public static final String MAP_4 = "Map4";
-    public static final String MAP_5 = "Map5";
-    public static final String TIMESTAMP = "Timestamp";
+    private static final String TAG = "SharedPreference";
+    private static final String PREFS_NAME = "SONGLE_APP";
+    private static final String SONGS = "Songs";
+    private static final String MAP_1 = "Map1";
+    private static final String MAP_2 = "Map2";
+    private static final String MAP_3 = "Map3";
+    private static final String MAP_4 = "Map4";
+    private static final String MAP_5 = "Map5";
+    private static final String TIMESTAMP = "Timestamp";
 
     public SharedPreference(){
         super();
@@ -57,7 +56,7 @@ public class SharedPreference {
         String jsonSongs = gson.toJson(songs);
 
         editor.putString(SONGS, jsonSongs);
-        editor.commit();
+        editor.apply();
 
     }
 
@@ -105,7 +104,7 @@ public class SharedPreference {
         editor = settings.edit();
 
         editor.putString(TIMESTAMP, timestamp);
-        editor.commit();
+        editor.apply();
 
     }
 
@@ -152,7 +151,7 @@ public class SharedPreference {
         } else {
             Log.e(TAG, "Unexpected number received in maps");
         }
-        editor.commit();
+        editor.apply();
 
     }
 

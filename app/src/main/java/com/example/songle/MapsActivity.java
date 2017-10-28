@@ -11,6 +11,7 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -20,9 +21,15 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.SphericalUtil;
+
+import java.util.ArrayList;
 
 /**
  * An activity that displays a Google map with a marker (pin) to indicate a particular location.
@@ -164,5 +171,75 @@ public class MapsActivity extends FragmentActivity
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         System.out.println(" >>>>onconnectionFailed");
+    }
+
+    public void addMarkers(ArrayList<ArrayList<String>> lyrics,
+                                          ArrayList<ArrayList<Boolean>> bools, ArrayList<Placemark> placemarks){
+        int n = placemarks.size();
+        ArrayList<Marker> markers = new ArrayList<Marker>(n);
+        for (int i = 0; i < n; i++){
+            Placemark placemark = placemarks.get(i);
+            int line = placemark.getLine();
+            int word = placemark.getWord();
+            //check if the word has been found or not
+            boolean check = bools.get(line).get(word);
+            // word not found yet so create Marker
+            if (!check){
+
+                String lyric = lyrics.get(line).get(word);
+                LatLng location = placemark.getLocation();
+                String description = placemark.getDescription();
+                BitmapDescriptor bitmap;
+
+                if (description.equals("unclassified")){
+                    bitmap = BitmapDescriptorFactory.fromResource(R.drawable.marker_unclassified);
+                } else if (description.equals("boring")){
+                    bitmap = BitmapDescriptorFactory.fromResource(R.drawable.marker_boring);
+                } else if (description.equals("notboring")){
+                    bitmap = BitmapDescriptorFactory.fromResource(R.drawable.marker_notboring);
+                } else if (description.equals("interesting")){
+                    bitmap = BitmapDescriptorFactory.fromResource(R.drawable.marker_interesting);
+                } else if (description.equals("veryinteresting")){
+                    bitmap = BitmapDescriptorFactory.fromResource(R.drawable.marker_veryinteresting);
+                } else {
+                    bitmap = BitmapDescriptorFactory.fromResource(R.drawable.marker_unclassified);
+                }
+
+                Marker marker = mMap.addMarker(new MarkerOptions().position(location).icon(bitmap));
+                marker.setTag(lyric);
+
+            }
+
+        }
+        //set a listener for marker clicks.
+        mMap.setOnMarkerClickListener((GoogleMap.OnMarkerClickListener) this);
+        return;
+
+    }
+
+    /**
+     * Called when a user clicks a marker
+     * @param marker
+     * @return
+     */
+
+    public boolean onMarkerClick(final Marker marker){
+        //may change this if necessary
+        double requiredDistance = 10;
+        double mLastLat = mLastLocation.getLatitude();
+        double mLastLong = mLastLocation.getLongitude();
+        LatLng mLastLatLong = new LatLng(mLastLat, mLastLong);
+        double distance = SphericalUtil.computeDistanceBetween(mLastLatLong, marker.getPosition());
+        if (distance < requiredDistance){
+            Toast.makeText(this, "Found word: " + marker.getTag().toString(),
+                    Toast.LENGTH_SHORT).show();
+            //TODO update bools and main lyrics display
+        } else {
+            Toast.makeText(this, "Too far from marker", Toast.LENGTH_SHORT).show();
+        }
+        // Return false to indicate that we have not consumed the event and that we wish
+        // for the default behavior to occur (which is for the camera to move such that the
+        // marker is centered and for the marker's info window to open, if it has one).
+        return false;
     }
 }
