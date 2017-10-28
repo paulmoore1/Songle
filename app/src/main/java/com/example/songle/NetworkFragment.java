@@ -362,6 +362,7 @@ public class NetworkFragment extends Fragment {
                 //check the timestamp is the most recent.
                 String timestamp = parser.getXmlTimestamp(stream);
                 if (timestamp.equals(mostRecentXMLTimestamp)){
+                    //don't bother parsing - it's just the same.
                     return null;
                 } else {
                     songs = parser.parse(stream);

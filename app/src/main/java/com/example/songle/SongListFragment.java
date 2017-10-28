@@ -61,8 +61,6 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Song song = (Song) parent.getItemAtPosition(position);
-
-
         Toast.makeText(activity, song.showSong(), Toast.LENGTH_LONG).show();
     }
 

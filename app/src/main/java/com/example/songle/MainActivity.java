@@ -1,5 +1,6 @@
 package com.example.songle;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -38,9 +39,6 @@ import java.util.Calendar;
 import java.util.List;
 
 public class MainActivity extends FragmentActivity implements DownloadCallback {
-    SharedPreferences sharedpreferences;
-    public static final String SavedTimeStamp = "timestampKey";
-    private String timestamp;
 
     //Broadcast receiver that tracks network connectivity changes
     private NetworkReceiver receiver = new NetworkReceiver();
@@ -86,12 +84,6 @@ public class MainActivity extends FragmentActivity implements DownloadCallback {
         receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);
 
-        //
-        sharedpreferences = getSharedPreferences("com.example.songle" ,Context.MODE_PRIVATE);
-        // check if the saved Timestamp is in the shared preferences - if it is then load it
-        if (sharedpreferences.contains(SavedTimeStamp)){
-            timestamp = sharedpreferences.getString(SavedTimeStamp, "");
-        }
 
         mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(),
                 getResources().getString(R.string.url_songs_xml));
@@ -126,7 +118,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback {
 
     @Override
     public void updateFromDownload(Object result) {
-        Log.i("MainActivity", result.getClass().toString());
+        Log.i("MainActivity", result.toString());
     }
 
 
@@ -193,5 +185,9 @@ public class MainActivity extends FragmentActivity implements DownloadCallback {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public Activity getAcitivity(){
+        return this;
     }
 }
