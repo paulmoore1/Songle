@@ -2,23 +2,29 @@
     <string name="app_name">Songle</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_maps">Map</string>
-    <string name="new_game">New Game</string>
-    <string name="continue_game">Continue Game</string>
-    <string name="no_internet_access">An active internet connection is required for Songle. Please switch on your internet and start the app again</string>
-    <string name="okay">Okay</string>
+    <string name="btn_new_game">New Game</string>
+    <string name="btn_continue_game">Continue Game</string>
+    <string name="btn_okay">Okay</string>
     <string name="title_activity_main_settings">MainSettings</string>
     <string name="url_songs_xml">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/songs.xml</string>
     <string name="welcome_songle">Welcome to Songle!</string>
+    <string name="btn_continue">Continue</string>
+    <string name="btn_exit">Exit</string>
+
+    <!-- Strings related to Network error dialogs -->
+    <string name="network_error">Network Error</string>
+    <string name="network_warning">Network Warning</string>
+    <string name="msg_data_required">A data connection is required!</string>
+    <string name="msg_data_warning">Without data you can only load games and guess with words you already have. Continue?</string>
+    <string name="btn_open_wifi_settings">Wifi Settings</string>
+    <string name="btn_open_data_settings">Data Settings</string>
+
 
     <!-- Strings related to Settings -->
 
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
 
-    <string name="pref_title_social_recommendations">Enable social recommendations</string>
-    <string name="pref_description_social_recommendations">Recommendations for people to contact
-        based on your message history
-    </string>
 
     <string name="pref_title_display_name">Display name</string>
     <string name="pref_default_display_name">John Smith</string>

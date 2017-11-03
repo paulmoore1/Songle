@@ -226,15 +226,21 @@ public class MapsActivity extends FragmentActivity
     public boolean onMarkerClick(final Marker marker){
         //may change this if necessary
         double requiredDistance = 10;
+        //find distance between last location and location of marker
         double mLastLat = mLastLocation.getLatitude();
         double mLastLong = mLastLocation.getLongitude();
         LatLng mLastLatLong = new LatLng(mLastLat, mLastLong);
         double distance = SphericalUtil.computeDistanceBetween(mLastLatLong, marker.getPosition());
+        //if you are close enough to the marker
         if (distance < requiredDistance){
             Toast.makeText(this, "Found word: " + marker.getTag().toString(),
                     Toast.LENGTH_SHORT).show();
+            //delete the marker
+            marker.remove();
             //TODO update bools and main lyrics display
+
         } else {
+            //too far away from marker, show a Toast but nothing more.
             Toast.makeText(this, "Too far from marker", Toast.LENGTH_SHORT).show();
         }
         // Return false to indicate that we have not consumed the event and that we wish

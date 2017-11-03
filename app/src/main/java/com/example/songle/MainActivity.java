@@ -6,37 +6,16 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.app.FragmentManager;
-import android.preference.PreferenceManager;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.provider.Settings;
 
 import android.support.v4.app.FragmentActivity;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.webkit.WebView;
-import android.widget.EditText;
-
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
 
 public class MainActivity extends FragmentActivity implements DownloadCallback {
 
@@ -64,18 +43,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback {
         boolean networkOn = isNetworkAvailable(this);
         //if there is internet, load as normal
         if (!networkOn) {
-            //with no internet, send an alert that will close the app.
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-            alertDialogBuilder.setMessage("A network connection is required! Please check your connection and load again");
-            alertDialogBuilder.setPositiveButton(R.string.okay,
-                    new DialogInterface.OnClickListener(){
-                        @Override
-                        public void onClick(DialogInterface arg0, int arg1){
-                            System.exit(0);
-                        }
-                    });
-            AlertDialog alertDialog = alertDialogBuilder.create();
-            alertDialog.show();
+            sendNetworkErrorDialog();
         }
 
 
@@ -189,5 +157,63 @@ public class MainActivity extends FragmentActivity implements DownloadCallback {
 
     public Activity getAcitivity(){
         return this;
+    }
+
+    //use if a network connection is required for the selected option to work
+    private void sendNetworkErrorDialog(){
+        //with no internet, send an alert that will take user to settings or close the app.
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.network_error);
+        adb.setMessage(R.string.msg_data_required);
+        adb.setItems(new CharSequence[]{
+                        getString(R.string.btn_open_wifi_settings),
+                        getString(R.string.btn_open_data_settings),
+                        getString(R.string.btn_exit)
+                },
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which){
+                            case 0:
+                                //go to Wifi settings
+                                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                                break;
+                            case 1:
+                                //go to data settings
+                                startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+                                break;
+                            case 2:
+                                //exit the app
+                                finish();
+                                break;
+                        }
+                    }
+                });
+
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
+    }
+
+    //use if a network connection will probably be required (but not for certain)
+    private void sendNetworkWarningDialog(){
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.network_warning);
+        adb.setMessage(R.string.msg_data_warning);
+        //dismiss dialog if 'Continue' selected
+        adb.setPositiveButton(R.string.btn_continue, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        //stop app if 'Exit' selected
+        adb.setNegativeButton(R.string.btn_exit, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        });
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
     }
 }
