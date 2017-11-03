@@ -17,7 +17,7 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends FragmentActivity implements DownloadCallback {
+public class HomeActivity extends FragmentActivity implements DownloadCallback {
 
     //Broadcast receiver that tracks network connectivity changes
     private NetworkReceiver receiver = new NetworkReceiver();
@@ -86,7 +86,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback {
 
     @Override
     public void updateFromDownload(Object result) {
-        Log.i("MainActivity", result.toString());
+        Log.i("HomeActivity", result.toString());
     }
 
 
@@ -168,7 +168,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback {
         adb.setItems(new CharSequence[]{
                         getString(R.string.btn_open_wifi_settings),
                         getString(R.string.btn_open_data_settings),
-                        getString(R.string.btn_exit)
+                        getString(R.string.txt_exit)
                 },
                 new DialogInterface.OnClickListener() {
                     @Override
@@ -200,14 +200,14 @@ public class MainActivity extends FragmentActivity implements DownloadCallback {
         adb.setTitle(R.string.network_warning);
         adb.setMessage(R.string.msg_data_warning);
         //dismiss dialog if 'Continue' selected
-        adb.setPositiveButton(R.string.btn_continue, new DialogInterface.OnClickListener() {
+        adb.setPositiveButton(R.string.txt_continue, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
         //stop app if 'Exit' selected
-        adb.setNegativeButton(R.string.btn_exit, new DialogInterface.OnClickListener() {
+        adb.setNegativeButton(R.string.txt_exit, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 finish();

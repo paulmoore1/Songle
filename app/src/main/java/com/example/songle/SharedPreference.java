@@ -181,7 +181,7 @@ public class SharedPreference {
     }
 
     //following are methods for saving and getting the current difficulty level
-    //needed to check if maps need to be redownloaded.
+
     public void saveCurrentDifficultyLevel(Context context, String diffLevel){
         //check diffLevel is one of the appropriate ones for difficulty level
         if (diffLevel.equals(context.getString(R.string.difficulty_insane))

@@ -71,9 +71,11 @@ public class SongListAdapter extends ArrayAdapter<Song> {
         holder.songNumberTxt.setText(song.getNumber());
         holder.songStatusTxt.setText(song.showStatus());
 
-        //make the icon green if the song is completed, grey otherwise
+        //make the icon green if the song is completed, orange if incomplete, grey otherwise
         if (song.isSongComplete()){
             holder.songImg.setImageResource(R.drawable.music_note_green);
+        } else if (song.isSongIncomplete()) {
+            holder.songImg.setImageResource(R.drawable.music_note_orange);
         } else {
             holder.songImg.setImageResource(R.drawable.music_note_grey);
         }

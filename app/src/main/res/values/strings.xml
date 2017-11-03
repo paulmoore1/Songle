@@ -2,14 +2,20 @@
     <string name="app_name">Songle</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_maps">Map</string>
-    <string name="btn_new_game">New Game</string>
-    <string name="btn_continue_game">Continue Game</string>
-    <string name="btn_okay">Okay</string>
+    <string name="txt_new_game">New Game</string>
+    <string name="txt_continue_game">Continue Game</string>
+    <string name="txt_load_old_game">Load Previous Game</string>
+    <string name="txt_okay">Okay</string>
     <string name="title_activity_main_settings">MainSettings</string>
     <string name="url_songs_xml">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/songs.xml</string>
-    <string name="welcome_songle">Welcome to Songle!</string>
-    <string name="btn_continue">Continue</string>
-    <string name="btn_exit">Exit</string>
+    <string name="msg_welcome_songle">Welcome to Songle!</string>
+    <string name="txt_continue">Continue</string>
+    <string name="txt_exit">Exit</string>
+    <string name="txt_select_song">Select Song</string>
+    <string name="txt_select_difficulty">Select Difficulty</string>
+    <string name="txt_start_game">Start Game</string>
+
+    <string name="msg_new_game">Please choose a song and a difficulty level</string>
 
     <!-- Strings related to Network error dialogs -->
     <string name="network_error">Network Error</string>
@@ -98,4 +104,5 @@
     <!-- Strings for saving values -->
     <string name="saved_timestamp">2017-10-09T10:00:33.775+01:00[Europe/London]</string>
     <string name="song">Songs</string>
+    <string name="title_activity_new_game_settings">NewGameSettingsActivity</string>
 </resources>
