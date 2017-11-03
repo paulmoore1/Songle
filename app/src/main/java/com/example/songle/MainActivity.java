@@ -43,7 +43,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback {
         boolean networkOn = isNetworkAvailable(this);
         //if there is internet, load as normal
         if (!networkOn) {
-            sendNetworkErrorDialog();
+            sendNetworkWarningDialog();
         }
 
 

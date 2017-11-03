@@ -19,6 +19,12 @@
     <string name="btn_open_wifi_settings">Wifi Settings</string>
     <string name="btn_open_data_settings">Data Settings</string>
 
+    <!-- Strings for setting difficulty -->
+    <string name="difficulty_insane">1</string>
+    <string name="difficulty_hard">2</string>
+    <string name="difficulty_moderate">3</string>
+    <string name="difficulty_easy">4</string>
+    <string name="difficulty_very_easy">5</string>
 
     <!-- Strings related to Settings -->
 

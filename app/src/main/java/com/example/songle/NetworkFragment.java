@@ -83,7 +83,7 @@ public class NetworkFragment extends Fragment {
         setRetainInstance(true);
         //load most recent timestamp into fragment
         activity = getActivity();
-        mostRecentXMLTimestamp = sharedPreference.getTimestamp(activity);
+        mostRecentXMLTimestamp = sharedPreference.getMostRecentTimestamp(activity);
         mUrlString = getArguments().getString(URL_KEY);
     }
 
@@ -367,7 +367,7 @@ public class NetworkFragment extends Fragment {
                 } else {
                     songs = parser.parse(stream);
                     //update the timestamp
-                    sharedPreference.saveTimestamp(activity, timestamp);
+                    sharedPreference.saveMostRecentTimestamp(activity, timestamp);
                 }
             } catch(Exception e){
 

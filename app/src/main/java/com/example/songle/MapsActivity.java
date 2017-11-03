@@ -217,6 +217,8 @@ public class MapsActivity extends FragmentActivity
 
     }
 
+
+
     /**
      * Called when a user clicks a marker
      * @param marker

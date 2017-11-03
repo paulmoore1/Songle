@@ -28,12 +28,14 @@ public class SharedPreference {
     private static final String MAP_4 = "Map4";
     private static final String MAP_5 = "Map5";
     private static final String TIMESTAMP = "Timestamp";
+    private static final String CURRENT_SONG_NUMBER = "Current_song_number";
+    private static final String CURRENT_DIFFICULTY_LEVEL = "Current_difficulty_level";
 
     public SharedPreference(){
         super();
     }
 
-    public void saveSongs(Context context, List<Song> songs){
+    public void saveSongs(Context context, List<Song> newSongs){
         SharedPreferences settings;
         SharedPreferences.Editor editor;
 
@@ -47,13 +49,13 @@ public class SharedPreference {
         if (oldSongs != null){
             int oldLength = oldSongs.size();
             for (int i = 0; i < oldLength; i++){
-                songs.set(i, oldSongs.get(i));
+                newSongs.set(i, oldSongs.get(i));
             }
 
         }
 
         Gson gson = new Gson();
-        String jsonSongs = gson.toJson(songs);
+        String jsonSongs = gson.toJson(newSongs);
 
         editor.putString(SONGS, jsonSongs);
         editor.apply();
@@ -77,6 +79,34 @@ public class SharedPreference {
         }
     }
 
+    /**
+     * Update song status accordingly (will be "N" automatically so don't input that)
+     * @param context
+     * @param song
+     * @param status - must be "I" (incomplete) or "C" complete
+     */
+    public void saveSongStatus(Context context, Song song, String status){
+        ArrayList<Song> songs = getSongs(context);
+        if (songs == null){
+            Log.e(TAG, "No songs found when trying to update status");
+            return;
+        }
+        //check the status is not "N"
+        if (status.equals("N")){
+            Log.e(TAG, "Tried to set song to not started");
+            return;
+        }
+        //update the song's status
+        song.setStatus(status);
+        //find where in the array list the song belongs. Subtract 1 since the first song is 01
+        int targetNum = Integer.parseInt(song.getNumber()) - 1;
+        //update the songs list
+        songs.set(targetNum, song);
+        //save the updated songs
+        saveSongs(context, songs);
+
+    }
+
     public ArrayList<Song> getSongs(Context context){
         SharedPreferences settings;
         List<Song> songs;
@@ -96,7 +126,7 @@ public class SharedPreference {
         }
     }
 
-    public void saveTimestamp(Context context, String timestamp){
+    public void saveMostRecentTimestamp(Context context, String timestamp){
         SharedPreferences settings;
         SharedPreferences.Editor editor;
 
@@ -108,7 +138,7 @@ public class SharedPreference {
 
     }
 
-    public String getTimestamp(Context context){
+    public String getMostRecentTimestamp(Context context){
         SharedPreferences settings;
         String timestamp;
 
@@ -120,6 +150,72 @@ public class SharedPreference {
         } else {
             return null;
         }
+    }
+
+    //following are methods for saving and getting the current song number
+    //needed to check if maps or lyrics need to be redownloaded.
+    public void saveCurrentSongNumber(Context context, String songNum){
+
+        SharedPreferences settings;
+        SharedPreferences.Editor editor;
+
+        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        editor = settings.edit();
+
+        editor.putString(CURRENT_SONG_NUMBER, songNum);
+        editor.apply();
+
+    }
+
+    public String getCurrentSongNumber(Context context){
+        SharedPreferences settings;
+        String songNum = null;
+
+        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
+        if (settings.contains(CURRENT_SONG_NUMBER)){
+            songNum = settings.getString(CURRENT_SONG_NUMBER, null);
+        }
+        return songNum;
+
+    }
+
+    //following are methods for saving and getting the current difficulty level
+    //needed to check if maps need to be redownloaded.
+    public void saveCurrentDifficultyLevel(Context context, String diffLevel){
+        //check diffLevel is one of the appropriate ones for difficulty level
+        if (diffLevel.equals(context.getString(R.string.difficulty_insane))
+                || diffLevel.equals(context.getString(R.string.difficulty_hard))
+                || diffLevel.equals(context.getString(R.string.difficulty_moderate))
+                || diffLevel.equals(context.getString(R.string.difficulty_easy))
+                || diffLevel.equals(context.getString(R.string.difficulty_very_easy))){
+            SharedPreferences settings;
+            SharedPreferences.Editor editor;
+
+            settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            editor = settings.edit();
+
+            editor.putString(CURRENT_DIFFICULTY_LEVEL, diffLevel);
+            editor.apply();
+        } else {
+            Log.e(TAG, "Unexpected difficulty level not saved");
+        }
+
+
+    }
+
+    public String getCurrentDifficultyLevel(Context context){
+        SharedPreferences settings;
+        String diffLevel = null;
+
+        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
+        if (settings.contains(CURRENT_DIFFICULTY_LEVEL)){
+            diffLevel = settings.getString(CURRENT_DIFFICULTY_LEVEL, null);
+
+        }
+        return diffLevel;
+
     }
 
     /**
@@ -185,6 +281,7 @@ public class SharedPreference {
             return (ArrayList<Placemark>) placemarks;
 
         } else {
+            Log.e(TAG, "Map not found");
             return  null;
         }
     }
