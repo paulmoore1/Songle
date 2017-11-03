@@ -32,7 +32,7 @@ public class LyricsTextParser {
     private Map<String, List<String>> lyrics;
 
 // check for the file extension found here: https://stackoverflow.com/questions/25298691/how-to-check-the-file-type-in-java
-    public LyricsTextParser(File file) {
+    public LyricsTextParser(Context context, File file) {
         //check the file ends in '.txt'
         String fileName = file.getName();
         int dotIndex = fileName.lastIndexOf('.');
@@ -119,34 +119,6 @@ public class LyricsTextParser {
 
     }
 
-    /**
-     * Returns the lyrics associated with a particular song number.
-     * @param context
-     * @param songNumber - the song number for the lyrics
-     * @return - a Map containing the lyrics, null if the file doesn't exist
-     */
-    public Map<String, List<String>> loadLyrics(Context context, String songNumber) {
 
-        String filename = songNumber + "lyrics.tmp";
-        try {
-            FileInputStream fis = context.openFileInput(filename);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            Map<String, List<String>> lyrics= (Map<String, List<String>>) ois.readObject();
-            ois.close();
-            fis.close();
-            return lyrics;
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, "Could not find file for song: " + songNumber);
-            e.printStackTrace();
-        } catch (IOException e) {
-            Log.e(TAG, "Could not set up ObjectInputStream");
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            Log.e(TAG, "Error in file - does not cast to Map<String, List<String>>");
-            e.printStackTrace();
-        }
-        return null;
-
-    }
 
 }
