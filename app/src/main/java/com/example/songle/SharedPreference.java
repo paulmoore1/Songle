@@ -28,11 +28,26 @@ public class SharedPreference {
     private static final String MAP_4 = "Map4";
     private static final String MAP_5 = "Map5";
     private static final String TIMESTAMP = "Timestamp";
-    private static final String CURRENT_SONG_NUMBER = "Current_song_number";
-    private static final String CURRENT_DIFFICULTY_LEVEL = "Current_difficulty_level";
+    private static final String CURRENT_SONG = "CurrentSong";
+    private static final String CURRENT_SONG_NUMBER = "CurrentSongNumber";
+    private static final String CURRENT_DIFFICULTY_LEVEL = "CurrentDifficultyLevel";
 
     public SharedPreference(){
         super();
+    }
+
+    //used so that a listener can effectively be registerd and unregistered without needing
+    //a separate sharedPreferences object.
+    public void registerOnSharedPreferenceChangedListener(Context context, SharedPreferences.OnSharedPreferenceChangeListener listener){
+        SharedPreferences settings;
+        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        settings.registerOnSharedPreferenceChangeListener(listener);
+    }
+
+    public void unregisterOnSharedPreferenceChangedListener(Context context, SharedPreferences.OnSharedPreferenceChangeListener listener){
+        SharedPreferences settings;
+        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        settings.unregisterOnSharedPreferenceChangeListener(listener);
     }
 
     public void saveSongs(Context context, List<Song> newSongs){
@@ -45,7 +60,7 @@ public class SharedPreference {
         // this part sets the new song list so that any old ones remain in place
         // important so that progress like completing a song is not overwritten when a new list is downloaded
         // IMPORTANT: Assumes song numbers don't change!
-        ArrayList<Song> oldSongs = getSongs(context);
+        ArrayList<Song> oldSongs = getAllSongs(context);
         if (oldSongs != null){
             int oldLength = oldSongs.size();
             for (int i = 0; i < oldLength; i++){
@@ -63,7 +78,7 @@ public class SharedPreference {
     }
 
     public void addSong(Context context, Song song){
-        ArrayList<Song> songs = getSongs(context);
+        ArrayList<Song> songs = getAllSongs(context);
         if (songs == null){
             songs = new ArrayList<Song>();
         }
@@ -72,7 +87,7 @@ public class SharedPreference {
     }
 
     public void removeSong(Context context, Song song){
-        ArrayList<Song> songs = getSongs(context);
+        ArrayList<Song> songs = getAllSongs(context);
         if (songs != null){
             songs.remove(song);
             saveSongs(context, songs);
@@ -86,7 +101,7 @@ public class SharedPreference {
      * @param status - must be "I" (incomplete) or "C" complete
      */
     public void saveSongStatus(Context context, Song song, String status){
-        ArrayList<Song> songs = getSongs(context);
+        ArrayList<Song> songs = getAllSongs(context);
         if (songs == null){
             Log.e(TAG, "No songs found when trying to update status");
             return;
@@ -107,7 +122,7 @@ public class SharedPreference {
 
     }
 
-    public ArrayList<Song> getSongs(Context context){
+    public ArrayList<Song> getAllSongs(Context context){
         SharedPreferences settings;
         List<Song> songs;
 
@@ -119,6 +134,34 @@ public class SharedPreference {
             Song[] songsArray = gson.fromJson(jsonSongs, Song[].class);
             songs = Arrays.asList(songsArray);
             songs = new ArrayList<Song>(songs);
+            return (ArrayList<Song>) songs;
+
+        } else {
+            return  null;
+        }
+    }
+
+    public ArrayList<Song> getOldSongs(Context context){
+        SharedPreferences settings;
+        List<Song> songs;
+
+        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
+        if (settings.contains(SONGS)){
+            String jsonSongs = settings.getString(SONGS, null);
+            Gson gson = new Gson();
+            Song[] songsArray = gson.fromJson(jsonSongs, Song[].class);
+            songs = Arrays.asList(songsArray);
+            songs = new ArrayList<Song>(songs);
+
+            //remove all songs which have not been started, so only complete or incomplete ones are returned.
+            for (int i = 0; i < songs.size(); i++){
+                Song song = songs.get(i);
+                if (song.isSongNotStarted()){
+                    songs.remove(song);
+                }
+            }
+
             return (ArrayList<Song>) songs;
 
         } else {
@@ -218,13 +261,45 @@ public class SharedPreference {
 
     }
 
+    public void saveCurrentSong(Context context, Song song){
+        SharedPreferences settings;
+        SharedPreferences.Editor editor;
+
+        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        editor = settings.edit();
+
+        Gson gson = new Gson();
+        String jsonSong = gson.toJson(song);
+
+        editor.putString(SONGS, jsonSong);
+        editor.apply();
+    }
+
+    public Song getCurrentSong(Context context){
+        SharedPreferences settings;
+        Song song = null;
+
+        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
+        if (settings.contains(CURRENT_SONG)){
+            String jsonSongs = settings.getString(CURRENT_SONG, null);
+            Gson gson = new Gson();
+            song = gson.fromJson(jsonSongs, Song.class);
+            return song;
+
+        } else {
+            return  null;
+        }
+
+    }
+
     /**
      * Saves a list of placemarks for a map to the SharedPreferences
      * @param context
      * @param placemarks
      * @param num - the map number that should be saved to
      */
-    public void saveMap(Context context, List<Placemark> placemarks, int num){
+    public void saveMap(Context context, List<Placemark> placemarks, String num){
         SharedPreferences settings;
         SharedPreferences.Editor editor;
 
@@ -234,38 +309,40 @@ public class SharedPreference {
         Gson gson = new Gson();
         String jsonSongs = gson.toJson(placemarks);
 
-        if (num == 1){
+        if (num.equals("1")){
             editor.putString(MAP_1, jsonSongs);
-        } else if (num == 2) {
+        } else if (num.equals("2")) {
             editor.putString(MAP_2, jsonSongs);
-        } else if (num == 3) {
+        } else if (num.equals("3")) {
             editor.putString(MAP_3, jsonSongs);
-        } else if (num == 4) {
+        } else if (num.equals("4")) {
             editor.putString(MAP_4, jsonSongs);
-        } else if (num == 5) {
+        } else if (num.equals("5")) {
             editor.putString(MAP_5, jsonSongs);
         } else {
             Log.e(TAG, "Unexpected number received in maps");
+            return;
         }
         editor.apply();
+        return;
 
     }
 
-    public ArrayList<Placemark> getMap(Context context, int num){
+    public ArrayList<Placemark> getMap(Context context, String num){
         SharedPreferences settings;
         List<Placemark> placemarks;
 
         settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String targetMap;
-        if (num == 1){
+        if (num.equals("1")){
             targetMap = MAP_1;
-        } else if (num == 2){
+        } else if (num.equals("2")){
             targetMap = MAP_2;
-        } else if (num == 3){
+        } else if (num.equals("3")){
             targetMap = MAP_3;
-        } else if (num == 4){
+        } else if (num.equals("4")){
             targetMap = MAP_4;
-        } else if (num == 5){
+        } else if (num.equals("5")){
             targetMap = MAP_5;
         } else {
             Log.e(TAG, "Unexpected number requested");

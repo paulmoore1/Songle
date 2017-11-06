@@ -2,7 +2,6 @@ package com.example.songle;
 
 import android.app.Activity;
 import android.support.v4.app.Fragment;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -31,20 +30,30 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
     List<Song> songs;
     SongListAdapter songListAdapter;
 
-    SharedPreference sharedPreference;
+    SharedPreference sharedPreference = new SharedPreference();
 
     @Override
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         activity = getActivity();
         Log.i(TAG, "going to get songs");
-        songs = sharedPreference.getSongs(activity);
+        Bundle bundle = this.getArguments();
+        String gameType = bundle.getString("GAME_TYPE");
+        if (gameType.equals(R.string.txt_new_game)){
+            songs = sharedPreference.getAllSongs(getContext());
+        } else if (gameType.equals(R.string.txt_load_old_game)){
+            songs = sharedPreference.getOldSongs(getContext());
+        } else {
+            Log.e(TAG, "Unexpected game type given");
+        }
+
         Log.i(TAG, "songs loaded");
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState){
+
         View view = inflater.inflate(R.layout.fragment_song_list, container, false);
         findViewsById(view);
 
@@ -59,9 +68,19 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id){
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Song song = (Song) parent.getItemAtPosition(position);
+        song.setStatus("I");
+        String songNum = song.getNumber();
         Toast.makeText(activity, song.showSong(), Toast.LENGTH_LONG).show();
+        //save these values to shared preferences.
+        sharedPreference.saveCurrentSong(getContext(), song);
+        sharedPreference.saveCurrentSongNumber(getContext(), songNum);
+        //mark song as incomplete now.
+        sharedPreference.saveSongStatus(getContext(), song, "I");
+        //close the fragment.
+        getFragmentManager().popBackStackImmediate();
+
     }
 
     @Override
@@ -70,6 +89,9 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
         getActivity().getActionBar().setTitle(R.string.app_name);
         super.onResume();
     }
+
+
+
 
 
 }

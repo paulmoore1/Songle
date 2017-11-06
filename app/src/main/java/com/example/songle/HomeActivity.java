@@ -2,13 +2,17 @@ package com.example.songle;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DownloadManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.sqlite.SQLiteDoneException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
 
 import android.support.v4.app.FragmentActivity;
@@ -17,8 +21,13 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class HomeActivity extends FragmentActivity implements DownloadCallback {
+import com.google.gson.Gson;
 
+import java.util.List;
+import java.util.Map;
+
+public class HomeActivity extends FragmentActivity implements DownloadCallback {
+    private static final String TAG = "HomeActivity";
     //Broadcast receiver that tracks network connectivity changes
     private NetworkReceiver receiver = new NetworkReceiver();
 
@@ -27,7 +36,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
     private NetworkFragment mNetworkFragment;
 
 
-
+    private SharedPreference sharedPreference = new SharedPreference();
 
     // boolean telling us whether a download is in progress so we don't trigger overlapping
     // downloads with consecutive button clicks
@@ -37,14 +46,20 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "super.onCreate() called");
         setContentView(R.layout.activity_main);
+        Log.d(TAG, "Layout loaded");
 
         //check for internet access first
         boolean networkOn = isNetworkAvailable(this);
+        Log.d(TAG,"Checked network on");
         //if there is internet, load as normal
         if (!networkOn) {
             sendNetworkWarningDialog();
         }
+
+        mNetworkFragment  = NetworkFragment.getInstance(getSupportFragmentManager(),
+                getString(R.string.url_songs_xml));
 
 
         // Register BroadcastReceiver to track connection changes
@@ -53,23 +68,116 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         this.registerReceiver(receiver, filter);
 
 
-        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(),
-                getResources().getString(R.string.url_songs_xml));
+
+
+    }
+
+    //called when the New Game button is clicked
+
+    public void newGame(View view){
+        //check the network is available.
+        boolean networkOn = isNetworkAvailable(this);
+        if (!networkOn){
+            sendNetworkErrorDialog();
+            return;
+        }
+        //start downloading the songs xml, which will store the songs in XML in Shared Prefs
         mNetworkFragment.startXmlDownload();
 
-    }
-
-
-    //public void newGame(View view){
-    //    boolean savedGame = checkSavedGame();
-
-    //}
-
-
-    public void startMaps(View view){
-        Intent intent = new Intent(this, MapsActivity.class);
+        //now ready to start new activity
+        Intent intent = new Intent(this, GameSettingsActivity.class);
+        //send the game type with the intent so the settings activity loads correctly.
+        intent.putExtra("GAME_TYPE", getString(R.string.txt_new_game));
         startActivity(intent);
+
     }
+
+    public void continueGame(View view){
+        Log.d(TAG, "Continue Game button clicked");
+        Song song = sharedPreference.getCurrentSong(this);
+        String diffLevel = sharedPreference.getCurrentDifficultyLevel(this);
+        //check there is actually a song in the current song list and a difficulty chosen
+        if (song != null && diffLevel != null){
+            //song is incomplete as expected, check that necessary files are present
+            if (song.isSongIncomplete()){
+
+                //check lyrics and map are already downloaded and stored.
+                Lyrics store = new Lyrics();
+                Map<String, List<String>> lyrics = store.loadLyrics(this, song.getNumber());
+                List<Placemark> placemarks = sharedPreference.getMap(this, diffLevel);
+                if (lyrics != null && placemarks != null){
+                    //have lyrics file and song in place, can load MainGameActivity with this
+                    //check in that activity for internet before allowing maps
+                    Intent intent = new Intent(this, MainGameActivity.class);
+
+                    //convert to JSON format for sending and extracting
+                    Gson gson = new Gson();
+                    String jsonLyrics = gson.toJson(lyrics);
+                    String jsonSong = gson.toJson(song);
+                    String jsonPlacemarks = gson.toJson(placemarks);
+
+                    Bundle info = new Bundle();
+                    info.putString("JSON_LYRICS", jsonLyrics);
+                    info.putString("JSON_SONG", jsonSong);
+                    info.putString("JSON_PLACEMARKS", jsonPlacemarks);
+                    intent.putExtras(info);
+                    startActivity(intent);
+
+                } else {
+                    //no lyrics/map found
+                    //check if network is available so we can download
+                    boolean networkAvailable = isNetworkAvailable(this);
+                    //network is active, so download files and start the game.
+                    if (networkAvailable){
+                        //TODO download and send the files as before above
+                    } else {
+                        //give up as a network is needed
+                        sendNetworkErrorDialog();
+                        
+                    }
+
+
+                }
+
+            } else if (song.isSongComplete()) {
+                //send alert dialog that the song has already been done.
+                sendGameCompletedAlreadyDialog();
+
+            } else if (song.isSongNotStarted()){
+                //error, should have been marked as incomplete if it is in currentSong
+                Log.e(TAG, "Song marked as not started when tried to continue");
+
+            } else {
+               //error, should be at least one of these!
+                Log.e(TAG, "Unexpected song status tag when tried to load");
+
+            }
+        } else {
+            //send alert that no game was found
+            sendGameNotFoundDialog();
+
+        }
+    }
+
+    public void loadGame(View view){
+        Log.d(TAG, "Load Game button pressed");
+        //check the network is available - we will probably need to download the maps.
+        boolean networkOn = isNetworkAvailable(this);
+        if (!networkOn){
+            sendNetworkErrorDialog();
+            return;
+        }
+        Log.d(TAG,"Network connection found");
+
+        //now ready to start new activity
+        Intent intent = new Intent(this, GameSettingsActivity.class);
+        //make sure game type is old game for the game settings activity.
+        intent.putExtra("GAME_TYPE", getString(R.string.txt_load_old_game));
+        startActivity(intent);
+        Log.d(TAG, "Started Game Settings Activity");
+
+    }
+
 
 
     private void startDownload(){
@@ -79,6 +187,8 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
             mDownloading = true;
         }
     }
+
+
 
 
 
@@ -155,42 +265,25 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         return super.onOptionsItemSelected(item);
     }
 
-    public Activity getAcitivity(){
-        return this;
-    }
-
     //use if a network connection is required for the selected option to work
     private void sendNetworkErrorDialog(){
         //with no internet, send an alert that will take user to settings or close the app.
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         adb.setTitle(R.string.network_error);
         adb.setMessage(R.string.msg_data_required);
-        adb.setItems(new CharSequence[]{
-                        getString(R.string.btn_open_wifi_settings),
-                        getString(R.string.btn_open_data_settings),
-                        getString(R.string.txt_exit)
-                },
-                new DialogInterface.OnClickListener() {
+        adb.setPositiveButton(R.string.txt_internet_settings, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+            }
+        });
+        adb.setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        switch (which){
-                            case 0:
-                                //go to Wifi settings
-                                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-                                break;
-                            case 1:
-                                //go to data settings
-                                startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
-                                break;
-                            case 2:
-                                //exit the app
-                                finish();
-                                break;
-                        }
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
                     }
                 });
-
-        AlertDialog alertDialog = adb.create();
+                AlertDialog alertDialog = adb.create();
         alertDialog.show();
     }
 
@@ -211,6 +304,34 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 finish();
+            }
+        });
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
+    }
+
+    private void sendGameNotFoundDialog(){
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.loading_error);
+        adb.setMessage(R.string.msg_game_not_found);
+        adb.setNegativeButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int i) {
+
+            }
+        });
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
+    }
+
+    private void sendGameCompletedAlreadyDialog(){
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.loading_error);
+        adb.setMessage(R.string.msg_game_already_completed);
+        adb.setNegativeButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int i) {
+
             }
         });
         AlertDialog alertDialog = adb.create();

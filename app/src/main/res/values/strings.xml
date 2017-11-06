@@ -8,34 +8,57 @@
     <string name="txt_okay">Okay</string>
     <string name="title_activity_main_settings">MainSettings</string>
     <string name="url_songs_xml">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/songs.xml</string>
+
     <string name="msg_welcome_songle">Welcome to Songle!</string>
     <string name="txt_continue">Continue</string>
+    <string name="txt_cancel">Cancel</string>
     <string name="txt_exit">Exit</string>
     <string name="txt_select_song">Select Song</string>
     <string name="txt_select_difficulty">Select Difficulty</string>
     <string name="txt_start_game">Start Game</string>
 
     <string name="msg_new_game">Please choose a song and a difficulty level</string>
+    <string name="msg_song_number_general">Song #</string>
 
     <!-- Strings related to Network error dialogs -->
     <string name="network_error">Network Error</string>
     <string name="network_warning">Network Warning</string>
     <string name="msg_data_required">A data connection is required!</string>
     <string name="msg_data_warning">Without data you can only load games and guess with words you already have. Continue?</string>
-    <string name="btn_open_wifi_settings">Wifi Settings</string>
-    <string name="btn_open_data_settings">Data Settings</string>
+    <string name="txt_internet_settings">Internet Settings</string>
+
+
+    <!-- Strings related to Loading error dialogs -->
+    <string name="loading_error">Loading Error</string>
+    <string name="msg_game_not_found">Game could not be found! Please start a new game.</string>
+    <string name="msg_lyrics_not_found">Lyrics file not found! Please connect to the internet.</string>
+    <string name="msg_game_already_completed">Game already completed! If you want to play it again, please connect to the internet!</string>
+
+    <!--Strings for game confirmation dialogs-->
+    <string name="confirm_game_settings">Confirm settings</string>
+    <string name="msg_begin_question">Do you want to begin?</string>
 
     <!-- Strings for setting difficulty -->
-    <string name="difficulty_insane">1</string>
-    <string name="difficulty_hard">2</string>
-    <string name="difficulty_moderate">3</string>
-    <string name="difficulty_easy">4</string>
-    <string name="difficulty_very_easy">5</string>
+    <string name="difficulty_insane">Insane</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="difficulty_moderate">Moderate</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_very_easy">Very Easy</string>
+
+    <string-array name="difficulty_levels">
+        <item>Very Easy</item>
+        <item>Easy</item>
+        <item>Moderate</item>
+        <item>Hard</item>
+        <item>Insane</item>
+    </string-array>
 
     <!-- Strings related to Settings -->
 
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
+    <string name="pref_description_social_recommendations">Select social recommendations</string>
+    <string name="pref_title_social_recommendations">Social recommendations</string>
 
 
     <string name="pref_title_display_name">Display name</string>
@@ -102,7 +125,9 @@
 
 
     <!-- Strings for saving values -->
-    <string name="saved_timestamp">2017-10-09T10:00:33.775+01:00[Europe/London]</string>
+    <string name="default_timestamp">2017-10-09T10:00:33.775+01:00[Europe/London]</string>
     <string name="song">Songs</string>
     <string name="title_activity_new_game_settings">NewGameSettingsActivity</string>
+    <string name="title_activity_main_game">MainGameActivity</string>
+    <string name="section_format">Hello World from section: %1$d</string>
 </resources>

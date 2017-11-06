@@ -46,7 +46,7 @@ public class NetworkFragment extends Fragment {
 
     private static final String URL_KEY = "UrlKey";
     Activity activity;
-    SharedPreference sharedPreference;
+    SharedPreference sharedPreference = new SharedPreference();
 
     private DownloadCallback mCallback;
     private DownloadTask mDownloadTask;
@@ -78,13 +78,18 @@ public class NetworkFragment extends Fragment {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate() invoked");
         super.onCreate(savedInstanceState);
         // Retain this Fragment across configuration changes in the host Activity.
         setRetainInstance(true);
-        //load most recent timestamp into fragment
-        activity = getActivity();
-        mostRecentXMLTimestamp = sharedPreference.getMostRecentTimestamp(activity);
+        Log.d(TAG, "Checking for saved timestamp");
+        String timestamp = sharedPreference.getMostRecentTimestamp(getContext());
+        if (timestamp == null){
+            mostRecentXMLTimestamp = getString(R.string.default_timestamp);
+            Log.d(TAG, "Used default timestamp");
+        }
         mUrlString = getArguments().getString(URL_KEY);
+        Log.d(TAG, "URL String:" + mUrlString);
     }
 
     @Override
@@ -121,9 +126,12 @@ public class NetworkFragment extends Fragment {
      * Start non-blocking execution of DownloadXmlTask.
      */
     public void startXmlDownload() {
+        Log.d(TAG, "startXmlDownload called");
         cancelDownload();
         mDownloadXmlTask = new DownloadXmlTask();
+        Log.d(TAG, "URL: " + mUrlString);
         mDownloadXmlTask.execute(mUrlString);
+
     }
 
     /**
@@ -352,25 +360,30 @@ public class NetworkFragment extends Fragment {
 
         private List<Song> loadXmlFromNetwork(String urlString) throws
                 XmlPullParserException, IOException{
+            Log.d(TAG, "loadXmlFromNetwork called");
             InputStream stream = null;
             //Instantiate the parser.
             XmlSongParser parser = new XmlSongParser();
             List<Song> songs = null;
 
             try {
+                Log.d(TAG, "URL is: " + urlString);
                 stream = downloadUrl(urlString);
                 //check the timestamp is the most recent.
                 String timestamp = parser.getXmlTimestamp(stream);
+                Log.d(TAG, "Downloaded timestamp is:" + timestamp);
                 if (timestamp.equals(mostRecentXMLTimestamp)){
                     //don't bother parsing - it's just the same.
                     return null;
                 } else {
+                    Log.d(TAG,"Started parsing");
                     songs = parser.parse(stream);
                     //update the timestamp
+                    Log.d(TAG, "Saved timestamp");
                     sharedPreference.saveMostRecentTimestamp(activity, timestamp);
                 }
             } catch(Exception e){
-
+                Log.e(TAG, "Could not download the URL.\nException: " + e);
             }
             return songs;
         }
@@ -378,6 +391,7 @@ public class NetworkFragment extends Fragment {
         //Given a string representation of a URL, sets up a connection and gets
         //an input stream
         private InputStream downloadUrl(String urlString) throws IOException {
+            Log.d(TAG, "downloadUrl called");
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -387,6 +401,7 @@ public class NetworkFragment extends Fragment {
             conn.setDoInput(true);
             Log.v(TAG, "Preparing to download");
             conn.connect();
+            Log.d(TAG, "Connected!");
             return conn.getInputStream();
 
         }

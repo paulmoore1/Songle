@@ -1,5 +1,6 @@
 package com.example.songle;
 
+import android.util.Log;
 import android.util.Xml;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -15,6 +16,7 @@ import java.util.List;
  */
 
 public class XmlSongParser {
+    private static final String TAG = "XmlSongParser";
 
     //Don't use namespaces
     private static final String ns = null;
@@ -26,6 +28,7 @@ public class XmlSongParser {
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(in, null);
             parser.nextTag();
+            Log.d(TAG, "Preparing to read songs");
             return readSongs(parser);
         } finally {
             in.close();
@@ -42,6 +45,7 @@ public class XmlSongParser {
 
     private List<Song> readSongs(XmlPullParser parser) throws
             XmlPullParserException, IOException{
+        Log.d(TAG, "readSongs called");
         List<Song> songs = new ArrayList<Song>();
         parser.require(XmlPullParser.START_TAG, ns, "Songs");
         while (parser.next() != XmlPullParser.END_TAG){
@@ -49,6 +53,7 @@ public class XmlSongParser {
                 continue;
             }
             String name = parser.getName();
+            Log.v(TAG, "Current name: " + name);
             //Starts by looking for the entry tag
             if (name.equals("Song")){
                 songs.add(readSong(parser));

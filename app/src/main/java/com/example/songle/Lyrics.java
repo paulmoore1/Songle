@@ -31,9 +31,6 @@ public class Lyrics {
         ltp.saveLyrics(context);
     }
 
-    public Map<String, List<String>> getLyrics() {
-        return lyrics;
-    }
 
     /**
      * Returns the lyrics associated with a particular song number.
@@ -41,7 +38,7 @@ public class Lyrics {
      * @param songNumber - the song number for the lyrics
      * @return - a Map containing the lyrics, null if the file doesn't exist
      */
-    public void loadLyrics(Context context, String songNumber) {
+    public Map<String, List<String>>loadLyrics(Context context, String songNumber) {
 
         String filename = songNumber + "lyrics.tmp";
         try {
@@ -51,6 +48,7 @@ public class Lyrics {
             ois.close();
             fis.close();
             this.lyrics = lyrics;
+            return lyrics;
         } catch (FileNotFoundException e) {
             Log.e(TAG, "Could not find file for song: " + songNumber);
             e.printStackTrace();
@@ -61,7 +59,8 @@ public class Lyrics {
             Log.e(TAG, "Error in file - does not cast to Map<String, List<String>>");
             e.printStackTrace();
         }
-        return;
+        return null;
+
 
     }
 
