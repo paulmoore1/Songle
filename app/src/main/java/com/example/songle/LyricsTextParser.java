@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
@@ -27,34 +28,32 @@ import java.util.Scanner;
 //Some help found here: https://stackoverflow.com/questions/5819772/java-parsing-text-file
 public class LyricsTextParser {
     public static final String TAG = "LyricsTextParser";
+    private Context context;
+    private SharedPreference sharedPreference = new SharedPreference();
+    private InputStream stream;
     private File file;
     private int currentLineNum = 1;
-    private Map<String, List<String>> lyrics;
+    private HashMap<String, ArrayList<String>> lyrics;
 
 // check for the file extension found here: https://stackoverflow.com/questions/25298691/how-to-check-the-file-type-in-java
-    public LyricsTextParser(Context context, File file) {
+    public LyricsTextParser(Context context) {
         //check the file ends in '.txt'
         String fileName = file.getName();
         int dotIndex = fileName.lastIndexOf('.');
         String extension = (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1);
         if (extension.equals("txt")) {
-            this.lyrics = new HashMap<String, List<String>>();
-            this.file = file;
+            this.lyrics = new HashMap<String, ArrayList<String>>();
+            this.context = context;
         } else {
 
-            this.file = null;
+            this.stream = null;
         }
     }
 
-    public void parse() {
+    public void parse(InputStream stream) {
         Scanner scanner = null;
-        try {
-            scanner = new Scanner(file);
-        } catch (FileNotFoundException e) {
-            System.err.println("Could not find file");
-            e.printStackTrace();
-            return;
-        }
+        scanner = new Scanner(stream);
+
         while (scanner.hasNext()) {
             //read line and split on spaces
             String[] fullLine = scanner.nextLine().split(" ");
@@ -86,7 +85,7 @@ public class LyricsTextParser {
                 String key = String.valueOf(currentLineNum) + ":" + String.valueOf(i);
                 String word = fullLine[i-1];
                 String bool = "False";
-                List<String> lyric = new ArrayList<String>(2);
+                ArrayList<String> lyric = new ArrayList<String>(2);
                 lyric.add(word);
                 lyric.add(bool);
                 lyrics.put(key, lyric);
@@ -95,29 +94,10 @@ public class LyricsTextParser {
             currentLineNum++;
         }
         scanner.close();
-    }
-
-    public void saveLyrics(Context context) {
-
-        SharedPreference sharedPreference = new SharedPreference();
-        String songNumber = sharedPreference.getCurrentSongNumber(context);
-        String filename = songNumber + "lyrics.tmp";
-
-        try {
-            FileOutputStream fos = context.openFileOutput(filename, Context.MODE_PRIVATE);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(lyrics);
-            oos.close();
-            fos.close();
-        } catch (FileNotFoundException e) {
-            System.err.println("Could not create file");
-            e.printStackTrace();
-        } catch (IOException e) {
-            System.err.println("Could not set up ObjectOutputStream");
-            e.printStackTrace();
-        }
+        sharedPreference.saveLyrics(context, lyrics);
 
     }
+
 
 
 

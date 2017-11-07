@@ -57,8 +57,7 @@ public class XmlMapParser {
     private Placemark readPlacemark(XmlPullParser parser) throws
             XmlPullParserException, IOException {
         parser.require(XmlPullParser.START_TAG, ns, "Placemark");
-        int line = 0;
-        int word = 0;
+        String key = null;
         String description = null;
         LatLng location = null;
         while (parser.next() != XmlPullParser.END_TAG) {
@@ -66,9 +65,7 @@ public class XmlMapParser {
                 continue;
             String name = parser.getName();
             if (name.equals("name")) {
-                int[] lyric = readName(parser);
-                line = lyric[0];
-                word = lyric[1];
+                key = readName(parser);
             } else if (name.equals("description")) {
                 description = readDescription(parser);
             } else if (name.equals("Point")) {
@@ -77,19 +74,15 @@ public class XmlMapParser {
                 skip(parser);
             }
         }
-        return new Placemark(line, word, description, location);
+        return new Placemark(key, description, location);
     }
 
-    private int[] readName(XmlPullParser parser) throws IOException,
+    private String readName(XmlPullParser parser) throws IOException,
             XmlPullParserException {
         parser.require(XmlPullParser.START_TAG, ns, "name");
-        String numbers = readText(parser);
-        String[] split = numbers.split(":");
-        int[] nums = new int[2];
-        nums[0] = Integer.parseInt(split[0]);
-        nums[1] = Integer.parseInt(split[1]);
+        String key = readText(parser);
         parser.require(XmlPullParser.END_TAG, ns, "name");
-        return nums;
+        return key;
     }
 
     private String readDescription(XmlPullParser parser) throws IOException,

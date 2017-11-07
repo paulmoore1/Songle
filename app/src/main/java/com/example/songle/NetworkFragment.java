@@ -31,12 +31,9 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
-
-import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Implementation of headless Fragment that runs an AsyncTask to fetch data from the network.
@@ -49,10 +46,12 @@ public class NetworkFragment extends Fragment {
     SharedPreference sharedPreference = new SharedPreference();
 
     private DownloadCallback mCallback;
-    private DownloadTask mDownloadTask;
+    private DownloadLyricsTask mDownloadLyricsTask;
     private DownloadXmlTask mDownloadXmlTask;
+    private DownloadKmlTask mDownloadKmlTask;
     private String mUrlString;
     private String mostRecentXMLTimestamp;
+    private String downloadType;
 
     /**
      * Static initializer for NetworkFragment that sets the URL of the host it will be downloading
@@ -82,12 +81,7 @@ public class NetworkFragment extends Fragment {
         super.onCreate(savedInstanceState);
         // Retain this Fragment across configuration changes in the host Activity.
         setRetainInstance(true);
-        Log.d(TAG, "Checking for saved timestamp");
-        String timestamp = sharedPreference.getMostRecentTimestamp(getContext());
-        if (timestamp == null){
-            mostRecentXMLTimestamp = getString(R.string.default_timestamp);
-            Log.d(TAG, "Used default timestamp");
-        }
+
         mUrlString = getArguments().getString(URL_KEY);
         Log.d(TAG, "URL String:" + mUrlString);
     }
@@ -114,12 +108,14 @@ public class NetworkFragment extends Fragment {
     }
 
     /**
-     * Start non-blocking execution of DownloadTask.
+     * Start non-blocking execution of DownloadLyricsTask.
      */
-    public void startGeneralDownload() {
+    public void startLyricsDownload() {
+        Log.d(TAG, "startLyricsDownload called");
         cancelDownload();
-        mDownloadTask = new DownloadTask();
-        mDownloadTask.execute(mUrlString);
+        mDownloadLyricsTask = new DownloadLyricsTask();
+        downloadType = "Lyrics";
+        mDownloadLyricsTask.execute(mUrlString);
     }
 
     /**
@@ -129,42 +125,59 @@ public class NetworkFragment extends Fragment {
         Log.d(TAG, "startXmlDownload called");
         cancelDownload();
         mDownloadXmlTask = new DownloadXmlTask();
-        Log.d(TAG, "URL: " + mUrlString);
+        downloadType = "Xml";
         mDownloadXmlTask.execute(mUrlString);
+    }
 
+    public void startKmlDownload(){
+        Log.d(TAG, "startKmlDownload called");
+        cancelDownload();
+        mDownloadKmlTask = new DownloadKmlTask();
+        downloadType = "Kml";
+        mDownloadKmlTask.execute(mUrlString);
+    }
+
+    public void retryDownload(){
+        //check that a download task was executed already
+        switch (downloadType) {
+            case "Lyrics":
+                startLyricsDownload();
+                break;
+            case "Xml":
+                startXmlDownload();
+                break;
+            case "Kml":
+                startKmlDownload();
+                break;
+            default:
+                break;
+        }
     }
 
     /**
      * Cancel (and interrupt if necessary) any ongoing DownloadTask execution.
      */
     public void cancelDownload() {
-        if (mDownloadTask != null) {
-            mDownloadTask.cancel(true);
-            mDownloadTask = null;
+        Log.d(TAG, "cancelDownload called");
+        if (mDownloadLyricsTask != null) {
+            mDownloadLyricsTask.cancel(true);
+            mDownloadLyricsTask = null;
+        } else if (mDownloadXmlTask != null){
+            mDownloadXmlTask.cancel(true);
+            mDownloadXmlTask = null;
+        } else if (mDownloadKmlTask != null){
+            mDownloadKmlTask.cancel(true);
+            mDownloadKmlTask = null;
         }
     }
+
 
     /**
      * Implementation of AsyncTask that runs a network operation on a background thread.
      */
-    private class DownloadTask extends AsyncTask<String, Integer, DownloadTask.Result> {
-
-        /**
-         * Wrapper class that serves as a union of a result value and an exception. When the
-         * download task has completed, either the result value or exception can be a non-null
-         * value. This allows you to pass exceptions to the UI thread that were thrown during
-         * doInBackground().
-         */
-        class Result {
-            public String mResultValue;
-            public Exception mException;
-            public Result(String resultValue) {
-                mResultValue = resultValue;
-            }
-            public Result(Exception exception) {
-                mException = exception;
-            }
-        }
+    private class DownloadLyricsTask extends AsyncTask<String, Integer, String> {
+        private String TAG = DownloadLyricsTask.class.getSimpleName();
+        private SharedPreference sharedPreferenceDownloadLyrics = new SharedPreference();
 
         /**
          * Cancel background network operation if we do not have network connectivity.
@@ -187,23 +200,38 @@ public class NetworkFragment extends Fragment {
          * Defines work to perform on the background thread.
          */
         @Override
-        protected Result doInBackground(String... urls) {
-            Result result = null;
-            if (!isCancelled() && urls != null && urls.length > 0) {
-                String urlString = urls[0];
-                try {
-                    URL url = new URL(urlString);
-                    String resultString = downloadUrl(url);
-                    if (resultString != null) {
-                        result = new Result(resultString);
-                    } else {
-                        throw new IOException("No response received.");
-                    }
-                } catch(Exception e) {
-                    result = new Result(e);
-                }
+        protected String doInBackground(String... urls) {
+            Log.v(TAG, "Started loading lyrics in the background");
+            String result = null;
+            try {
+                result = loadLyricsFromNetwork(urls[0]);
+            } catch (IOException e){
+                Log.e(TAG, "Unable to load content");
             }
-            return result;
+            if (result.equals("Parsed")){
+                onPostExecute("Updated");
+                return "Lyrics updated";
+            } else {
+                onPostExecute("Not updated");
+                return "Lyrics not updated";
+            }
+
+        }
+
+        private String loadLyricsFromNetwork(String urlString) throws
+        IOException{
+            Log.d(TAG,"loadLyrisFromNetwork called");
+            InputStream stream = null;
+            LyricsTextParser ltp = new LyricsTextParser(getActivity().getApplicationContext());
+            try {
+                Log.d(TAG, "URL is: " + urlString);
+                stream = downloadUrl(urlString);
+                ltp.parse(stream);
+                return "Parsed";
+            } catch (IOException e){
+                Log.e(TAG, "Error: " + e);
+                return "Error";
+            }
         }
 
         /**
@@ -221,22 +249,20 @@ public class NetworkFragment extends Fragment {
          * Updates the DownloadCallback with the result.
          */
         @Override
-        protected void onPostExecute(Result result) {
+        protected void onPostExecute(String result) {
             if (result != null && mCallback != null) {
-                if (result.mException != null) {
-                    mCallback.updateFromDownload(result.mException.getMessage());
-                } else if (result.mResultValue != null) {
-                    mCallback.updateFromDownload(result.mResultValue);
-                }
+                mCallback.updateFromDownload(result);
+                Log.d(TAG, "Finished downloading");
                 mCallback.finishDownloading();
             }
         }
+
 
         /**
          * Override to add special behavior for cancelled AsyncTask.
          */
         @Override
-        protected void onCancelled(Result result) {
+        protected void onCancelled(String result) {
         }
 
         /**
@@ -244,81 +270,26 @@ public class NetworkFragment extends Fragment {
          * If the network request is successful, it returns the response body in String form. Otherwise,
          * it will throw an IOException.
          */
-        private String downloadUrl(URL url) throws IOException {
-            InputStream stream = null;
-            HttpsURLConnection connection = null;
-            String result = null;
-            try {
-                connection = (HttpsURLConnection) url.openConnection();
-                // Timeout for reading InputStream arbitrarily set to 3000ms.
-                connection.setReadTimeout(3000);
-                // Timeout for connection.connect() arbitrarily set to 3000ms.
-                connection.setConnectTimeout(3000);
-                // For this use case, set HTTP method to GET.
-                connection.setRequestMethod("GET");
-                // Already true by default but setting just in case; needs to be true since this request
-                // is carrying an input (response) body.
-                connection.setDoInput(true);
-                // Open communications link (network traffic occurs here).
-                connection.connect();
-                publishProgress(DownloadCallback.Progress.CONNECT_SUCCESS);
-                int responseCode = connection.getResponseCode();
-                if (responseCode != HttpsURLConnection.HTTP_OK) {
-                    throw new IOException("HTTP error code: " + responseCode);
-                }
-                // Retrieve the response body as an InputStream.
-                stream = connection.getInputStream();
-                publishProgress(DownloadCallback.Progress.GET_INPUT_STREAM_SUCCESS, 0);
-                if (stream != null) {
-                    // Converts Stream to String with max length of 500.
-                    result = readStream(stream, 500);
-                    publishProgress(DownloadCallback.Progress.PROCESS_INPUT_STREAM_SUCCESS, 0);
-                }
-            } finally {
-                // Close Stream and disconnect HTTPS connection.
-                if (stream != null) {
-                    stream.close();
-                }
-                if (connection != null) {
-                    connection.disconnect();
-                }
-            }
-            return result;
+        private InputStream downloadUrl(String urlString) throws IOException {
+            Log.d(TAG, "downloadUrl called");
+            URL url = new URL(urlString);
+
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            conn.setReadTimeout(10000 /*milliseconds*/);
+            conn.setConnectTimeout(15000 /*milliseconds*/);
+            conn.setRequestMethod("GET");
+            conn.setDoInput(true);
+            conn.connect();
+            return conn.getInputStream();
+
         }
 
-        /**
-         * Converts the contents of an InputStream to a String.
-         */
-        private String readStream(InputStream stream, int maxLength) throws IOException {
-            String result = null;
-            // Read InputStream using the UTF-8 charset.
-            InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
-            // Create temporary buffer to hold Stream data with specified max length.
-            char[] buffer = new char[maxLength];
-            // Populate temporary buffer with Stream data.
-            int numChars = 0;
-            int readSize = 0;
-            while (numChars < maxLength && readSize != -1) {
-                numChars += readSize;
-                int pct = (100 * numChars) / maxLength;
-                publishProgress(DownloadCallback.Progress.PROCESS_INPUT_STREAM_IN_PROGRESS, pct);
-                readSize = reader.read(buffer, numChars, buffer.length - numChars);
-            }
-            if (numChars != -1) {
-                // The stream was not empty.
-                // Create String that is actual length of response body if actual length was less than
-                // max length.
-                numChars = Math.min(numChars, maxLength);
-                result = new String(buffer, 0, numChars);
-            }
-            return result;
-        }
     }
 
     private class DownloadXmlTask extends AsyncTask<String, Void, String> {
         private String TAG = DownloadXmlTask.class.getSimpleName();
         private SharedPreference sharedPreferenceDownloadXml = new SharedPreference();
-
 
         /**
          * Cancel background network operation if we do not have network connectivity.
@@ -339,22 +310,29 @@ public class NetworkFragment extends Fragment {
 
         @Override
         protected String doInBackground(String... urls){
-            Log.v(TAG, "Started loading XML in the background");
+            Log.d(TAG, "doInBackground called");
+            String timestamp = sharedPreferenceDownloadXml.getMostRecentTimestamp(getContext());
+            if (timestamp == null){
+                mostRecentXMLTimestamp = getString(R.string.default_timestamp);
+            }
             List<Song> songs;
             try {
                 songs = loadXmlFromNetwork(urls[0]);
             } catch (IOException e){
-                System.err.println("Unable to load content. Check your network connection");
+                Log.e(TAG,"Unable to load content. Check your network connection");
                 return null;
             } catch (XmlPullParserException e){
-                System.err.println("Error parsing XML");
+                Log.e(TAG,"Error parsing XML");
                 return null;
             }
             //songs will not be null if the timestamp is new. In that case save the new songs list
             if (songs != null){
                 sharedPreferenceDownloadXml.saveSongs(getActivity().getApplicationContext(), songs);
+                Log.d(TAG, "finished background task");
+                onPostExecute("Updated");
                 return "Songs updated";
             } else {
+                onPostExecute("Not updated");
                 return "Songs not updated";
             }
         }
@@ -368,17 +346,10 @@ public class NetworkFragment extends Fragment {
             List<Song> songs = null;
 
             try {
-                Log.d(TAG, "URL is: " + urlString);
                 stream = downloadUrl(urlString);
-
-                Log.d(TAG,"Started parsing");
                 songs = parser.parse(stream, mostRecentXMLTimestamp);
-                //update the timestamp
-                Log.d(TAG, "Saved timestamp");
-                //    sharedPreferenceDownloadXml.saveMostRecentTimestamp(activity, timestamp);
-               // }
             } catch(Exception e){
-                Log.e(TAG, "Could not download the URL.\nException: " + e);
+                Log.e(TAG, "Exception: " + e);
             }
             return songs;
         }
@@ -387,7 +358,111 @@ public class NetworkFragment extends Fragment {
         //an input stream
         private InputStream downloadUrl(String urlString) throws IOException {
             Log.d(TAG, "downloadUrl called");
-            Log.d(TAG, "URL: " + urlString);
+            URL url = new URL(urlString);
+
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            conn.setReadTimeout(10000 /*milliseconds*/);
+            conn.setConnectTimeout(15000 /*milliseconds*/);
+            conn.setRequestMethod("GET");
+            conn.setDoInput(true);
+            conn.connect();
+            return conn.getInputStream();
+
+        }
+
+
+
+        @Override
+        protected void onPostExecute(String result){
+            Log.d(TAG, "onPostExecute called");
+            if (result != null && mCallback != null) {
+                mCallback.updateFromDownload(result);
+                Log.d(TAG, "Finished downloading");
+
+                mCallback.finishDownloading();
+            }
+
+        }
+
+
+    }
+
+    private class DownloadKmlTask extends AsyncTask<String, Void, String> {
+        private String TAG = DownloadKmlTask.class.getSimpleName();
+        private SharedPreference sharedPreferenceDownloadKml = new SharedPreference();
+
+        /**
+         * Cancel background network operation if we do not have network connectivity.
+         */
+        @Override
+        protected void onPreExecute() {
+            if (mCallback != null) {
+                NetworkInfo networkInfo = mCallback.getActiveNetworkInfo();
+                if (networkInfo == null || !networkInfo.isConnected() ||
+                        (networkInfo.getType() != ConnectivityManager.TYPE_WIFI
+                                && networkInfo.getType() != ConnectivityManager.TYPE_MOBILE)) {
+                    // If no connectivity, cancel task and update Callback with null data.
+                    mCallback.updateFromDownload(null);
+                    cancel(true);
+                }
+            }
+        }
+
+        @Override
+        protected String doInBackground(String... urls){
+            Log.v(TAG, "Started loading KML in the background");
+            Boolean allDownloadedCorrectly = true;
+            String baseUrl = urls[0];
+            for (int i = 1; i < 6; i++){
+                List<Placemark> placemarks = null;
+                String mapNumber = Integer.toString(i);
+                String urlString = baseUrl + mapNumber + ".kml";
+                try {
+                    placemarks = loadKmlFromNetwork(urlString);
+                } catch (IOException e){
+                    Log.e(TAG, "IOException: " + e);
+                } catch (XmlPullParserException e){
+                    Log.e(TAG, "XML Exception: " + e);
+                }
+                if (placemarks != null){
+                    sharedPreferenceDownloadKml.saveMap(getActivity().getApplicationContext(),
+                            placemarks, mapNumber);
+                } else {
+                    allDownloadedCorrectly = false;
+                }
+            }
+            if (allDownloadedCorrectly){
+                onPostExecute("Updated");
+                return "Maps updated";
+            } else {
+                onPostExecute("Not updated");
+                return "Maps not updated";
+            }
+
+        }
+
+        private List<Placemark> loadKmlFromNetwork(String urlString) throws
+                XmlPullParserException, IOException{
+            Log.d(TAG, "loadKmlFromNetwork called");
+            InputStream stream = null;
+            //Instantiate the parser.
+            XmlMapParser parser = new XmlMapParser();
+            List<Placemark> placemarks = null;
+
+            try {
+                stream = downloadUrl(urlString);
+                placemarks = parser.parse(stream);
+            } catch(Exception e){
+                Log.e(TAG, "Exception: " + e);
+            }
+            return placemarks;
+        }
+
+        //Given a string representation of a URL, sets up a connection and gets
+        //an input stream
+        private InputStream downloadUrl(String urlString) throws IOException {
+            Log.d(TAG, "downloadUrl called");
             URL url = new URL(urlString);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -406,9 +481,7 @@ public class NetworkFragment extends Fragment {
         @Override
         protected void onPostExecute(String result){
             if (result != null && mCallback != null) {
-                if (result!= null) {
-                    mCallback.updateFromDownload(result);
-                }
+                mCallback.updateFromDownload(result);
                 Log.d(TAG, "Finished downloading");
 
                 mCallback.finishDownloading();

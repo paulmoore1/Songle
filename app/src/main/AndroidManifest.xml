@@ -65,10 +65,12 @@
         </activity>
         <activity
             android:name=".GameSettingsActivity"
-            android:label="@string/title_activity_new_game_settings" />
+            android:label="@string/title_activity_new_game_settings"
+            android:parentActivityName=".HomeActivity"/>
         <activity
             android:name=".MainGameActivity"
-            android:label="@string/title_activity_main_game"></activity>
+            android:label="@string/title_activity_main_game"
+            android:parentActivityName=".HomeActivity"></activity>
     </application>
 
 </manifest>

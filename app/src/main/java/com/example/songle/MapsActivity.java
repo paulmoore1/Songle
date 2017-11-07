@@ -172,7 +172,7 @@ public class MapsActivity extends FragmentActivity
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         System.out.println(" >>>>onconnectionFailed");
     }
-
+/*
     public void addMarkers(ArrayList<ArrayList<String>> lyrics,
                                           ArrayList<ArrayList<Boolean>> bools, ArrayList<Placemark> placemarks){
         int n = placemarks.size();
@@ -215,7 +215,7 @@ public class MapsActivity extends FragmentActivity
         mMap.setOnMarkerClickListener((GoogleMap.OnMarkerClickListener) this);
         return;
 
-    }
+    }*/
 
 
 

@@ -11,8 +11,10 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Paul Moore on 25-Oct-17.
@@ -25,6 +27,8 @@ public class SharedPreference {
     private static final String TAG = "SharedPreference";
     private static final String PREFS_NAME = "SONGLE_APP";
     private static final String SONGS = "Songs";
+    private static final String LYRICS = "Lyrics";
+    private static final String SONG_SIZES = "SongSizes";
     private static final String MAP_1 = "Map1";
     private static final String MAP_2 = "Map2";
     private static final String MAP_3 = "Map3";
@@ -81,22 +85,6 @@ public class SharedPreference {
 
     }
 
-    public void addSong(Context context, Song song){
-        ArrayList<Song> songs = getAllSongs(context);
-        if (songs == null){
-            songs = new ArrayList<Song>();
-        }
-        songs.add(song);
-        saveSongs(context, songs);
-    }
-
-    public void removeSong(Context context, Song song){
-        ArrayList<Song> songs = getAllSongs(context);
-        if (songs != null){
-            songs.remove(song);
-            saveSongs(context, songs);
-        }
-    }
 
     /**
      * Update song status accordingly (will be "N" automatically so don't input that)
@@ -172,9 +160,8 @@ public class SharedPreference {
         if (settings.contains(SONGS)){
             String jsonSongs = settings.getString(SONGS, null);
             Gson gson = new Gson();
-            Song[] songsArray = gson.fromJson(jsonSongs, Song[].class);
-            songs = Arrays.asList(songsArray);
-            songs = new ArrayList<Song>(songs);
+            Type type = new TypeToken<List<Song>>(){}.getType();
+            songs = gson.fromJson(jsonSongs, type);
             Log.d(TAG, "Full list of songs: " + songs.toString());
 
             //remove all songs which have not been started, so only complete or incomplete ones are returned.
@@ -334,24 +321,23 @@ public class SharedPreference {
         editor = settings.edit();
 
         Gson gson = new Gson();
-        String jsonSongs = gson.toJson(placemarks);
+        String jsonPlacemarks = gson.toJson(placemarks);
 
         if (num.equals("1")){
-            editor.putString(MAP_1, jsonSongs);
+            editor.putString(MAP_1, jsonPlacemarks);
         } else if (num.equals("2")) {
-            editor.putString(MAP_2, jsonSongs);
+            editor.putString(MAP_2, jsonPlacemarks);
         } else if (num.equals("3")) {
-            editor.putString(MAP_3, jsonSongs);
+            editor.putString(MAP_3, jsonPlacemarks);
         } else if (num.equals("4")) {
-            editor.putString(MAP_4, jsonSongs);
+            editor.putString(MAP_4, jsonPlacemarks);
         } else if (num.equals("5")) {
-            editor.putString(MAP_5, jsonSongs);
+            editor.putString(MAP_5, jsonPlacemarks);
         } else {
             Log.e(TAG, "Unexpected number received in maps");
             return;
         }
         editor.apply();
-        return;
 
     }
 
@@ -388,5 +374,46 @@ public class SharedPreference {
             Log.e(TAG, "Map not found");
             return  null;
         }
+    }
+
+    public void saveLyrics(Context context, HashMap<String, ArrayList<String>> lyrics){
+        SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = settings.edit();
+
+        Gson gson = new Gson();
+        String jsonLyrics = gson.toJson(lyrics);
+
+        editor.putString(LYRICS, jsonLyrics);
+        editor.apply();
+    }
+
+    public HashMap<String, ArrayList<String>> getLyrics(Context context){
+        SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        HashMap<String, ArrayList<String>> lyrics;
+
+        if(settings.contains(LYRICS)){
+            String jsonLyrics = settings.getString(LYRICS, null);
+            Gson gson = new Gson();
+            Type type = new TypeToken<HashMap<String, ArrayList<String>>>(){}.getType();
+            lyrics = gson.fromJson(jsonLyrics, type);
+            return lyrics;
+
+        } else {
+            Log.e(TAG, "Lyrics not found");
+            return null;
+        }
+
+
+    }
+
+    public void saveSongDimensions(Context context, int[][] sizes){
+        SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = settings.edit();
+
+        Gson gson = new Gson();
+        String jsonLyrics = gson.toJson(sizes);
+
+        editor.putString(SONG_SIZES, jsonLyrics);
+        editor.apply();
     }
 }

@@ -1,18 +1,13 @@
 package com.example.songle;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.sqlite.SQLiteDoneException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.Settings;
 
 import android.support.v4.app.FragmentActivity;
@@ -23,13 +18,15 @@ import android.view.MenuItem;
 
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class HomeActivity extends FragmentActivity implements DownloadCallback {
     private static final String TAG = "HomeActivity";
     //Broadcast receiver that tracks network connectivity changes
-    private NetworkReceiver receiver = new NetworkReceiver();
+    //private NetworkReceiver receiver = new NetworkReceiver();
 
     // Keep a reference to the NetworkFragment which owns the AsyncTask object
     // that is used to execute network ops.
@@ -47,7 +44,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super.onCreate() called");
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.home_screen);
         Log.d(TAG, "Layout loaded");
 
         //check for internet access first
@@ -61,12 +58,12 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         mNetworkFragment  = NetworkFragment.getInstance(getSupportFragmentManager(),
                 getString(R.string.url_songs_xml));
 
-
+/*
         // Register BroadcastReceiver to track connection changes
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);
-
+*/
 
 
     }
@@ -82,6 +79,11 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         }
         //start downloading the songs xml, which will store the songs in XML in Shared Prefs
         mNetworkFragment.startXmlDownload();
+
+        //do nothing until downloading is false.
+        while (mDownloading){
+            //Log.d(TAG, "Waiting for download");
+        }
 
         //now ready to start new activity
         Intent intent = new Intent(this, GameSettingsActivity.class);
@@ -101,8 +103,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
             if (song.isSongIncomplete()){
 
                 //check lyrics and map are already downloaded and stored.
-                Lyrics store = new Lyrics();
-                Map<String, List<String>> lyrics = store.loadLyrics(this, song.getNumber());
+                HashMap<String, ArrayList<String>> lyrics = sharedPreference.getLyrics(this);
                 List<Placemark> placemarks = sharedPreference.getMap(this, diffLevel);
                 if (lyrics != null && placemarks != null){
                     //have lyrics file and song in place, can load MainGameActivity with this
@@ -178,40 +179,32 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
     }
 
 
-
-    private void startDownload(){
-        if (!mDownloading && mNetworkFragment != null){
-            //Execute the async download.
-            mNetworkFragment.startGeneralDownload();
-            mDownloading = true;
-        }
-    }
-
     @Override
     protected void onPause(){
         Log.d(TAG, "onPause called");
-        // Register BroadcastReceiver to track connection changes
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        this.unregisterReceiver(receiver);
         super.onPause();
+        //this.unregisterReceiver(receiver);
+
     }
+
 
     @Override
     protected void onResume(){
-        // Register BroadcastReceiver to track connection changes
+        Log.d(TAG, "onResume called");
+ /*       // Register BroadcastReceiver to track connection changes
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkReceiver();
-        this.registerReceiver(receiver, filter);
+        this.registerReceiver(receiver, filter);*/
         super.onResume();
     }
 
-
-
-
-
     @Override
     public void updateFromDownload(Object result) {
-        Log.i("HomeActivity", result.toString());
+        if(result.equals("Updated")){
+            finishDownloading();
+        } else {
+            mNetworkFragment.retryDownload();
+        }
     }
 
 
@@ -235,8 +228,14 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         }
     }
 
+
     @Override
     public void finishDownloading() {
+        Log.d(TAG, "finishDownloading called");
+        mDownloading = false;
+        if (mNetworkFragment != null) {
+            mNetworkFragment.cancelDownload();
+        }
 
     }
 
