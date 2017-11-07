@@ -84,14 +84,10 @@
         app:layout_constraintTop_toBottomOf="@+id/btn_select_difficulty" />
 
 
-
-
-
-
-
     <FrameLayout
+        android:id="@+id/content_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/content_frame"></FrameLayout>
+        android:elevation="12dp"></FrameLayout>
 
 </android.support.constraint.ConstraintLayout>

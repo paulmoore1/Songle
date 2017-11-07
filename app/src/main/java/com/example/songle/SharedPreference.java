@@ -6,9 +6,12 @@ import android.util.Log;
 
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -51,6 +54,7 @@ public class SharedPreference {
     }
 
     public void saveSongs(Context context, List<Song> newSongs){
+        Log.d(TAG, "saveSongs called");
         SharedPreferences settings;
         SharedPreferences.Editor editor;
 
@@ -101,7 +105,14 @@ public class SharedPreference {
      * @param status - must be "I" (incomplete) or "C" complete
      */
     public void saveSongStatus(Context context, Song song, String status){
+        SharedPreferences settings;
+        SharedPreferences.Editor editor;
+
+        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        editor = settings.edit();
+        Log.d(TAG, "saveSongStatus called");
         ArrayList<Song> songs = getAllSongs(context);
+
         if (songs == null){
             Log.e(TAG, "No songs found when trying to update status");
             return;
@@ -111,37 +122,48 @@ public class SharedPreference {
             Log.e(TAG, "Tried to set song to not started");
             return;
         }
+
         //update the song's status
         song.setStatus(status);
         //find where in the array list the song belongs. Subtract 1 since the first song is 01
         int targetNum = Integer.parseInt(song.getNumber()) - 1;
         //update the songs list
         songs.set(targetNum, song);
+
         //save the updated songs
-        saveSongs(context, songs);
+        Gson gson = new Gson();
+        String jsonSongs = gson.toJson(songs);
+
+        editor.putString(SONGS, jsonSongs);
+        editor.apply();
+
+        Log.d(TAG, "saveSongStatus finished");
 
     }
 
     public ArrayList<Song> getAllSongs(Context context){
+        Log.d(TAG, "getAllSongs called");
         SharedPreferences settings;
-        List<Song> songs;
+        List<Song> songs = new ArrayList<Song>();
 
         settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
         if (settings.contains(SONGS)){
             String jsonSongs = settings.getString(SONGS, null);
             Gson gson = new Gson();
-            Song[] songsArray = gson.fromJson(jsonSongs, Song[].class);
-            songs = Arrays.asList(songsArray);
-            songs = new ArrayList<Song>(songs);
+            Type type = new TypeToken<List<Song>>(){}.getType();
+            songs = gson.fromJson(jsonSongs, type);
+            Log.d(TAG, "getAllSongs returned songs");
             return (ArrayList<Song>) songs;
 
         } else {
+            Log.d(TAG, "getAllSongs returned null");
             return  null;
         }
     }
 
     public ArrayList<Song> getOldSongs(Context context){
+        Log.d(TAG, "getOldSongs called");
         SharedPreferences settings;
         List<Song> songs;
 
@@ -153,18 +175,21 @@ public class SharedPreference {
             Song[] songsArray = gson.fromJson(jsonSongs, Song[].class);
             songs = Arrays.asList(songsArray);
             songs = new ArrayList<Song>(songs);
+            Log.d(TAG, "Full list of songs: " + songs.toString());
 
             //remove all songs which have not been started, so only complete or incomplete ones are returned.
-            for (int i = 0; i < songs.size(); i++){
-                Song song = songs.get(i);
-                if (song.isSongNotStarted()){
-                    songs.remove(song);
-                }
+            Iterator<Song> iter = songs.iterator();
+            while (iter.hasNext()){
+                Song song = iter.next();
+                if (song.isSongNotStarted()) iter.remove();
             }
 
+            Log.d(TAG, "New list of songs: " + songs.toString());
+            Log.d(TAG, "getOldSongs returned songs");
             return (ArrayList<Song>) songs;
 
         } else {
+            Log.d(TAG, "getOldSongs return null");
             return  null;
         }
     }
@@ -262,6 +287,7 @@ public class SharedPreference {
     }
 
     public void saveCurrentSong(Context context, Song song){
+        Log.d(TAG, "saveCurrentSong called");
         SharedPreferences settings;
         SharedPreferences.Editor editor;
 
@@ -271,11 +297,12 @@ public class SharedPreference {
         Gson gson = new Gson();
         String jsonSong = gson.toJson(song);
 
-        editor.putString(SONGS, jsonSong);
+        editor.putString(CURRENT_SONG, jsonSong);
         editor.apply();
     }
 
     public Song getCurrentSong(Context context){
+        Log.d(TAG, "getCurrentSong called");
         SharedPreferences settings;
         Song song = null;
 

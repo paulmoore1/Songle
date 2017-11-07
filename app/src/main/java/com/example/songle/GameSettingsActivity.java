@@ -27,17 +27,28 @@ public class GameSettingsActivity extends FragmentActivity {
     SharedPreference sharedPreference = new SharedPreference();
     Button buttonSelectSong, buttonSelectDifficulty;
     TextView selectedSongNumber, selectedDifficultyLevel;
-    RadioGroup radioGroup;
-    //initialise song number and difficulty level with whatever they were before
+
     private String songNumber;
     private String diffLevel;
+    private Song currentSong;
 
     SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
             String songNumber2 = sharedPreference.getCurrentSongNumber(getApplicationContext());
             //if songs are now different (implying the user has selected one)
-            if (!songNumber.equals(songNumber2)){
+            if(songNumber2 == null) {
+                TextView songTextView = (TextView)findViewById(R.id.txt_selected_song);
+                songTextView.setText(R.string.msg_no_song_selected);
+            } else if (songNumber == null){
+                //no previous song number - update.
+                songNumber = songNumber2;
+                //update textview object with selected song
+                String songText = getString(R.string.msg_song_number_general) + songNumber;
+                TextView songTextView = (TextView)findViewById(R.id.txt_selected_song);
+                songTextView.setText(songText);
+
+            } else if (!songNumber.equals(songNumber2)){
                 //update songNumber in this activity.
                 songNumber = songNumber2;
                 //update textview object with selected song
@@ -53,6 +64,7 @@ public class GameSettingsActivity extends FragmentActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.select_game_settings);
         songNumber = sharedPreference.getCurrentSongNumber(this);
@@ -64,6 +76,7 @@ public class GameSettingsActivity extends FragmentActivity {
         selectedDifficultyLevel = findViewById(R.id.txt_current_difficulty);
         //get the game type to pass on to the songlist fragment, so it loads the correct games.
         gameType = getIntent().getStringExtra("GAME_TYPE");
+        Log.d(TAG, "gameType: " + gameType);
 
         sharedPreference.registerOnSharedPreferenceChangedListener(getApplicationContext(), listener);
 
@@ -78,7 +91,7 @@ public class GameSettingsActivity extends FragmentActivity {
                 songListFragment = new SongListFragment();
                 Bundle bundle = new Bundle();
                 bundle.putString("GAME_TYPE", gameType);
-
+                Log.d(TAG, "Game tag in bundle:" + bundle.getString("GAME_TYPE"));
                 songListFragment.setArguments(bundle);
                 switchContent(songListFragment, SongListFragment.ARG_ITEM_ID);
             }
@@ -97,6 +110,15 @@ public class GameSettingsActivity extends FragmentActivity {
             @Override
             public void onClick(View view) {
 
+                if (songNumber == null){
+                    Toast.makeText(getApplicationContext(),
+                            getString(R.string.msg_no_song_selected), Toast.LENGTH_SHORT).show();
+                } else if (diffLevel == null){
+                    Toast.makeText(getApplicationContext(),
+                            getString(R.string.msg_no_difficulty_selected), Toast.LENGTH_SHORT).show();
+                } else {
+                    sendConfirmGameDialog(songNumber, diffLevel);
+                }
             }
         });
 
@@ -166,7 +188,8 @@ public class GameSettingsActivity extends FragmentActivity {
     }
 
     public void sendSelectDifficultyDialog(){
-        mChosenDifficulty = new ArrayList<>(1);
+        Log.d(TAG, "sendSelectDifficultyDialog called");
+        mChosenDifficulty = new ArrayList<>(2);
         final CharSequence[] diffList = getResources().getStringArray(R.array.difficulty_levels);
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         adb.setTitle(R.string.txt_select_difficulty);
@@ -175,17 +198,15 @@ public class GameSettingsActivity extends FragmentActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         String chosenDiff = diffList[i].toString();
-                        mChosenDifficulty.set(0, chosenDiff);
-                        Toast.makeText(getApplicationContext(),
-                                "You chose: " + chosenDiff, Toast.LENGTH_SHORT).show();
-
+                        mChosenDifficulty.add(0, chosenDiff);
 
                     }
-                });
-        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+                }).setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 String chosenDiff = mChosenDifficulty.get(0);
+                //save value in private string
+                diffLevel = chosenDiff;
                 //save value in shared preferences
                 sharedPreference.saveCurrentDifficultyLevel(getApplicationContext(),
                         chosenDiff);
@@ -209,6 +230,10 @@ public class GameSettingsActivity extends FragmentActivity {
         adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
+                //save this song to shared preferences as it has been definitely chosen.
+                Song currentSong = sharedPreference.getCurrentSong(getApplicationContext());
+                sharedPreference.saveSongStatus(getApplicationContext(), currentSong, "I");
+
                 Intent intent = new Intent(GameSettingsActivity.this, MainGameActivity.class);
                 //send the chosen number and difficulty
                 intent.putExtra("SONG_NUMBER", chosenSongNumber);
@@ -216,17 +241,29 @@ public class GameSettingsActivity extends FragmentActivity {
                 startActivity(intent);
 
             }
-        });
-        adb.setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
+        }).setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
 
             }
         });
-        adb.create();
-        adb.show();
+        AlertDialog ad = adb.create();
+        ad.show();
 
 
+    }
+    public void sendNoSongsFoundDialog(){
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.loading_error);
+        adb.setMessage(R.string.msg_no_songs_found);
+        adb.setNegativeButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+        AlertDialog ad = adb.create();
+        ad.show();
     }
 
 

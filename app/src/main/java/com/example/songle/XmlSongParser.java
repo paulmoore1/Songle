@@ -1,5 +1,6 @@
 package com.example.songle;
 
+import android.content.Context;
 import android.util.Log;
 import android.util.Xml;
 
@@ -17,21 +18,29 @@ import java.util.List;
 
 public class XmlSongParser {
     private static final String TAG = "XmlSongParser";
-
+    private SharedPreference sharedPreference = new SharedPreference();
+    private String oldTimestamp;
+    Context c;
     //Don't use namespaces
     private static final String ns = null;
 
-    public List<Song> parse(InputStream in) throws XmlPullParserException,
+    public XmlSongParser(Context context){
+        this.c = context;
+    }
+
+    public List<Song> parse(InputStream in, String oldTimestamp) throws XmlPullParserException,
             IOException{
         try {
+            Log.d(TAG, "parse called");
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(in, null);
             parser.nextTag();
-            Log.d(TAG, "Preparing to read songs");
+            this.oldTimestamp = oldTimestamp;
             return readSongs(parser);
         } finally {
             in.close();
+            Log.d(TAG, "input stream closed");
         }
     }
 
@@ -46,22 +55,33 @@ public class XmlSongParser {
     private List<Song> readSongs(XmlPullParser parser) throws
             XmlPullParserException, IOException{
         Log.d(TAG, "readSongs called");
-        List<Song> songs = new ArrayList<Song>();
-        parser.require(XmlPullParser.START_TAG, ns, "Songs");
-        while (parser.next() != XmlPullParser.END_TAG){
-            if(parser.getEventType() != XmlPullParser.START_TAG){
-                continue;
+        String timestamp = readTimestamp(parser);
+        Log.d(TAG, "timestamp: " + timestamp);
+        Log.d(TAG, "Comparing with old timestamp: " + oldTimestamp);
+        if (timestamp.equals(oldTimestamp)){
+            Log.d(TAG, "Matches old timestamp. Stop parsing");
+            return null;
+        } else {
+            List<Song> songs = new ArrayList<Song>();
+            parser.require(XmlPullParser.START_TAG, ns, "Songs");
+            while (parser.next() != XmlPullParser.END_TAG) {
+                if (parser.getEventType() != XmlPullParser.START_TAG) {
+                    continue;
+                }
+                String name = parser.getName();
+
+                //Starts by looking for the entry tag
+                if (name.equals("Song")) {
+                    songs.add(readSong(parser));
+                } else {
+                    skip(parser);
+                }
             }
-            String name = parser.getName();
-            Log.v(TAG, "Current name: " + name);
-            //Starts by looking for the entry tag
-            if (name.equals("Song")){
-                songs.add(readSong(parser));
-            } else {
-                skip(parser);
-            }
+            Log.d(TAG, "Finished parsing songs");
+            //update timestamp
+            sharedPreference.saveMostRecentTimestamp(c, timestamp);
+            return songs;
         }
-        return songs;
     }
 
     private Song readSong(XmlPullParser parser) throws
@@ -113,17 +133,9 @@ public class XmlSongParser {
 
     private String readLink(XmlPullParser parser) throws IOException,
             XmlPullParserException {
-        String link = "";
         parser.require(XmlPullParser.START_TAG, ns, "Link");
-        String tag = parser.getName();
-        String relType = parser.getAttributeValue(null, "href");
-        if (tag.equals("Link")){
-            if (relType.equals("alternate")){
-                link = parser.getAttributeValue(null, "href");
-                parser.nextTag();
-            }
-        }
-        parser.require(XmlPullParser.END_TAG, ns, "link");
+        String link = readText(parser);
+        parser.require(XmlPullParser.END_TAG, ns, "Link");
         return link;
     }
 
@@ -156,28 +168,19 @@ public class XmlSongParser {
         }
     }
 
-    public String getXmlTimestamp(InputStream in) throws XmlPullParserException,
-    IOException{
-        try {
-            XmlPullParser parser = Xml.newPullParser();
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-            parser.setInput(in, null);
-            parser.nextTag();
-            return readTimestamp(parser);
-        } finally {
-            in.close();
-        }
-    }
 
     private String readTimestamp(XmlPullParser parser) throws IOException,
         XmlPullParserException{
+
         String timestamp = "";
         parser.require(XmlPullParser.START_TAG, ns, "Songs");
         String tag = parser.getName();
+
         if (tag.equals("Songs")){
-            timestamp = parser.getAttributeValue("timestamp", null);
+            timestamp = parser.getAttributeValue(null, "timestamp");
+
         }
-        parser.require(XmlPullParser.END_TAG, ns, "Songs");
+
         return timestamp;
 
     }

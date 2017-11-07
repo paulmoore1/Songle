@@ -9,12 +9,14 @@
         android:id="@+id/list_song"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:divider="@color/transparent"
-        android:dividerHeight="10dp"
+
+        android:background="@drawable/common_google_signin_btn_icon_light_normal_background"
+        android:divider="@color/view_divider_color"
+        android:dividerHeight="0.5dp"
         android:drawSelectorOnTop="true"
+        android:elevation="32dp"
         android:footerDividersEnabled="false"
         android:padding="10dp"
-        android:scrollbarStyle="outsideOverlay">
-    </ListView>
+        android:scrollbarStyle="outsideOverlay" />
 
 </RelativeLayout>

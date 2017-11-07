@@ -100,4 +100,8 @@ public class Song {
         if (status.equals(NOT_STARTED)) return true;
         else return false;
     }
+
+    public String toString(){
+        return "Song #" + number + " Status: " + status;
+    }
 }

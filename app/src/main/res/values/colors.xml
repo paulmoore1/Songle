@@ -6,5 +6,5 @@
     <color name="textColorPrimary">#000000</color>
     <color name="transparent">#00000000</color>
     <color name="song_list_item_bg">#ffffff</color>
-    <color name="view_divider_color">#BABABA</color>
+    <color name="view_divider_color">#bababa</color>
 </resources>

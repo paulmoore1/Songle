@@ -53,6 +53,12 @@
         <item>Insane</item>
     </string-array>
 
+    <!-- Strings for game setting message -->
+    <string name="msg_no_song_selected">No song selected</string>
+    <string name="msg_no_difficulty_selected">No difficulty selected</string>
+    <string name="msg_no_songs_found">No songs found. Make sure you are connected to the internet
+    and wait for the song list to download.</string>
+
     <!-- Strings related to Settings -->
 
     <!-- Example General settings -->
@@ -125,7 +131,7 @@
 
 
     <!-- Strings for saving values -->
-    <string name="default_timestamp">2017-10-09T10:00:33.775+01:00[Europe/London]</string>
+    <string name="default_timestamp">2017-10-08T10:00:33.775+01:00[Europe/London]</string>
     <string name="song">Songs</string>
     <string name="title_activity_new_game_settings">NewGameSettingsActivity</string>
     <string name="title_activity_main_game">MainGameActivity</string>

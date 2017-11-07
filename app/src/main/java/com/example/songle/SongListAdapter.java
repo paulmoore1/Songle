@@ -2,6 +2,8 @@ package com.example.songle;
 
 import android.app.Activity;
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +18,7 @@ import java.util.List;
  */
 
 public class SongListAdapter extends ArrayAdapter<Song> {
-
+    private static final String TAG = "SongListAdapater";
     private Context context;
     List<Song> songs;
     SharedPreference sharedPreference;
@@ -51,8 +53,9 @@ public class SongListAdapter extends ArrayAdapter<Song> {
         return (long) number;
     }
 
+    @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent){
+    public View getView(int position, View convertView, @NonNull ViewGroup parent){
         ViewHolder holder;
         if (convertView == null){
             LayoutInflater inflater = (LayoutInflater) context

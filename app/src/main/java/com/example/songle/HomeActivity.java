@@ -69,7 +69,6 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
 
 
 
-
     }
 
     //called when the New Game button is clicked
@@ -188,7 +187,23 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         }
     }
 
+    @Override
+    protected void onPause(){
+        Log.d(TAG, "onPause called");
+        // Register BroadcastReceiver to track connection changes
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        this.unregisterReceiver(receiver);
+        super.onPause();
+    }
 
+    @Override
+    protected void onResume(){
+        // Register BroadcastReceiver to track connection changes
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        receiver = new NetworkReceiver();
+        this.registerReceiver(receiver, filter);
+        super.onResume();
+    }
 
 
 
