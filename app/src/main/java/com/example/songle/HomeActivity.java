@@ -78,7 +78,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
             return;
         }
         //start downloading the songs xml, which will store the songs in XML in Shared Prefs
-        mNetworkFragment.startXmlDownload();
+        startXmlDownload();
 
         //do nothing until downloading is false.
         while (mDownloading){
@@ -196,6 +196,10 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);*/
         super.onResume();
+    }
+    public void startXmlDownload(){
+        mNetworkFragment.startXmlDownload();
+        mDownloading = true;
     }
 
     @Override

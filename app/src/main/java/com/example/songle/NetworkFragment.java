@@ -42,8 +42,6 @@ public class NetworkFragment extends Fragment {
     public static final String TAG = "NetworkFragment";
 
     private static final String URL_KEY = "UrlKey";
-    Activity activity;
-    SharedPreference sharedPreference = new SharedPreference();
 
     private DownloadCallback mCallback;
     private DownloadLyricsTask mDownloadLyricsTask;
@@ -88,6 +86,7 @@ public class NetworkFragment extends Fragment {
 
     @Override
     public void onAttach(Context context) {
+        Log.d(TAG, "onAttach called");
         super.onAttach(context);
         // Host Activity will handle callbacks from task.
         mCallback = (DownloadCallback)context;
@@ -95,6 +94,7 @@ public class NetworkFragment extends Fragment {
 
     @Override
     public void onDetach() {
+        Log.d(TAG, "onDetach called");
         super.onDetach();
         // Clear reference to host Activity.
         mCallback = null;
@@ -138,6 +138,7 @@ public class NetworkFragment extends Fragment {
     }
 
     public void retryDownload(){
+        Log.d(TAG, "retryDownload called");
         //check that a download task was executed already
         switch (downloadType) {
             case "Lyrics":
@@ -414,10 +415,12 @@ public class NetworkFragment extends Fragment {
             Log.v(TAG, "Started loading KML in the background");
             Boolean allDownloadedCorrectly = true;
             String baseUrl = urls[0];
+            String songNumber = sharedPreferenceDownloadKml.getCurrentSongNumber(getActivity().getApplicationContext());
             for (int i = 1; i < 6; i++){
                 List<Placemark> placemarks = null;
                 String mapNumber = Integer.toString(i);
-                String urlString = baseUrl + mapNumber + ".kml";
+                String urlString = baseUrl + songNumber + "/map" + mapNumber + ".kml";
+                Log.d(TAG, "Map URL: " + urlString);
                 try {
                     placemarks = loadKmlFromNetwork(urlString);
                 } catch (IOException e){
@@ -426,9 +429,11 @@ public class NetworkFragment extends Fragment {
                     Log.e(TAG, "XML Exception: " + e);
                 }
                 if (placemarks != null){
+                    Log.d(TAG, "Downloaded map#" + i);
                     sharedPreferenceDownloadKml.saveMap(getActivity().getApplicationContext(),
                             placemarks, mapNumber);
                 } else {
+                    Log.e(TAG, "Error downloading maps");
                     allDownloadedCorrectly = false;
                 }
             }
@@ -480,6 +485,7 @@ public class NetworkFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String result){
+            Log.d(TAG, "onPostExecute called");
             if (result != null && mCallback != null) {
                 mCallback.updateFromDownload(result);
                 Log.d(TAG, "Finished downloading");

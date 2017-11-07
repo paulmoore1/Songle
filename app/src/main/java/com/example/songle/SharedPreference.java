@@ -406,7 +406,7 @@ public class SharedPreference {
 
     }
 
-    public void saveSongDimensions(Context context, int[][] sizes){
+    public void saveLyricDimensions(Context context, ArrayList<Integer> sizes){
         SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = settings.edit();
 
@@ -415,5 +415,21 @@ public class SharedPreference {
 
         editor.putString(SONG_SIZES, jsonLyrics);
         editor.apply();
+    }
+
+    public ArrayList<Integer> getLyricDimensions(Context context){
+        SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        ArrayList<Integer> sizes;
+
+        if (settings.contains(SONG_SIZES)){
+            String jsonSizes = settings.getString(SONG_SIZES, null);
+            Gson gson = new Gson();
+            Type type = new TypeToken<ArrayList<Integer>>(){}.getType();
+            sizes = gson.fromJson(jsonSizes, type);
+            return sizes;
+        } else {
+            Log.e(TAG, "Song sizes not found");
+            return null;
+        }
     }
 }

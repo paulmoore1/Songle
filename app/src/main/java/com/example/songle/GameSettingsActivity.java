@@ -34,7 +34,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     SharedPreference sharedPreference = new SharedPreference();
     Button buttonSelectSong, buttonSelectDifficulty, buttonStartGame;
     TextView selectedSongNumber, selectedDifficultyLevel;
-    private NetworkFragment mNetworkFragment;
+    private NetworkFragment mNetworkFragmentLyrics;
+    private NetworkFragment mNetworkFragmentMaps;
     private boolean mDownloading = false;
     private String songNumber;
     private String diffLevel;
@@ -47,14 +48,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             //if songs are now different (implying the user has selected one)
             if(songNumber2 == null) {
                 selectedSongNumber.setText(R.string.msg_no_song_selected);
-            } else if (songNumber == null){
-                //no previous song number - update.
-                songNumber = songNumber2;
-                //update textview object with selected song
-                String songText = getString(R.string.msg_song_number_general) + songNumber;
-                selectedSongNumber.setText(songText);
-
-            } else if (!songNumber.equals(songNumber2)){
+            } else {
                 //update songNumber in this activity.
                 songNumber = songNumber2;
                 //update textview object with selected song
@@ -83,6 +77,18 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         sharedPreference.registerOnSharedPreferenceChangedListener(getApplicationContext(), listener);
 
         FragmentManager fragmentManager = getSupportFragmentManager();
+        mNetworkFragmentLyrics = NetworkFragment.getInstance(fragmentManager,
+                getString(R.string.url_general));
+        mNetworkFragmentMaps = NetworkFragment.getInstance(fragmentManager,
+                getString(R.string.url_general));
+
+        //shows the last chosen song (if there is one) - avoids bug where clicking an old song
+        //doesn't update the text (since the shared preferences don't change).
+        songNumber = sharedPreference.getCurrentSongNumber(getApplicationContext());
+        if (songNumber != null){
+            String songText = "Previously chose: Song #" + songNumber;
+            selectedSongNumber.setText(songText);
+        }
 
         //if select song is selected, load a fragment to display it.
         buttonSelectSong.setOnClickListener(new View.OnClickListener() {
@@ -254,7 +260,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         //save this song to shared preferences as it has been definitely chosen.
         Song currentSong = sharedPreference.getCurrentSong(getApplicationContext());
         sharedPreference.saveSongStatus(getApplicationContext(), currentSong, "I");
-
+        setContentView(R.layout.loading);
         //check for internet connection again
         boolean networkOn = isNetworkAvailable(this);
         if (!networkOn){
@@ -264,25 +270,26 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         String mUrlStringLyrics = getString(R.string.url_general) +
                 songNumber + "/words.txt";
 
-        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(),
+        mNetworkFragmentLyrics = NetworkFragment.getInstance(getSupportFragmentManager(),
                 mUrlStringLyrics);
-
+        Log.d(TAG, "Current context" + getApplicationContext().toString());
    /*     // Register BroadcastReceiver to track connection changes
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         NetworkReceiver receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);
 */
-        mNetworkFragment.startLyricsDownload();
+        startLyricsDownload();
         //do nothing further until download is finished
         while (mDownloading){
 
         }
+        Log.d(TAG, "Lyrics downloaded");
 
         String mUrlStringMaps = getString(R.string.url_general) + songNumber + "/map";
-        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(),
+        mNetworkFragmentMaps = NetworkFragment.getInstance(getSupportFragmentManager(),
                 mUrlStringMaps);
-
-        mNetworkFragment.startKmlDownload();
+        Log.d(TAG, "Started downloading Kml");
+        startMapsDownload();
         //do nothing further until download is finished
         while (mDownloading){
 
@@ -342,12 +349,23 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         alertDialog.show();
     }
 
+    public void startLyricsDownload(){
+        Log.d(TAG, "startLyricsDownload called");
+        mNetworkFragmentLyrics.startLyricsDownload();
+        mDownloading = true;
+    }
+
+    public void startMapsDownload(){
+        mNetworkFragmentMaps.startKmlDownload();
+        mDownloading = true;
+    }
+
     @Override
     public void updateFromDownload(Object result) {
         if(result.equals("Updated")){
             finishDownloading();
         } else {
-            mNetworkFragment.retryDownload();
+            mNetworkFragmentLyrics.retryDownload();
         }
     }
 
@@ -377,8 +395,10 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     public void finishDownloading() {
         Log.d(TAG, "finishDownloading called");
         mDownloading = false;
-        if (mNetworkFragment != null) {
-            mNetworkFragment.cancelDownload();
+        if (mNetworkFragmentLyrics != null) {
+            mNetworkFragmentLyrics.cancelDownload();
+        } else if (mNetworkFragmentMaps != null){
+            mNetworkFragmentMaps.cancelDownload();
         }
 
     }

@@ -34,26 +34,20 @@ public class LyricsTextParser {
     private File file;
     private int currentLineNum = 1;
     private HashMap<String, ArrayList<String>> lyrics;
+    private ArrayList<Integer> sizes;
 
-// check for the file extension found here: https://stackoverflow.com/questions/25298691/how-to-check-the-file-type-in-java
+
     public LyricsTextParser(Context context) {
-        //check the file ends in '.txt'
-        String fileName = file.getName();
-        int dotIndex = fileName.lastIndexOf('.');
-        String extension = (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1);
-        if (extension.equals("txt")) {
-            this.lyrics = new HashMap<String, ArrayList<String>>();
-            this.context = context;
-        } else {
-
-            this.stream = null;
-        }
+        Log.d(TAG, "Lyrics Text Parser created");
+        this.lyrics = new HashMap<String, ArrayList<String>>();
+        this.context = context;
+        this.sizes = new ArrayList<>(20);
     }
 
     public void parse(InputStream stream) {
         Scanner scanner = null;
         scanner = new Scanner(stream);
-
+        Log.d(TAG, "parsing lyrics started");
         while (scanner.hasNext()) {
             //read line and split on spaces
             String[] fullLine = scanner.nextLine().split(" ");
@@ -90,11 +84,17 @@ public class LyricsTextParser {
                 lyric.add(bool);
                 lyrics.put(key, lyric);
             }
+            //put the length of the line in the array so we can show blank lines correctly.
+            sizes.add(currentLineNum - 1, m - 1);
 
             currentLineNum++;
+            Log.v(TAG, "Line number: " + currentLineNum);
         }
         scanner.close();
+        Log.d(TAG, "Lyrics saved");
         sharedPreference.saveLyrics(context, lyrics);
+        sharedPreference.saveLyricDimensions(context, sizes);
+
 
     }
 

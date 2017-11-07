@@ -1,5 +1,6 @@
 package com.example.songle;
 
+import android.util.Log;
 import android.util.Xml;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -18,13 +19,14 @@ import java.util.List;
  */
 
 public class XmlMapParser {
-
+    private static final String TAG = "XmlMapParser";
     //Don't use namespaces
     private static final String ns = null;
 
     public List<Placemark> parse(InputStream in) throws XmlPullParserException,
             IOException {
         try {
+            Log.d(TAG, "Parsing started");
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(in, null);
@@ -37,8 +39,9 @@ public class XmlMapParser {
 
     private List<Placemark> readPlacemarks(XmlPullParser parser) throws
             XmlPullParserException, IOException {
+        Log.d(TAG, "readPlacemarks called");
         List<Placemark> placemarks = new ArrayList<Placemark>();
-        parser.require(XmlPullParser.START_TAG, ns, "Document");
+        parser.require(XmlPullParser.START_TAG, ns, "kml");
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
                 continue;
@@ -51,6 +54,7 @@ public class XmlMapParser {
                 skip(parser);
             }
         }
+        Log.d(TAG, "All Placemarks read");
         return placemarks;
     }
 
