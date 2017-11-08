@@ -2,7 +2,9 @@ package com.example.songle;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,14 +22,19 @@ import java.util.List;
 public class SongListAdapter extends ArrayAdapter<Song> {
     private static final String TAG = "SongListAdapater";
     private Context context;
-    List<Song> songs;
-    SharedPreference sharedPreference;
+    private int currentSongNumber = -1;
+    private List<Song> songs;
+    private SharedPreference sharedPreference;
 
     public SongListAdapter(Context context, List<Song> songs){
         super(context, R.layout.song_list_item, songs);
         this.context = context;
         this.songs = songs;
         sharedPreference = new SharedPreference();
+        String strLastSong = sharedPreference.getCurrentSongNumber(context);
+        if (strLastSong != null) {
+            currentSongNumber = Integer.parseInt(strLastSong);
+        }
     }
 
     private class ViewHolder {
@@ -82,8 +89,16 @@ public class SongListAdapter extends ArrayAdapter<Song> {
         } else {
             holder.songImg.setImageResource(R.drawable.music_note_grey);
         }
+       /* //TODO fix weird coloring bug here
+       //show last chosen song as the primary color
+        if (currentSongNumber != -1){
+            if (currentSongNumber == position) {
+                holder.songNumberTxt.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+                holder.songStatusTxt.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+            }
 
-
+        }
+        */
         return convertView;
 
     }

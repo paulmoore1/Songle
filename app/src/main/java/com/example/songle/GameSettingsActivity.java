@@ -4,10 +4,10 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -15,17 +15,18 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.NavUtils;
+
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
-public class GameSettingsActivity extends FragmentActivity implements DownloadCallback{
+public class GameSettingsActivity extends FragmentActivity implements DownloadCallback,
+        FragmentManager.OnBackStackChangedListener{
     public static final String TAG = "GameSettingsActivity";
     //String is NewGame or OldGame, depending on what was selected.
     private String gameType;
@@ -77,6 +78,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         sharedPreference.registerOnSharedPreferenceChangedListener(getApplicationContext(), listener);
 
         FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.addOnBackStackChangedListener(this);
+        shouldDisplayHomeUp();
         mNetworkFragmentLyrics = NetworkFragment.getInstance(fragmentManager,
                 getString(R.string.url_general));
         mNetworkFragmentMaps = NetworkFragment.getInstance(fragmentManager,
@@ -160,6 +163,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         while (fragmentManager.popBackStackImmediate());
 
         if (fragment != null){
+            setTitle(R.string.txt_select_song);
+            getActionBar().setTitle(R.string.txt_select_song);
             FragmentTransaction transaction = fragmentManager.beginTransaction();
             transaction.replace(R.id.content_frame, fragment, tag);
             transaction.addToBackStack(tag);
@@ -256,6 +261,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
 
     }
+
     public void startGame(){
         //save this song to shared preferences as it has been definitely chosen.
         Song currentSong = sharedPreference.getCurrentSong(getApplicationContext());
@@ -267,6 +273,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             sendNetworkErrorDialog();
             return;
         }
+        Handler handler = new Handler();
+        handler.postDelayed(resetSettingsActivity, 100000);
         String mUrlStringLyrics = getString(R.string.url_general) +
                 songNumber + "/words.txt";
 
@@ -306,14 +314,55 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         startActivity(intent);
     }
 
+    private Runnable resetSettingsActivity = new Runnable() {
+        @Override
+        public void run() {
+            Intent intent = new Intent(getApplicationContext(), GameSettingsActivity.class);
+            startActivity(intent);
+        }
+    };
+
+    //TODO fix bug where pressing back button in the Action Bar for the SongListFragment returns to HomeActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
         switch(item.getItemId()){
             case android.R.id.home:
-                NavUtils.navigateUpFromSameTask(this);
-                return true;
+                int count = getFragmentManager().getBackStackEntryCount();
+                if (count == 0) {
+                    NavUtils.navigateUpFromSameTask(this);
+                    return true;
+                } else {
+                    return onSupportNavigateUp();
+                }
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    public void onBackStackChanged(){
+        shouldDisplayHomeUp();
+    }
+
+    public void shouldDisplayHomeUp(){
+        //Enable Up button only if there are entries in the back stack
+        boolean canback = getSupportFragmentManager().getBackStackEntryCount() > 0;
+        getActionBar().setDisplayHomeAsUpEnabled(canback);
+    }
+
+    public boolean onSupportNavigateUp(){
+        getSupportFragmentManager().popBackStack();
+        return true;
+    }
+
+    @Override
+    public void onBackPressed(){
+        int count = getFragmentManager().getBackStackEntryCount();
+        if (count == 0){
+            Intent intent = new Intent(this, HomeActivity.class);
+            startActivity(intent);
+        } else {
+            getFragmentManager().popBackStack();
         }
     }
 

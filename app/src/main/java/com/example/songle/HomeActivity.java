@@ -79,7 +79,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         }
         //start downloading the songs xml, which will store the songs in XML in Shared Prefs
         startXmlDownload();
-
+        setContentView(R.layout.loading);
         //do nothing until downloading is false.
         while (mDownloading){
             //Log.d(TAG, "Waiting for download");

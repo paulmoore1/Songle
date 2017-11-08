@@ -6,11 +6,12 @@
     <string name="txt_continue_game">Continue Game</string>
     <string name="txt_load_old_game">Load Previous Game</string>
     <string name="txt_okay">Okay</string>
-    <string name="title_activity_main_settings">MainSettings</string>
+    <string name="title_activity_main_settings">Main Settings</string>
     <string name="url_songs_xml">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/songs.xml</string>
     <string name="url_general">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/</string>
 
     <string name="msg_welcome_songle">Welcome to Songle!</string>
+    <string name="msg_start_select_option">Select an option to get started!</string>
     <string name="txt_continue">Continue</string>
     <string name="txt_cancel">Cancel</string>
     <string name="txt_exit">Exit</string>
@@ -25,7 +26,7 @@
     <string name="network_error">Network Error</string>
     <string name="network_warning">Network Warning</string>
     <string name="msg_data_required">A data connection is required!</string>
-    <string name="msg_data_warning">Without data you can only load games and guess with words you already have. Continue?</string>
+    <string name="msg_data_warning">Without data you can only continue your most recent game. Continue?</string>
     <string name="txt_internet_settings">Internet Settings</string>
 
 

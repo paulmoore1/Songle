@@ -30,17 +30,17 @@ public class LyricsTextParser {
     public static final String TAG = "LyricsTextParser";
     private Context context;
     private SharedPreference sharedPreference = new SharedPreference();
-    private InputStream stream;
-    private File file;
+    private String songNumber;
     private int currentLineNum = 1;
     private HashMap<String, ArrayList<String>> lyrics;
-    private ArrayList<Integer> sizes;
+    private ArrayList<String> sizes;
 
 
-    public LyricsTextParser(Context context) {
+    public LyricsTextParser(Context context, String songNumber) {
         Log.d(TAG, "Lyrics Text Parser created");
         this.lyrics = new HashMap<String, ArrayList<String>>();
         this.context = context;
+        this.songNumber = songNumber;
         this.sizes = new ArrayList<>(20);
     }
 
@@ -85,15 +85,23 @@ public class LyricsTextParser {
                 lyrics.put(key, lyric);
             }
             //put the length of the line in the array so we can show blank lines correctly.
-            sizes.add(currentLineNum - 1, m - 1);
+            sizes.add(currentLineNum - 1, Integer.toString(m - 1));
 
             currentLineNum++;
             Log.v(TAG, "Line number: " + currentLineNum);
         }
         scanner.close();
+        try {
+            stream.close();
+        } catch (IOException e){
+            Log.e(TAG, "Tried to close stream, gave exception: " + e);
+        }
+        lyrics.put("SIZE", sizes);
+        lyrics.put("NUMBER", sizes);
+        //TODO store number correctly
         Log.d(TAG, "Lyrics saved");
-        sharedPreference.saveLyrics(context, lyrics);
-        sharedPreference.saveLyricDimensions(context, sizes);
+        //sharedPreference.saveLyrics(context, lyrics);
+        //sharedPreference.saveLyricDimensions(context, sizes);
 
 
     }

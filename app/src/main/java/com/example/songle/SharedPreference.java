@@ -2,6 +2,7 @@ package com.example.songle;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 
@@ -34,6 +35,11 @@ public class SharedPreference {
     private static final String MAP_3 = "Map3";
     private static final String MAP_4 = "Map4";
     private static final String MAP_5 = "Map5";
+    private static final String MAP_1_NUM = "Map1Num";
+    private static final String MAP_2_NUM = "Map2Num";
+    private static final String MAP_3_NUM = "Map3Num";
+    private static final String MAP_4_NUM = "Map4Num";
+    private static final String MAP_5_NUM = "Map5Num";
     private static final String TIMESTAMP = "Timestamp";
     private static final String CURRENT_SONG = "CurrentSong";
     private static final String CURRENT_SONG_NUMBER = "CurrentSongNumber";
@@ -311,9 +317,10 @@ public class SharedPreference {
      * Saves a list of placemarks for a map to the SharedPreferences
      * @param context
      * @param placemarks
-     * @param num - the map number that should be saved to
+     * @param mapNumber - the map number that should be saved to
+     * @param songNumber - the song number of this map
      */
-    public void saveMap(Context context, List<Placemark> placemarks, String num){
+    public void saveMap(Context context, List<Placemark> placemarks, String mapNumber, String songNumber){
         SharedPreferences settings;
         SharedPreferences.Editor editor;
 
@@ -323,16 +330,21 @@ public class SharedPreference {
         Gson gson = new Gson();
         String jsonPlacemarks = gson.toJson(placemarks);
 
-        if (num.equals("1")){
+        if (mapNumber.equals("1")){
             editor.putString(MAP_1, jsonPlacemarks);
-        } else if (num.equals("2")) {
+            editor.putString(MAP_1_NUM, songNumber);
+        } else if (mapNumber.equals("2")) {
             editor.putString(MAP_2, jsonPlacemarks);
-        } else if (num.equals("3")) {
+            editor.putString(MAP_2_NUM, songNumber);
+        } else if (mapNumber.equals("3")) {
             editor.putString(MAP_3, jsonPlacemarks);
-        } else if (num.equals("4")) {
+            editor.putString(MAP_3_NUM, songNumber);
+        } else if (mapNumber.equals("4")) {
             editor.putString(MAP_4, jsonPlacemarks);
-        } else if (num.equals("5")) {
+            editor.putString(MAP_4_NUM, songNumber);
+        } else if (mapNumber.equals("5")) {
             editor.putString(MAP_5, jsonPlacemarks);
+            editor.putString(MAP_5_NUM, songNumber);
         } else {
             Log.e(TAG, "Unexpected number received in maps");
             return;
@@ -431,5 +443,30 @@ public class SharedPreference {
             Log.e(TAG, "Song sizes not found");
             return null;
         }
+    }
+
+
+    public String getMapsSongNumber(Context context, String mapNumber){
+        SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String songNumber = "";
+        String targetMapNumber = null;
+        if (mapNumber.equals("1")){
+            targetMapNumber = MAP_1_NUM;
+        } else if (mapNumber.equals("2")){
+            targetMapNumber = MAP_2_NUM;
+        } else if (mapNumber.equals("3")){
+            targetMapNumber = MAP_3_NUM;
+        } else if (mapNumber.equals("4")){
+            targetMapNumber = MAP_4_NUM;
+        } else if (mapNumber.equals("5")){
+            targetMapNumber = MAP_5_NUM;
+        } else {
+            Log.e(TAG, "Unexpected number requested: " + mapNumber);
+            return null;
+        }
+        if (settings.contains(targetMapNumber)){
+            songNumber = settings.getString(targetMapNumber, "");
+        }
+        return songNumber;
     }
 }

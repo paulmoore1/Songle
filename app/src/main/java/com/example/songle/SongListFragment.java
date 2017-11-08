@@ -85,10 +85,12 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
 
     @Override
     public void onResume(){
-        getActivity().setTitle(R.string.app_name);
-        getActivity().getActionBar().setTitle(R.string.app_name);
+        getActivity().setTitle(R.string.txt_select_song);
+        getActivity().getActionBar().setTitle(R.string.txt_select_song);
         super.onResume();
     }
+
+
 
 
 

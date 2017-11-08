@@ -22,6 +22,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.renderscript.ScriptGroup;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -221,9 +222,12 @@ public class NetworkFragment extends Fragment {
 
         private String loadLyricsFromNetwork(String urlString) throws
         IOException{
+            String songNumber = sharedPreferenceDownloadLyrics.getCurrentSongNumber(
+                    getActivity().getApplicationContext());
+
             Log.d(TAG,"loadLyrisFromNetwork called");
             InputStream stream = null;
-            LyricsTextParser ltp = new LyricsTextParser(getActivity().getApplicationContext());
+            LyricsTextParser ltp = new LyricsTextParser(getActivity().getApplicationContext(), songNumber);
             try {
                 Log.d(TAG, "URL is: " + urlString);
                 stream = downloadUrl(urlString);
@@ -273,6 +277,7 @@ public class NetworkFragment extends Fragment {
          */
         private InputStream downloadUrl(String urlString) throws IOException {
             Log.d(TAG, "downloadUrl called");
+            InputStream stream = null;
             URL url = new URL(urlString);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -282,7 +287,9 @@ public class NetworkFragment extends Fragment {
             conn.setRequestMethod("GET");
             conn.setDoInput(true);
             conn.connect();
-            return conn.getInputStream();
+            stream = conn.getInputStream();
+            conn.disconnect();
+            return stream;
 
         }
 
@@ -359,6 +366,7 @@ public class NetworkFragment extends Fragment {
         //an input stream
         private InputStream downloadUrl(String urlString) throws IOException {
             Log.d(TAG, "downloadUrl called");
+            InputStream stream;
             URL url = new URL(urlString);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -368,7 +376,9 @@ public class NetworkFragment extends Fragment {
             conn.setRequestMethod("GET");
             conn.setDoInput(true);
             conn.connect();
-            return conn.getInputStream();
+            stream = conn.getInputStream();
+            conn.disconnect();
+            return stream;
 
         }
 
@@ -431,7 +441,7 @@ public class NetworkFragment extends Fragment {
                 if (placemarks != null){
                     Log.d(TAG, "Downloaded map#" + i);
                     sharedPreferenceDownloadKml.saveMap(getActivity().getApplicationContext(),
-                            placemarks, mapNumber);
+                            placemarks, mapNumber, songNumber);
                 } else {
                     Log.e(TAG, "Error downloading maps");
                     allDownloadedCorrectly = false;
@@ -468,6 +478,7 @@ public class NetworkFragment extends Fragment {
         //an input stream
         private InputStream downloadUrl(String urlString) throws IOException {
             Log.d(TAG, "downloadUrl called");
+            InputStream stream;
             URL url = new URL(urlString);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -477,7 +488,9 @@ public class NetworkFragment extends Fragment {
             conn.setRequestMethod("GET");
             conn.setDoInput(true);
             conn.connect();
-            return conn.getInputStream();
+            stream = conn.getInputStream();
+            conn.disconnect();
+            return stream;
 
         }
 
