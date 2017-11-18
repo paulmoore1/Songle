@@ -16,13 +16,11 @@ package com.example.songle;
  * limitations under the License.
  */
 
-import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.renderscript.ScriptGroup;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -179,7 +177,8 @@ public class NetworkFragment extends Fragment {
      */
     private class DownloadLyricsTask extends AsyncTask<String, Integer, String> {
         private String TAG = DownloadLyricsTask.class.getSimpleName();
-        private SharedPreference sharedPreferenceDownloadLyrics = new SharedPreference();
+        private SharedPreference sharedPreferenceDownloadLyrics =
+                new SharedPreference(getActivity().getApplicationContext());
 
         /**
          * Cancel background network operation if we do not have network connectivity.
@@ -223,7 +222,7 @@ public class NetworkFragment extends Fragment {
         private String loadLyricsFromNetwork(String urlString) throws
         IOException{
             String songNumber = sharedPreferenceDownloadLyrics.getCurrentSongNumber(
-                    getActivity().getApplicationContext());
+            );
 
             Log.d(TAG,"loadLyrisFromNetwork called");
             InputStream stream = null;
@@ -297,7 +296,7 @@ public class NetworkFragment extends Fragment {
 
     private class DownloadXmlTask extends AsyncTask<String, Void, String> {
         private String TAG = DownloadXmlTask.class.getSimpleName();
-        private SharedPreference sharedPreferenceDownloadXml = new SharedPreference();
+        private SharedPreference sharedPreferenceDownloadXml = new SharedPreference(getActivity().getApplicationContext());
 
         /**
          * Cancel background network operation if we do not have network connectivity.
@@ -319,7 +318,7 @@ public class NetworkFragment extends Fragment {
         @Override
         protected String doInBackground(String... urls){
             Log.d(TAG, "doInBackground called");
-            String timestamp = sharedPreferenceDownloadXml.getMostRecentTimestamp(getContext());
+            String timestamp = sharedPreferenceDownloadXml.getMostRecentTimestamp();
             if (timestamp == null){
                 mostRecentXMLTimestamp = getString(R.string.default_timestamp);
             }
@@ -335,7 +334,7 @@ public class NetworkFragment extends Fragment {
             }
             //songs will not be null if the timestamp is new. In that case save the new songs list
             if (songs != null){
-                sharedPreferenceDownloadXml.saveSongs(getActivity().getApplicationContext(), songs);
+                sharedPreferenceDownloadXml.saveSongs(songs);
                 Log.d(TAG, "finished background task");
                 onPostExecute("Updated");
                 return "Songs updated";
@@ -401,7 +400,8 @@ public class NetworkFragment extends Fragment {
 
     private class DownloadKmlTask extends AsyncTask<String, Void, String> {
         private String TAG = DownloadKmlTask.class.getSimpleName();
-        private SharedPreference sharedPreferenceDownloadKml = new SharedPreference();
+        private SharedPreference sharedPreferenceDownloadKml =
+                new SharedPreference(getActivity().getApplicationContext());
 
         /**
          * Cancel background network operation if we do not have network connectivity.
@@ -425,7 +425,7 @@ public class NetworkFragment extends Fragment {
             Log.v(TAG, "Started loading KML in the background");
             Boolean allDownloadedCorrectly = true;
             String baseUrl = urls[0];
-            String songNumber = sharedPreferenceDownloadKml.getCurrentSongNumber(getActivity().getApplicationContext());
+            String songNumber = sharedPreferenceDownloadKml.getCurrentSongNumber();
             for (int i = 1; i < 6; i++){
                 List<Placemark> placemarks = null;
                 String mapNumber = Integer.toString(i);
@@ -440,7 +440,7 @@ public class NetworkFragment extends Fragment {
                 }
                 if (placemarks != null){
                     Log.d(TAG, "Downloaded map#" + i);
-                    sharedPreferenceDownloadKml.saveMap(getActivity().getApplicationContext(),
+                    sharedPreferenceDownloadKml.saveMap(
                             placemarks, mapNumber, songNumber);
                 } else {
                     Log.e(TAG, "Error downloading maps");

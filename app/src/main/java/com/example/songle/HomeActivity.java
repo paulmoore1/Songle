@@ -4,7 +4,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -21,10 +20,11 @@ import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class HomeActivity extends FragmentActivity implements DownloadCallback {
     private static final String TAG = "HomeActivity";
+
+    private SharedPreference sharedPreference;
     //Broadcast receiver that tracks network connectivity changes
     //private NetworkReceiver receiver = new NetworkReceiver();
 
@@ -32,8 +32,6 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
     // that is used to execute network ops.
     private NetworkFragment mNetworkFragment;
 
-
-    private SharedPreference sharedPreference = new SharedPreference();
 
     // boolean telling us whether a download is in progress so we don't trigger overlapping
     // downloads with consecutive button clicks
@@ -46,6 +44,8 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         Log.d(TAG, "super.onCreate() called");
         setContentView(R.layout.home_screen);
         Log.d(TAG, "Layout loaded");
+
+        sharedPreference = new SharedPreference(getApplicationContext());
 
         //check for internet access first
         boolean networkOn = isNetworkAvailable(this);
@@ -95,16 +95,16 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
 
     public void continueGame(View view){
         Log.d(TAG, "Continue Game button clicked");
-        Song song = sharedPreference.getCurrentSong(this);
-        String diffLevel = sharedPreference.getCurrentDifficultyLevel(this);
+        Song song = sharedPreference.getCurrentSong();
+        String diffLevel = sharedPreference.getCurrentDifficultyLevel();
         //check there is actually a song in the current song list and a difficulty chosen
         if (song != null && diffLevel != null){
             //song is incomplete as expected, check that necessary files are present
             if (song.isSongIncomplete()){
-
+                String songNumber = song.getNumber();
                 //check lyrics and map are already downloaded and stored.
-                HashMap<String, ArrayList<String>> lyrics = sharedPreference.getLyrics(this);
-                List<Placemark> placemarks = sharedPreference.getMap(this, diffLevel);
+                HashMap<String, ArrayList<String>> lyrics = sharedPreference.getLyrics(songNumber);
+                List<Placemark> placemarks = sharedPreference.getMap(diffLevel);
                 if (lyrics != null && placemarks != null){
                     //have lyrics file and song in place, can load MainGameActivity with this
                     //check in that activity for internet before allowing maps

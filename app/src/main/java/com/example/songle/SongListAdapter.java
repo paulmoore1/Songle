@@ -2,10 +2,7 @@ package com.example.songle;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.Resources;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,8 +27,8 @@ public class SongListAdapter extends ArrayAdapter<Song> {
         super(context, R.layout.song_list_item, songs);
         this.context = context;
         this.songs = songs;
-        sharedPreference = new SharedPreference();
-        String strLastSong = sharedPreference.getCurrentSongNumber(context);
+        sharedPreference = new SharedPreference(context);
+        String strLastSong = sharedPreference.getCurrentSongNumber();
         if (strLastSong != null) {
             currentSongNumber = Integer.parseInt(strLastSong);
         }

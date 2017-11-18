@@ -18,7 +18,7 @@ import java.util.List;
 
 public class XmlSongParser {
     private static final String TAG = "XmlSongParser";
-    private SharedPreference sharedPreference = new SharedPreference();
+    private SharedPreference sharedPreference;
     private String oldTimestamp;
     Context c;
     //Don't use namespaces
@@ -26,6 +26,7 @@ public class XmlSongParser {
 
     public XmlSongParser(Context context){
         this.c = context;
+        sharedPreference = new SharedPreference(context);
     }
 
     public List<Song> parse(InputStream in, String oldTimestamp) throws XmlPullParserException,
@@ -79,7 +80,7 @@ public class XmlSongParser {
             }
             Log.d(TAG, "Finished parsing songs");
             //update timestamp
-            sharedPreference.saveMostRecentTimestamp(c, timestamp);
+            sharedPreference.saveMostRecentTimestamp(timestamp);
             return songs;
         }
     }

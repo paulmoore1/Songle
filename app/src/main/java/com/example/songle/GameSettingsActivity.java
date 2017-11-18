@@ -32,7 +32,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     private String gameType;
     private Fragment contentFragment;
     SongListFragment songListFragment;
-    SharedPreference sharedPreference = new SharedPreference();
+    SharedPreference sharedPreference;
     Button buttonSelectSong, buttonSelectDifficulty, buttonStartGame;
     TextView selectedSongNumber, selectedDifficultyLevel;
     private NetworkFragment mNetworkFragmentLyrics;
@@ -45,7 +45,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
-            String songNumber2 = sharedPreference.getCurrentSongNumber(getApplicationContext());
+            String songNumber2 = sharedPreference.getCurrentSongNumber();
             //if songs are now different (implying the user has selected one)
             if(songNumber2 == null) {
                 selectedSongNumber.setText(R.string.msg_no_song_selected);
@@ -67,6 +67,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.select_game_settings);
+        sharedPreference = new SharedPreference(getApplicationContext());
 
         buttonSelectSong = findViewById(R.id.btn_select_song);
         buttonSelectDifficulty = findViewById(R.id.btn_select_difficulty);
@@ -75,7 +76,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         selectedDifficultyLevel = findViewById(R.id.txt_current_difficulty);
         //get the game type to pass on to the songlist fragment, so it loads the correct games.
         gameType = getIntent().getStringExtra("GAME_TYPE");
-        sharedPreference.registerOnSharedPreferenceChangedListener(getApplicationContext(), listener);
+        sharedPreference.registerOnSharedPreferenceChangedListener(listener);
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.addOnBackStackChangedListener(this);
@@ -87,7 +88,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
         //shows the last chosen song (if there is one) - avoids bug where clicking an old song
         //doesn't update the text (since the shared preferences don't change).
-        songNumber = sharedPreference.getCurrentSongNumber(getApplicationContext());
+        songNumber = sharedPreference.getCurrentSongNumber();
         if (songNumber != null){
             String songText = "Previously chose: Song #" + songNumber;
             selectedSongNumber.setText(songText);
@@ -178,13 +179,13 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     @Override
     protected void onResume(){
         super.onResume();
-        sharedPreference.registerOnSharedPreferenceChangedListener(getApplicationContext(), listener);
+        sharedPreference.registerOnSharedPreferenceChangedListener(listener);
 
     }
 
     @Override
     protected void onPause(){
-        sharedPreference.unregisterOnSharedPreferenceChangedListener(getApplicationContext(), listener);
+        sharedPreference.unregisterOnSharedPreferenceChangedListener(listener);
         super.onPause();
     }
 
@@ -223,8 +224,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
                 //save value in private string
                 diffLevel = chosenDiff;
                 //save value in shared preferences
-                sharedPreference.saveCurrentDifficultyLevel(getApplicationContext(),
-                        chosenDiff);
+                sharedPreference.saveCurrentDifficultyLevel(chosenDiff);
                 //update text displayed
                 selectedDifficultyLevel.setText(chosenDiff);
             }
@@ -264,8 +264,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
     public void startGame(){
         //save this song to shared preferences as it has been definitely chosen.
-        Song currentSong = sharedPreference.getCurrentSong(getApplicationContext());
-        sharedPreference.saveSongStatus(getApplicationContext(), currentSong, "I");
+        Song currentSong = sharedPreference.getCurrentSong();
+        sharedPreference.saveSongStatus(currentSong, "I");
         setContentView(R.layout.loading);
         //check for internet connection again
         boolean networkOn = isNetworkAvailable(this);

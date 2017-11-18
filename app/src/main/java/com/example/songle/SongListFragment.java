@@ -30,21 +30,21 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
     List<Song> songs;
     SongListAdapter songListAdapter;
 
-    SharedPreference sharedPreference = new SharedPreference();
-
+    SharedPreference sharedPreference;
     @Override
     public void onCreate(Bundle savedInstanceState){
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
         activity = getActivity();
+        sharedPreference = new SharedPreference(getActivity().getApplicationContext());
 
         Bundle bundle = this.getArguments();
         String gameType = bundle.getString("GAME_TYPE");
         Log.d(TAG, "Gametype tag found in bundle: " + gameType);
         if (gameType.equals(getString(R.string.txt_new_game))){
-            songs = sharedPreference.getAllSongs(getContext());
+            songs = sharedPreference.getAllSongs();
         } else if (gameType.equals(getString(R.string.txt_load_old_game))){
-            songs = sharedPreference.getOldSongs(getContext());
+            songs = sharedPreference.getOldSongs();
         } else {
             Log.e(TAG, "Unexpected game type given");
         }
@@ -75,8 +75,8 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
         String songNum = song.getNumber();
         Toast.makeText(activity, song.showSong(), Toast.LENGTH_SHORT).show();
         //save these values to shared preferences.
-        sharedPreference.saveCurrentSong(activity.getApplicationContext(), song);
-        sharedPreference.saveCurrentSongNumber(activity.getApplicationContext(), songNum);
+        sharedPreference.saveCurrentSong(song);
+        sharedPreference.saveCurrentSongNumber(songNum);
 
         //close the fragment.
         getFragmentManager().popBackStackImmediate();

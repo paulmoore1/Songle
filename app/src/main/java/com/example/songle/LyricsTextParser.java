@@ -9,19 +9,11 @@ package com.example.songle;
 import android.content.Context;
 import android.util.Log;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 
@@ -29,7 +21,7 @@ import java.util.Scanner;
 public class LyricsTextParser {
     public static final String TAG = "LyricsTextParser";
     private Context context;
-    private SharedPreference sharedPreference = new SharedPreference();
+    private SharedPreference sharedPreference;
     private String songNumber;
     private int currentLineNum = 1;
     private HashMap<String, ArrayList<String>> lyrics;
@@ -40,6 +32,7 @@ public class LyricsTextParser {
         Log.d(TAG, "Lyrics Text Parser created");
         this.lyrics = new HashMap<String, ArrayList<String>>();
         this.context = context;
+        this.sharedPreference = new SharedPreference(context);
         this.songNumber = songNumber;
         this.sizes = new ArrayList<>(20);
     }
@@ -100,7 +93,7 @@ public class LyricsTextParser {
         lyrics.put("NUMBER", sizes);
         //TODO store number correctly
         Log.d(TAG, "Lyrics saved");
-        //sharedPreference.saveLyrics(context, lyrics);
+        sharedPreference.saveLyrics(lyrics, songNumber);
         //sharedPreference.saveLyricDimensions(context, sizes);
 
 
