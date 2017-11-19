@@ -1,5 +1,6 @@
 package com.example.songle;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
@@ -22,9 +23,9 @@ import java.util.List;
  */
 
 public class SharedPreference {
-    private Context context;
-    private SharedPreferences settings;
-    private SharedPreferences.Editor editor;
+    private final Context context;
+    private final SharedPreferences settings;
+    private final SharedPreferences.Editor editor;
     private static final String TAG = "SharedPreference";
     private static final String PREFS_NAME = "SONGLE_APP";
     private static final String SONGS = "Songs";
@@ -35,7 +36,6 @@ public class SharedPreference {
     private static final String LYRICS_3 = "Lyrics3";
     private static final String LYRICS_4 = "Lyrics4";
     private static final String LYRIC_STATUS = "LyricStatus";
-    private static final String LYRIC_SIZE = "LyricSize";
     private static final String NEXT_LYRIC_LOCATION = "NextLyricLocation";
     private static final String SONG_SIZES = "SongSizes";
     private static final String MAP_1 = "Map1";
@@ -53,6 +53,7 @@ public class SharedPreference {
     private static final String CURRENT_SONG_NUMBER = "CurrentSongNumber";
     private static final String CURRENT_DIFFICULTY_LEVEL = "CurrentDifficultyLevel";
 
+    @SuppressLint("CommitPrefEdits")
     public SharedPreference(Context context){
         super();
         this.context = context;
@@ -62,11 +63,13 @@ public class SharedPreference {
 
     //used so that a listener can effectively be registerd and unregistered without needing
     //a separate sharedPreferences object.
-    public void registerOnSharedPreferenceChangedListener(SharedPreferences.OnSharedPreferenceChangeListener listener){
+    public void registerOnSharedPreferenceChangedListener(
+            SharedPreferences.OnSharedPreferenceChangeListener listener){
         settings.registerOnSharedPreferenceChangeListener(listener);
     }
 
-    public void unregisterOnSharedPreferenceChangedListener(SharedPreferences.OnSharedPreferenceChangeListener listener){
+    public void unregisterOnSharedPreferenceChangedListener(
+            SharedPreferences.OnSharedPreferenceChangeListener listener){
         settings.unregisterOnSharedPreferenceChangeListener(listener);
     }
 
@@ -95,22 +98,28 @@ public class SharedPreference {
 
     /**
      * Update song status accordingly (will be "N" automatically so don't input that)
-     * @param song
-     * @param status - must be "I" (incomplete) or "C" complete
+     * @param songNumber song number to update
+     * @param status - must be "N" (not complete), "I" (incomplete) or "C" complete
      */
-    public void saveSongStatus(Song song, String status){
+    public void saveSongStatus(String songNumber, String status){
         Log.d(TAG, "saveSongStatus called");
         ArrayList<Song> songs = getAllSongs();
-
+        //Check there is a list of songs
         if (songs == null){
             Log.e(TAG, "No songs found when trying to update status");
+            return;
+        }
+        Song song = getSong(songNumber, songs);
+        //Check the song is actually there
+        if (song == null){
+            Log.e(TAG, "Song number not found in songs list");
             return;
         }
 
         //update the song's status
         song.setStatus(status);
         //find where in the array list the song belongs. Subtract 1 since the first song is 01
-        int targetNum = Integer.parseInt(song.getNumber()) - 1;
+        int targetNum = Integer.parseInt(songNumber) - 1;
         //update the songs list
         songs.set(targetNum, song);
 
@@ -125,9 +134,20 @@ public class SharedPreference {
 
     }
 
+    private Song getSong(String songNumber, ArrayList<Song> songs){
+        int size = songs.size();
+        int index = Integer.parseInt(songNumber) - 1;
+        if (index < size){
+            return songs.get(index);
+        } else{
+            Log.e(TAG, "Tried to access song #" + songNumber + "in array of size " + size);
+            return null;
+        }
+    }
+
     public ArrayList<Song> getAllSongs(){
         Log.d(TAG, "getAllSongs called");
-        List<Song> songs = new ArrayList<Song>();
+        List<Song> songs;
         if (settings.contains(SONGS)){
             String jsonSongs = settings.getString(SONGS, null);
             Gson gson = new Gson();
@@ -151,8 +171,11 @@ public class SharedPreference {
             Gson gson = new Gson();
             Type type = new TypeToken<List<Song>>(){}.getType();
             songs = gson.fromJson(jsonSongs, type);
+            if (songs == null) {
+                Log.e(TAG, "No songs found");
+                return null;
+            }
             Log.d(TAG, "Full list of songs: " + songs.toString());
-
             //remove all songs which have not been started, so only complete or incomplete ones are returned.
             Iterator<Song> iter = songs.iterator();
             while (iter.hasNext()){
@@ -237,7 +260,7 @@ public class SharedPreference {
 
     public Song getCurrentSong(){
         Log.d(TAG, "getCurrentSong called");
-        Song song = null;
+        Song song;
 
         if (settings.contains(CURRENT_SONG)){
             String jsonSongs = settings.getString(CURRENT_SONG, null);
@@ -252,7 +275,7 @@ public class SharedPreference {
 
     /**
      * Saves a list of placemarks for a map to the SharedPreferences
-     * @param placemarks
+     * @param placemarks the placemarks to save
      * @param mapNumber - the map number that should be saved to
      * @param songNumber - the song number of this map
      */
@@ -261,24 +284,30 @@ public class SharedPreference {
         Gson gson = new Gson();
         String jsonPlacemarks = gson.toJson(placemarks);
 
-        if (mapNumber.equals("1")){
-            editor.putString(MAP_1, jsonPlacemarks);
-            editor.putString(MAP_1_NUM, songNumber);
-        } else if (mapNumber.equals("2")) {
-            editor.putString(MAP_2, jsonPlacemarks);
-            editor.putString(MAP_2_NUM, songNumber);
-        } else if (mapNumber.equals("3")) {
-            editor.putString(MAP_3, jsonPlacemarks);
-            editor.putString(MAP_3_NUM, songNumber);
-        } else if (mapNumber.equals("4")) {
-            editor.putString(MAP_4, jsonPlacemarks);
-            editor.putString(MAP_4_NUM, songNumber);
-        } else if (mapNumber.equals("5")) {
-            editor.putString(MAP_5, jsonPlacemarks);
-            editor.putString(MAP_5_NUM, songNumber);
-        } else {
-            Log.e(TAG, "Unexpected number received in maps");
-            return;
+        switch (mapNumber) {
+            case "1":
+                editor.putString(MAP_1, jsonPlacemarks);
+                editor.putString(MAP_1_NUM, songNumber);
+                break;
+            case "2":
+                editor.putString(MAP_2, jsonPlacemarks);
+                editor.putString(MAP_2_NUM, songNumber);
+                break;
+            case "3":
+                editor.putString(MAP_3, jsonPlacemarks);
+                editor.putString(MAP_3_NUM, songNumber);
+                break;
+            case "4":
+                editor.putString(MAP_4, jsonPlacemarks);
+                editor.putString(MAP_4_NUM, songNumber);
+                break;
+            case "5":
+                editor.putString(MAP_5, jsonPlacemarks);
+                editor.putString(MAP_5_NUM, songNumber);
+                break;
+            default:
+                Log.e(TAG, "Unexpected number received in maps");
+                return;
         }
         editor.apply();
 
@@ -287,26 +316,32 @@ public class SharedPreference {
     public ArrayList<Placemark> getMap(String num){
         List<Placemark> placemarks;
         String targetMap;
-        if (num.equals("1")){
-            targetMap = MAP_1;
-        } else if (num.equals("2")){
-            targetMap = MAP_2;
-        } else if (num.equals("3")){
-            targetMap = MAP_3;
-        } else if (num.equals("4")){
-            targetMap = MAP_4;
-        } else if (num.equals("5")){
-            targetMap = MAP_5;
-        } else {
-            Log.e(TAG, "Unexpected number requested");
-            return null;
+        switch (num) {
+            case "1":
+                targetMap = MAP_1;
+                break;
+            case "2":
+                targetMap = MAP_2;
+                break;
+            case "3":
+                targetMap = MAP_3;
+                break;
+            case "4":
+                targetMap = MAP_4;
+                break;
+            case "5":
+                targetMap = MAP_5;
+                break;
+            default:
+                Log.e(TAG, "Unexpected number requested");
+                return null;
         }
         if (settings.contains(targetMap)){
             String jsonPlacemarks = settings.getString(targetMap, null);
             Gson gson = new Gson();
             Placemark[] placemarksArray = gson.fromJson(jsonPlacemarks, Placemark[].class);
             placemarks = Arrays.asList(placemarksArray);
-            placemarks = new ArrayList<Placemark>(placemarks);
+            placemarks = new ArrayList<>(placemarks);
             return (ArrayList<Placemark>) placemarks;
 
         } else {
@@ -316,31 +351,76 @@ public class SharedPreference {
     }
 
     /**
-     * Returns true if the song number is already in the lyrics, false otherwise
-     * @param songNumber
-     * @return
+     * Get the song number stored in the map at a certain number from 1-5
+     * @param mapNumber takes values 1-5
+     * @return song number stored in that map as an integer.
      */
-    public boolean checkLyricSongNumberStatus(String songNumber){
-        Gson gson = new Gson();
-        // if there is no lyric status object already stored, make one
-        if (!settings.contains(LYRIC_STATUS)){
-            ArrayList<Integer> statuses = new ArrayList<Integer>();
-            for (int i = 0; i < 5; i++){
-                statuses.add(0);
-            }
-            String jsonStatuses = gson.toJson(statuses);
-            editor.putString(LYRIC_STATUS, jsonStatuses);
-            //false since the statuses must have been empty
-            return false;
+    private int getMapsSongNumber(int mapNumber){
+        String songNumber = "";
+        String targetMapNumber;
+        //TODO check if a switch works too - says variable not initialised
+        /*
+        switch(mapNumber){
+            case 1:
+                targetMapNumber = MAP_1_NUM;
+            case 2:
+                targetMapNumber = MAP_2_NUM;
+            case 3:
+                targetMapNumber = MAP_3_NUM;
+            case 4:
+                targetMapNumber = MAP_4_NUM;
+            case 5:
+                targetMapNumber = MAP_5_NUM;
+        }*/
+        if (mapNumber == 1){
+            targetMapNumber = MAP_1_NUM;
+        } else if (mapNumber == 2){
+            targetMapNumber = MAP_2_NUM;
+        } else if (mapNumber == 3){
+            targetMapNumber = MAP_3_NUM;
+        } else if (mapNumber == 4){
+            targetMapNumber = MAP_4_NUM;
+        } else if (mapNumber == 5){
+            targetMapNumber = MAP_5_NUM;
+        } else {
+            Log.e(TAG, "Unexpected number requested: " + mapNumber);
+            return 0;
         }
-        // there is a lyric status object already
-        else {
-            ArrayList<Integer> currentStatuses = getLyricStatuses();
-            int target = Integer.parseInt(songNumber);
-            //check if the song number is already in the statuses
-            if (currentStatuses.contains(target)) return true;
-            else return false;
+        if (settings.contains(targetMapNumber)){
+            //return 0 as default to indicate no song is there
+            songNumber = settings.getString(targetMapNumber, "0");
         }
+        return Integer.parseInt(songNumber);
+    }
+
+    /**
+     * Checks that all the maps for a song are correct
+     * @param songNumber - target song number
+     * @return true if all the maps for that song are stored; false otherwise
+     */
+    public boolean checkMaps(String songNumber){
+        //convert to integer for easy comparison
+        int songNum = Integer.parseInt(songNumber);
+        boolean result = true;
+        for (int i = 1; i < 6; i++){
+            //result will only remain true if all the maps had the song number
+            result = result && (getMapsSongNumber(i) == songNum);
+        }
+        return result;
+    }
+
+
+
+    /**
+     * Check if the lyrics for a certain song are stored.
+     * @param songNumber - number of song being checked
+     * @return true if the song is stored in the lyrics, false otherwise
+     */
+    public boolean checkLyricsStored(String songNumber){
+        ArrayList<Integer> currentStatuses = getLyricStatuses();
+        int target = Integer.parseInt(songNumber);
+        //check if the song number is already in the statuses
+        return currentStatuses.contains(target);
     }
 
     /**
@@ -349,9 +429,8 @@ public class SharedPreference {
      */
     public boolean willOverwrite(){
         ArrayList<Integer> currentStatuses = getLyricStatuses();
-        //at least one status is zero, so that will be picked.
-        if (currentStatuses.contains(0)) return false;
-        else return true;
+        //true if there are no zeros in the statuses
+        return !currentStatuses.contains(0);
     }
 
     /**
@@ -371,6 +450,18 @@ public class SharedPreference {
     }
 
     private ArrayList<Integer> getLyricStatuses(){
+        // if there is no lyric status object already stored, make one
+        if (!settings.contains(LYRIC_STATUS)){
+            ArrayList<Integer> statuses = new ArrayList<>();
+            for (int i = 0; i < 5; i++){
+                statuses.add(0);
+            }
+            Gson gson = new Gson();
+            String jsonStatuses = gson.toJson(statuses);
+            editor.putString(LYRIC_STATUS, jsonStatuses);
+            //return empty list since the statuses must have been empty
+            return statuses;
+        }
         Gson gson = new Gson();
         String jsonCurrentStatus = settings.getString(LYRIC_STATUS, null);
         Type type = new TypeToken<ArrayList<Integer>>(){}.getType();
@@ -382,40 +473,48 @@ public class SharedPreference {
         String jsonStatuses = gson.toJson(statuses);
         editor.putString(LYRIC_STATUS, jsonStatuses);
         editor.apply();
-
     }
 
 
-    public int getNextLyricLocation(){
-        //if there was no previously stored location, return 1 (and save this)
+    private int getNextLyricLocation(){
+        //if there was no previously stored location, return 0 (and save)
         if (!settings.contains(NEXT_LYRIC_LOCATION)) {
-            editor.putInt(NEXT_LYRIC_LOCATION, 1);
+            editor.putInt(NEXT_LYRIC_LOCATION, 0);
             editor.apply();
-            return 1;
+            return 0;
         }
         else {
-            int prevLocation = settings.getInt(NEXT_LYRIC_LOCATION, 1);
+            int prevLocation = settings.getInt(NEXT_LYRIC_LOCATION, 0);
             ArrayList<Integer> currentStatuses = getLyricStatuses();
-            // Check if there are any empty spaces in the lyrics marked by 0 in the status
-            // Add 1 since we start with 1.
-            int possibleEmptyLocation = currentStatuses.indexOf(0) + 1;
+            // Check if there are any empty spaces in the lyrics (marked by 0)
+            int possibleEmptyLocation = currentStatuses.indexOf(0);
             //no empty spots, return the default next location
-            if (possibleEmptyLocation == 0) return prevLocation;
-            //empty spot at index + 1, return this
+            if (possibleEmptyLocation == -1) return prevLocation;
+            //empty spot, return this
             else return possibleEmptyLocation;
 
         }
     }
 
-    public void incrementNextLyricLocation(){
-        int prevLocation = settings.getInt(NEXT_LYRIC_LOCATION, 1);
-        if (prevLocation < 5){
+    /**
+     * Get the song stored at a certain location
+     * @param location takes on values from 0-4 inclusive
+     * @return the integer of the song number there.
+     */
+    private int getSongAtLyricLocation(int location){
+        ArrayList<Integer> statuses = getLyricStatuses();
+        return statuses.get(location);
+    }
+
+    private void incrementNextLyricLocation(){
+        int prevLocation = settings.getInt(NEXT_LYRIC_LOCATION, 0);
+        if (prevLocation < 4){
             int newLocation = prevLocation+1;
             editor.putInt(NEXT_LYRIC_LOCATION, newLocation);
             editor.apply();
-        } else if (prevLocation == 5){
+        } else if (prevLocation == 4){
             //reset to 1
-            editor.putInt(NEXT_LYRIC_LOCATION, 1);
+            editor.putInt(NEXT_LYRIC_LOCATION, 0);
             editor.apply();
         } else {
             Log.e(TAG, "Unexpected Location found: " + prevLocation);
@@ -424,77 +523,77 @@ public class SharedPreference {
     }
 
     /**
-     * Stores the lyrics file. If there is already a lyrics file, overrides it.
-     * @param lyrics
+     * Stores the lyrics file.
+     * If there is already a lyrics file where it needs to store, overrides it.
+     * @param lyrics the lyrics to store
+     * @param songNumber the song number for those lyrics
      */
     public void saveLyrics(HashMap<String, ArrayList<String>> lyrics, String songNumber){
         Gson gson = new Gson();
         String jsonLyrics = gson.toJson(lyrics);
 
         int nextLyricLocation = getNextLyricLocation();
+
+        int prevSongNumber = getSongAtLyricLocation(nextLyricLocation);
+        //if there was a song already there, erase it
+        if(prevSongNumber != 0) {
+            eraseLyrics(String.valueOf(prevSongNumber));
+        }
+
         //save in the next location indicated
         switch(nextLyricLocation) {
-            case 1:
+            case 0:
                 editor.putString(LYRICS_0, jsonLyrics);
-            case 2:
+            case 1:
                 editor.putString(LYRICS_1, jsonLyrics);
-            case 3:
+            case 2:
                 editor.putString(LYRICS_2, jsonLyrics);
-            case 4:
+            case 3:
                 editor.putString(LYRICS_3, jsonLyrics);
-            case 5:
+            case 4:
                 editor.putString(LYRICS_4, jsonLyrics);
         }
         editor.apply();
-
-        //update the statuses with the song number to indicate that the song is in there
-        String jsonCurrentStatus = settings.getString(LYRIC_STATUS, null);
-        if (jsonCurrentStatus != null) {
-            Type type = new TypeToken<ArrayList<Integer>>() {
-            }.getType();
-            ArrayList<Integer> currentStatuses = gson.fromJson(jsonCurrentStatus, type);
-            //subtract 1 since the next location starts at 1, not 0
-            currentStatuses.add(nextLyricLocation - 1, Integer.parseInt(songNumber));
-            //add one to the next location
-            incrementNextLyricLocation();
-        } else {
-
-        }
-
+        //update the statuses to reflect the new song added
+        ArrayList<Integer> statuses = getLyricStatuses();
+        statuses.set(nextLyricLocation, Integer.parseInt(songNumber));
+        saveLyricStatuses(statuses);
+        //move to the next default location
+        incrementNextLyricLocation();
     }
 
 
     public HashMap<String, ArrayList<String>> getLyrics(String songNumber){
         HashMap<String, ArrayList<String>> lyrics;
         ArrayList<Integer> currentLyricStatuses = getLyricStatuses();
-        int songNum = Integer.parseInt(songNumber);
-        int lyricLocation = currentLyricStatuses.indexOf(songNum) + 1;
+        int lyricLocation = currentLyricStatuses.indexOf(Integer.parseInt(songNumber));
         //return null if the song is not there.
-        if (lyricLocation == 0) {
+        if (lyricLocation == -1) {
             Log.e(TAG, "Song lyrics not found for song #" + songNumber);
             return null;
         }
         Gson gson = new Gson();
-        String jsonLyrics = null;
+        String jsonLyrics;
         Type type = new TypeToken<HashMap<String, ArrayList<String>>>(){}.getType();
+        //TODO fix switch
         switch(lyricLocation){
-            case 1:
+            case 0:
                 jsonLyrics = settings.getString(LYRICS_0, null);
                 lyrics = gson.fromJson(jsonLyrics, type);
                 return lyrics;
-            case 2:
+            case 1:
                 jsonLyrics = settings.getString(LYRICS_1, null);
                 lyrics = gson.fromJson(jsonLyrics, type);
                 return lyrics;
-            case 3:
+            case 2:
                 jsonLyrics = settings.getString(LYRICS_2, null);
                 lyrics = gson.fromJson(jsonLyrics, type);
                 return lyrics;
-            case 4:
+            case 3:
                 jsonLyrics = settings.getString(LYRICS_3, null);
                 lyrics = gson.fromJson(jsonLyrics, type);
                 return lyrics;
-            case 5:
+            case 4:
                 jsonLyrics = settings.getString(LYRICS_4, null);
                 lyrics = gson.fromJson(jsonLyrics, type);
                 return lyrics;
@@ -509,31 +608,37 @@ public class SharedPreference {
     }
 
     public void eraseLyrics(String songNumber){
-        ArrayList<Integer> currentLyricStatuses = getLyricStatuses();
+        //indicate the song as not started (it's erased)
+        saveSongStatus(songNumber, "N");
+
+        //update statuses
+        ArrayList<Integer> currentStatuses = getLyricStatuses();
         int songNum = Integer.parseInt(songNumber);
-        int lyricLocation = currentLyricStatuses.indexOf(songNum) + 1;
+        int lyricLocation = currentStatuses.indexOf(songNum);
         //return if the song is already not there.
-        if (lyricLocation == 0) return;
+        if (lyricLocation == -1) return;
 
         //song was in statuses, update to 0.
-        currentLyricStatuses.set(lyricLocation - 1, 0);
-        saveLyricStatuses(currentLyricStatuses);
+        currentStatuses.set(lyricLocation, 0);
+        saveLyricStatuses(currentStatuses);
+
 
         switch(lyricLocation){
-            case 1:
+            case 0:
                 editor.putString(LYRICS_0, null);
-            case 2:
+            case 1:
                 editor.putString(LYRICS_1, null);
-            case 3:
+            case 2:
                 editor.putString(LYRICS_2, null);
-            case 4:
+            case 3:
                 editor.putString(LYRICS_3, null);
-            case 5:
+            case 4:
                 editor.putString(LYRICS_4, null);
             default:
                 Log.e(TAG, "Unexpected location erased: " + lyricLocation);
 
         }
+
 
 
 
@@ -562,27 +667,4 @@ public class SharedPreference {
         }
     }
 
-
-    public String getMapsSongNumber(String mapNumber){
-        String songNumber = "";
-        String targetMapNumber = null;
-        if (mapNumber.equals("1")){
-            targetMapNumber = MAP_1_NUM;
-        } else if (mapNumber.equals("2")){
-            targetMapNumber = MAP_2_NUM;
-        } else if (mapNumber.equals("3")){
-            targetMapNumber = MAP_3_NUM;
-        } else if (mapNumber.equals("4")){
-            targetMapNumber = MAP_4_NUM;
-        } else if (mapNumber.equals("5")){
-            targetMapNumber = MAP_5_NUM;
-        } else {
-            Log.e(TAG, "Unexpected number requested: " + mapNumber);
-            return null;
-        }
-        if (settings.contains(targetMapNumber)){
-            songNumber = settings.getString(targetMapNumber, "");
-        }
-        return songNumber;
-    }
 }

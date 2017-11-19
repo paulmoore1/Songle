@@ -28,13 +28,15 @@
     <string name="msg_data_required">A data connection is required!</string>
     <string name="msg_data_warning">Without data you can only continue your most recent game. Continue?</string>
     <string name="txt_internet_settings">Internet Settings</string>
+    <string name="download_error">Download Error</string>
+    <string name="msg_download_error">An error occurred while downloading. Please check your internet connection and try again.</string>
 
 
     <!-- Strings related to Loading error dialogs -->
     <string name="loading_error">Loading Error</string>
     <string name="msg_game_not_found">Game could not be found! Please start a new game.</string>
     <string name="msg_lyrics_not_found">Lyrics file not found! Please connect to the internet.</string>
-    <string name="msg_game_already_completed">Game already completed! If you want to play it again, please connect to the internet!</string>
+    <string name="msg_game_already_completed">Game already completed! If you want to play it again, please connect to the internet.</string>
 
     <!--Strings for game confirmation dialogs-->
     <string name="confirm_game_settings">Confirm settings</string>

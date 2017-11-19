@@ -19,7 +19,6 @@ import java.util.List;
 public class XmlSongParser {
     private static final String TAG = "XmlSongParser";
     private SharedPreference sharedPreference;
-    private String oldTimestamp;
     Context c;
     //Don't use namespaces
     private static final String ns = null;
@@ -29,7 +28,7 @@ public class XmlSongParser {
         sharedPreference = new SharedPreference(context);
     }
 
-    public List<Song> parse(InputStream in, String oldTimestamp) throws XmlPullParserException,
+    public List<Song> parse(InputStream in) throws XmlPullParserException,
             IOException{
         try {
             Log.d(TAG, "parse called");
@@ -37,7 +36,6 @@ public class XmlSongParser {
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(in, null);
             parser.nextTag();
-            this.oldTimestamp = oldTimestamp;
             return readSongs(parser);
         } finally {
             in.close();
@@ -45,19 +43,18 @@ public class XmlSongParser {
         }
     }
 
-    // gets the value of the song which comes last in the songs list
-    // won't use here unless we have time - could save on downloading entire XML
-    public int lastSongNumber(List<Song> songs){
-        Song lastSong = songs.get(songs.size() - 1);
-        int lastNum = Integer.parseInt(lastSong.getNumber());
-        return lastNum;
-    }
-
     private List<Song> readSongs(XmlPullParser parser) throws
             XmlPullParserException, IOException{
         Log.d(TAG, "readSongs called");
         String timestamp = readTimestamp(parser);
         Log.d(TAG, "timestamp: " + timestamp);
+
+        //get oldTimestamp to compare and check.
+        String oldTimestamp = sharedPreference.getMostRecentTimestamp();
+        if (oldTimestamp == null){
+            oldTimestamp = c.getString(R.string.default_timestamp);
+        }
+
         Log.d(TAG, "Comparing with old timestamp: " + oldTimestamp);
         if (timestamp.equals(oldTimestamp)){
             Log.d(TAG, "Matches old timestamp. Stop parsing");

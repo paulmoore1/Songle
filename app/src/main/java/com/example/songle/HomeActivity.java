@@ -85,7 +85,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
             //Log.d(TAG, "Waiting for download");
         }
 
-        //now ready to start new activity
+        //now ready to start game settings
         Intent intent = new Intent(this, GameSettingsActivity.class);
         //send the game type with the intent so the settings activity loads correctly.
         intent.putExtra("GAME_TYPE", getString(R.string.txt_new_game));
@@ -103,7 +103,11 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
             if (song.isSongIncomplete()){
                 String songNumber = song.getNumber();
                 //check lyrics and map are already downloaded and stored.
-                HashMap<String, ArrayList<String>> lyrics = sharedPreference.getLyrics(songNumber);
+                HashMap<String, ArrayList<String>> lyrics = null;
+                if(sharedPreference.checkLyricsStored(songNumber)){
+                    lyrics = sharedPreference.getLyrics(songNumber);
+                }
+
                 List<Placemark> placemarks = sharedPreference.getMap(diffLevel);
                 if (lyrics != null && placemarks != null){
                     //have lyrics file and song in place, can load MainGameActivity with this

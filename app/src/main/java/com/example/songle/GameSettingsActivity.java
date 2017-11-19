@@ -68,6 +68,11 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.select_game_settings);
         sharedPreference = new SharedPreference(getApplicationContext());
+        //check if there was an error when downloading previously so the activity had to be reset
+        boolean error = getIntent().getBooleanExtra("DOWNLOAD_ERROR", false);
+        if (error){
+            sendDownloadErrorDialog();
+        }
 
         buttonSelectSong = findViewById(R.id.btn_select_song);
         buttonSelectDifficulty = findViewById(R.id.btn_select_difficulty);
@@ -235,19 +240,30 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     }
 
     public void sendConfirmGameDialog(final String chosenSongNumber, final String chosenDiff){
-        String beginQuestion = getString(R.string.msg_begin_question);
-        String beginMessage = "Chosen song number: " + chosenSongNumber + "\nChosen difficulty level: " +
-                chosenDiff + "\n" + beginQuestion;
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         adb.setTitle(R.string.confirm_game_settings);
+        String beginQuestion = getString(R.string.msg_begin_question);
+        String beginMessage;
+        //if the lyrics are not already stored and are full, alert the user as this will overwrite a previous game
+        if(!sharedPreference.checkLyricsStored(chosenSongNumber)
+                &&sharedPreference.willOverwrite()){
+            String overwrittenSongNumber = sharedPreference.nextSongOverwritten();
+            beginMessage = "Chosen song number: " + chosenSongNumber +
+                    "\nChosen difficulty level: " + chosenDiff +
+                    "\nThis will overwrite your saved game with song #" + overwrittenSongNumber +
+                    "\n" + beginQuestion;
+        } else {
+            beginMessage = "Chosen song number: " + chosenSongNumber + "\nChosen difficulty level: " +
+                    chosenDiff + "\n" + beginQuestion;
+        }
+
+
         adb.setMessage(beginMessage);
         //if user is happy with settings, start the game
         adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-
                 startGame();
-
 
             }
         }).setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
@@ -263,18 +279,20 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     }
 
     public void startGame(){
-        //save this song to shared preferences as it has been definitely chosen.
-        Song currentSong = sharedPreference.getCurrentSong();
-        sharedPreference.saveSongStatus(currentSong, "I");
-        setContentView(R.layout.loading);
         //check for internet connection again
         boolean networkOn = isNetworkAvailable(this);
         if (!networkOn){
             sendNetworkErrorDialog();
             return;
         }
+        //save this song status to shared preferences as it has been definitely chosen.
+        String currentSongNumber = sharedPreference.getCurrentSongNumber();
+        sharedPreference.saveSongStatus(currentSongNumber, "I");
+        setContentView(R.layout.loading);
+
+        //use this just in case it gets stuck downloading for more than 10s - resets loading screen
         Handler handler = new Handler();
-        handler.postDelayed(resetSettingsActivity, 100000);
+        handler.postDelayed(resetSettingsActivity, 10000);
         String mUrlStringLyrics = getString(R.string.url_general) +
                 songNumber + "/words.txt";
 
@@ -307,7 +325,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         //send the ifficulty
 
         intent.putExtra("SONG_DIFFICULTY", diffLevel);
-
+        //all data loaded, cancel handler
+        handler.removeCallbacks(resetSettingsActivity);
 
         //finished downloading, unregister.
        // this.unregisterReceiver(receiver);
@@ -318,6 +337,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         @Override
         public void run() {
             Intent intent = new Intent(getApplicationContext(), GameSettingsActivity.class);
+            intent.putExtra("DOWNLOAD_ERROR", true);
             startActivity(intent);
         }
     };
@@ -389,6 +409,21 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             }
         });
         adb.setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
+    }
+
+    private void sendDownloadErrorDialog(){
+        //if there was an error, alert the user and ask them to try again.
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.download_error);
+        adb.setMessage(R.string.msg_download_error);
+        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
 

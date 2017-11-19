@@ -47,7 +47,6 @@ public class NetworkFragment extends Fragment {
     private DownloadXmlTask mDownloadXmlTask;
     private DownloadKmlTask mDownloadKmlTask;
     private String mUrlString;
-    private String mostRecentXMLTimestamp;
     private String downloadType;
 
     /**
@@ -177,7 +176,7 @@ public class NetworkFragment extends Fragment {
      */
     private class DownloadLyricsTask extends AsyncTask<String, Integer, String> {
         private String TAG = DownloadLyricsTask.class.getSimpleName();
-        private SharedPreference sharedPreferenceDownloadLyrics =
+        private SharedPreference sharedPreferenceLyrics =
                 new SharedPreference(getActivity().getApplicationContext());
 
         /**
@@ -209,7 +208,7 @@ public class NetworkFragment extends Fragment {
             } catch (IOException e){
                 Log.e(TAG, "Unable to load content");
             }
-            if (result.equals("Parsed")){
+            if (result != null && result.equals("Parsed")){
                 onPostExecute("Updated");
                 return "Lyrics updated";
             } else {
@@ -221,10 +220,11 @@ public class NetworkFragment extends Fragment {
 
         private String loadLyricsFromNetwork(String urlString) throws
         IOException{
-            String songNumber = sharedPreferenceDownloadLyrics.getCurrentSongNumber(
+            String songNumber = sharedPreferenceLyrics.getCurrentSongNumber(
             );
 
-            Log.d(TAG,"loadLyrisFromNetwork called");
+            Log.d(TAG,"loadLyricsFromNetwork called");
+            //TODO try removing
             InputStream stream = null;
             LyricsTextParser ltp = new LyricsTextParser(getActivity().getApplicationContext(), songNumber);
             try {
@@ -267,6 +267,9 @@ public class NetworkFragment extends Fragment {
          */
         @Override
         protected void onCancelled(String result) {
+            Log.d(TAG, "onCancelled called");
+            cancelDownload();
+            mCallback.finishDownloading();
         }
 
         /**
@@ -296,7 +299,9 @@ public class NetworkFragment extends Fragment {
 
     private class DownloadXmlTask extends AsyncTask<String, Void, String> {
         private String TAG = DownloadXmlTask.class.getSimpleName();
-        private SharedPreference sharedPreferenceDownloadXml = new SharedPreference(getActivity().getApplicationContext());
+        //separate Shared Preference object needed.
+        private SharedPreference sharedPreferenceXml =
+                new SharedPreference(getActivity().getApplicationContext());
 
         /**
          * Cancel background network operation if we do not have network connectivity.
@@ -318,23 +323,19 @@ public class NetworkFragment extends Fragment {
         @Override
         protected String doInBackground(String... urls){
             Log.d(TAG, "doInBackground called");
-            String timestamp = sharedPreferenceDownloadXml.getMostRecentTimestamp();
-            if (timestamp == null){
-                mostRecentXMLTimestamp = getString(R.string.default_timestamp);
-            }
             List<Song> songs;
             try {
                 songs = loadXmlFromNetwork(urls[0]);
-            } catch (IOException e){
-                Log.e(TAG,"Unable to load content. Check your network connection");
+            }catch (XmlPullParserException e){
+                Log.e(TAG,"Error parsing XML: " + e);
                 return null;
-            } catch (XmlPullParserException e){
-                Log.e(TAG,"Error parsing XML");
+            } catch (IOException e){
+                Log.e(TAG,"IO exception thrown: " + e);
                 return null;
             }
             //songs will not be null if the timestamp is new. In that case save the new songs list
             if (songs != null){
-                sharedPreferenceDownloadXml.saveSongs(songs);
+                sharedPreferenceXml.saveSongs(songs);
                 Log.d(TAG, "finished background task");
                 onPostExecute("Updated");
                 return "Songs updated";
@@ -354,7 +355,7 @@ public class NetworkFragment extends Fragment {
 
             try {
                 stream = downloadUrl(urlString);
-                songs = parser.parse(stream, mostRecentXMLTimestamp);
+                songs = parser.parse(stream);
             } catch(Exception e){
                 Log.e(TAG, "Exception: " + e);
             }
@@ -400,7 +401,8 @@ public class NetworkFragment extends Fragment {
 
     private class DownloadKmlTask extends AsyncTask<String, Void, String> {
         private String TAG = DownloadKmlTask.class.getSimpleName();
-        private SharedPreference sharedPreferenceDownloadKml =
+        //needs separate shared preferences
+        private SharedPreference sharedPreferenceKml =
                 new SharedPreference(getActivity().getApplicationContext());
 
         /**
@@ -425,7 +427,7 @@ public class NetworkFragment extends Fragment {
             Log.v(TAG, "Started loading KML in the background");
             Boolean allDownloadedCorrectly = true;
             String baseUrl = urls[0];
-            String songNumber = sharedPreferenceDownloadKml.getCurrentSongNumber();
+            String songNumber = sharedPreferenceKml.getCurrentSongNumber();
             for (int i = 1; i < 6; i++){
                 List<Placemark> placemarks = null;
                 String mapNumber = Integer.toString(i);
@@ -440,7 +442,7 @@ public class NetworkFragment extends Fragment {
                 }
                 if (placemarks != null){
                     Log.d(TAG, "Downloaded map#" + i);
-                    sharedPreferenceDownloadKml.saveMap(
+                    sharedPreferenceKml.saveMap(
                             placemarks, mapNumber, songNumber);
                 } else {
                     Log.e(TAG, "Error downloading maps");
