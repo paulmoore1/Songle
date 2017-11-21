@@ -42,6 +42,9 @@
     <string name="confirm_game_settings">Confirm settings</string>
     <string name="msg_begin_question">Do you want to begin?</string>
 
+    <!--String for requesting permission -->
+    <string name="msg_location_rationale">Access to your location is required so you can collect the words of the song. Please allow access for the app to work.</string>
+
     <!-- Strings for setting difficulty -->
     <string name="difficulty_insane">Insane</string>
     <string name="difficulty_hard">Hard</string>
@@ -69,6 +72,8 @@
     <string name="maps_tab">Find</string>
     <string name="words_tab">Words</string>
     <string name="guess_tab">Guess</string>
+    <string name="btn_guess">Guess</string>
+    <string name="msg_enter_guess">Enter your guess for the song\'s title!</string>
 
     <!-- Strings related to Settings -->
 
