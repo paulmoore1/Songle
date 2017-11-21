@@ -89,11 +89,16 @@ public class LyricsTextParser {
         } catch (IOException e){
             Log.e(TAG, "Tried to close stream, gave exception: " + e);
         }
+        ArrayList<String> songNumList = new ArrayList<>();
+        songNumList.add(songNumber);
+
         lyrics.put("SIZE", sizes);
-        lyrics.put("NUMBER", sizes);
-        //TODO store number correctly
-        Log.d(TAG, "Lyrics saved");
+        lyrics.put("NUMBER", songNumList);
+
         sharedPreference.saveLyrics(lyrics, songNumber);
+
+        Log.d(TAG, "Lyrics saved");
+
         //sharedPreference.saveLyricDimensions(context, sizes);
 
 

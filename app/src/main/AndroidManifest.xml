@@ -70,7 +70,8 @@
         <activity
             android:name=".MainGameActivity"
             android:label="@string/title_activity_main_game"
-            android:parentActivityName=".HomeActivity"></activity>
+            android:parentActivityName=".HomeActivity"
+            android:theme="@style/MyTheme.TranslucentNavigation"></activity>
     </application>
 
 </manifest>

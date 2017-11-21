@@ -121,7 +121,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
                 sendSelectDifficultyDialog();
             }
         });
-        //send a dialog if
+        //send a dialog if start game is clicked
         buttonStartGame.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -246,7 +246,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         String beginMessage;
         //if the lyrics are not already stored and are full, alert the user as this will overwrite a previous game
         if(!sharedPreference.checkLyricsStored(chosenSongNumber)
-                &&sharedPreference.willOverwrite()){
+                && sharedPreference.willOverwrite()){
             String overwrittenSongNumber = sharedPreference.nextSongOverwritten();
             beginMessage = "Chosen song number: " + chosenSongNumber +
                     "\nChosen difficulty level: " + chosenDiff +
@@ -293,38 +293,48 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         //use this just in case it gets stuck downloading for more than 10s - resets loading screen
         Handler handler = new Handler();
         handler.postDelayed(resetSettingsActivity, 10000);
-        String mUrlStringLyrics = getString(R.string.url_general) +
-                songNumber + "/words.txt";
 
-        mNetworkFragmentLyrics = NetworkFragment.getInstance(getSupportFragmentManager(),
-                mUrlStringLyrics);
-        Log.d(TAG, "Current context" + getApplicationContext().toString());
+        //check lyrics are stored - if not then download them
+        if (!sharedPreference.checkLyricsStored(songNumber)){
+            String mUrlStringLyrics = getString(R.string.url_general) +
+                    songNumber + "/words.txt";
+
+            mNetworkFragmentLyrics = NetworkFragment.getInstance(getSupportFragmentManager(),
+                    mUrlStringLyrics);
+
    /*     // Register BroadcastReceiver to track connection changes
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         NetworkReceiver receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);
 */
-        startLyricsDownload();
-        //do nothing further until download is finished
-        while (mDownloading){
+            startLyricsDownload();
+            //do nothing further until download is finished
+            while (mDownloading){
 
+            }
+            Log.d(TAG, "Lyrics downloaded");
+        } else {
+            Log.d(TAG, "Lyrics already stored");
         }
-        Log.d(TAG, "Lyrics downloaded");
 
-        String mUrlStringMaps = getString(R.string.url_general) + songNumber + "/map";
-        mNetworkFragmentMaps = NetworkFragment.getInstance(getSupportFragmentManager(),
-                mUrlStringMaps);
-        Log.d(TAG, "Started downloading Kml");
-        startMapsDownload();
-        //do nothing further until download is finished
-        while (mDownloading){
+        //check maps are stored - if not then download them.
+        if (!sharedPreference.checkMaps(songNumber)){
+            String mUrlStringMaps = getString(R.string.url_general) + songNumber + "/map";
+            mNetworkFragmentMaps = NetworkFragment.getInstance(getSupportFragmentManager(),
+                    mUrlStringMaps);
+            Log.d(TAG, "Started downloading Kml");
+            startMapsDownload();
+            //do nothing further until download is finished
+            while (mDownloading){
 
+            }
+            Log.d(TAG, "Maps downloaded");
+        } else {
+            Log.d(TAG, "Maps already stored");
         }
+
         //now ready to start game
         Intent intent = new Intent(GameSettingsActivity.this, MainGameActivity.class);
-        //send the ifficulty
-
-        intent.putExtra("SONG_DIFFICULTY", diffLevel);
         //all data loaded, cancel handler
         handler.removeCallbacks(resetSettingsActivity);
 

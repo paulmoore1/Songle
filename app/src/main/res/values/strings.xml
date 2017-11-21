@@ -65,6 +65,11 @@
     <string name="default_no_difficulty_selected">No difficulty selected yet.</string>
     <string name="default_no_song_selected">No song selected yet.</string>
 
+    <!--Strings for playing the game-->
+    <string name="maps_tab">Find</string>
+    <string name="words_tab">Words</string>
+    <string name="guess_tab">Guess</string>
+
     <!-- Strings related to Settings -->
 
     <!-- Example General settings -->

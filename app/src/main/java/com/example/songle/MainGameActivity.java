@@ -1,155 +1,196 @@
 package com.example.songle;
+//adapted from https://github.com/Suleiman19/Bottom-Navigation-Demo/blob/master/app/src/main/java/com/grafixartist/bottomnav/MainActivity.java
 
 
-import android.app.Activity;
-import android.app.ActionBar;
-import android.app.FragmentTransaction;
-
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.content.Intent;
-import android.support.v13.app.FragmentPagerAdapter;
-import android.support.v4.app.NavUtils;
-import android.support.v4.view.ViewPager;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
+import android.os.Handler;
+import android.support.annotation.ColorRes;
+import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDelegate;
+import android.support.v7.widget.Toolbar;
 
-import android.widget.TextView;
+import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
+import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
+import com.aurelhubert.ahbottomnavigation.notification.AHNotification;
 
-public class MainGameActivity extends Activity {
+public class MainGameActivity extends AppCompatActivity {
 
-    /**
-     * The {@link android.support.v4.view.PagerAdapter} that will provide
-     * fragments for each of the sections. We use a
-     * {@link FragmentPagerAdapter} derivative, which will keep every
-     * loaded fragment in memory. If this becomes too memory intensive, it
-     * may be best to switch to a
-     * {@link android.support.v13.app.FragmentStatePagerAdapter}.
-     */
-    private SectionsPagerAdapter mSectionsPagerAdapter;
+    private final int[] colors = {R.color.maps_tab, R.color.words_tab, R.color.guess_tab};
 
-    /**
-     * The {@link ViewPager} that will host the section contents.
-     */
-    private ViewPager mViewPager;
+    private Toolbar toolbar;
+    private NoSwipePager viewPager;
+    private AHBottomNavigation bottomNavigation;
+    private BottomBarAdapter pagerAdapter;
+
+    private boolean notificationVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        AppCompatDelegate.setDefaultNightMode(
+                AppCompatDelegate.MODE_NIGHT_AUTO);
+
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main_game);
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-        // Create the adapter that will return a fragment for each of the three
-        // primary sections of the activity.
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
+        setContentView(R.layout.main_game_screen);
 
-        // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.container);
-        mViewPager.setAdapter(mSectionsPagerAdapter);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        //noinspection ConstantConditions
+        getSupportActionBar().setTitle("Bottom Navigation");
 
 
-    }
+        setupViewPager();
 
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main_game, menu);
-        return true;
-    }
+//        final DummyFragment fragment = new DummyFragment();
+//        Bundle bundle = new Bundle();
+//        bundle.putInt("color", ContextCompat.getColor(this, colors[0]));
+//        fragment.setArguments(bundle);
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        switch (item.getItemId()){
-            case android.R.id.home:
-                NavUtils.navigateUpFromSameTask(this);
+//        getSupportFragmentManager()
+//                .beginTransaction()
+//                .add(R.id.frame, fragment, DummyFragment.TAG)
+//                .commit();
+
+        bottomNavigation = (AHBottomNavigation) findViewById(R.id.bottom_navigation);
+        setupBottomNavBehaviors();
+        setupBottomNavStyle();
+
+        createFakeNotification();
+
+        addBottomNavigationItems();
+        bottomNavigation.setCurrentItem(0);
+
+
+        bottomNavigation.setOnTabSelectedListener(new AHBottomNavigation.OnTabSelectedListener() {
+            @Override
+            public boolean onTabSelected(int position, boolean wasSelected) {
+//                fragment.updateColor(ContextCompat.getColor(MainActivity.this, colors[position]));
+
+                if (!wasSelected)
+                    viewPager.setCurrentItem(position);
+                //allow translucent scrolling for middle position only.
+                    if(position == 1) bottomNavigation.setTranslucentNavigationEnabled(true);
+                    else bottomNavigation.setTranslucentNavigationEnabled(false);
+
+                // remove notification badge
+                int lastItemPos = bottomNavigation.getItemsCount() - 1;
+                if (notificationVisible && position == lastItemPos)
+                    bottomNavigation.setNotification(new AHNotification(), lastItemPos);
                 return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    public void onBackPressed(){
-        Intent intent = new Intent(this, HomeActivity.class);
-        startActivity(intent);
-    }
-
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
-        /**
-         * The fragment argument representing the section number for this
-         * fragment.
-         */
-        private static final String ARG_SECTION_NUMBER = "section_number";
-
-        public PlaceholderFragment() {
-        }
-
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
-        public static PlaceholderFragment newInstance(int sectionNumber) {
-            PlaceholderFragment fragment = new PlaceholderFragment();
-            Bundle args = new Bundle();
-            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            fragment.setArguments(args);
-            return fragment;
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main_game, container, false);
-            TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-            textView.setText(getString(R.string.section_format, getArguments().getInt(ARG_SECTION_NUMBER)));
-            return rootView;
-        }
-    }
-
-    /**
-     * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
-     * one of the sections/tabs/pages.
-     */
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
-
-        public SectionsPagerAdapter(FragmentManager fm) {
-            super(fm);
-        }
-
-        @Override
-        public Fragment getItem(int position) {
-            // getItem is called to instantiate the fragment for the given page.
-            // Return a PlaceholderFragment (defined as a static inner class below).
-            return PlaceholderFragment.newInstance(position + 1);
-        }
-
-        @Override
-        public int getCount() {
-            // Show 3 total pages.
-            return 3;
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            switch (position) {
-                case 0:
-                    return "SECTION 1";
-                case 1:
-                    return "SECTION 2";
-                case 2:
-                    return "SECTION 3";
             }
-            return null;
-        }
+        });
+
     }
+
+    private void setupViewPager() {
+        viewPager = (NoSwipePager) findViewById(R.id.viewpager);
+        viewPager.setPagingEnabled(false);
+        pagerAdapter = new BottomBarAdapter(getSupportFragmentManager());
+
+        pagerAdapter.addFragments(createFragment(R.color.maps_tab));
+        pagerAdapter.addFragments(createFragment(R.color.words_tab));
+        pagerAdapter.addFragments(createFragment(R.color.guess_tab));
+
+        viewPager.setAdapter(pagerAdapter);
+    }
+
+    @NonNull
+    private DummyFragment createFragment(int color) {
+        DummyFragment fragment = new DummyFragment();
+        fragment.setArguments(passFragmentArguments(fetchColor(color)));
+        return fragment;
+    }
+
+    @NonNull
+    private Bundle passFragmentArguments(int color) {
+        Bundle bundle = new Bundle();
+        bundle.putInt("color", color);
+        return bundle;
+    }
+
+    private void createFakeNotification() {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                AHNotification notification = new AHNotification.Builder()
+                        .setText("1")
+                        .setBackgroundColor(Color.YELLOW)
+                        .setTextColor(Color.BLACK)
+                        .build();
+                // Adding notification to last item.
+
+                bottomNavigation.setNotification(notification, bottomNavigation.getItemsCount() - 1);
+
+                notificationVisible = true;
+            }
+        }, 1000);
+    }
+
+
+    public void setupBottomNavBehaviors() {
+//       bottomNavigation.setBehaviorTranslationEnabled(false);
+
+        /*
+        Before enabling this. Change MainActivity theme to MyTheme.TranslucentNavigation in
+        AndroidManifest.
+        Warning: Toolbar Clipping might occur. Solve this by wrapping it in a LinearLayout with a top
+        View of 24dp (status bar size) height.
+         */
+        bottomNavigation.setTranslucentNavigationEnabled(false);
+    }
+
+    /**
+     * Adds styling properties to {@link AHBottomNavigation}
+     */
+    private void setupBottomNavStyle() {
+        /*
+        Set Bottom Navigation colors. Accent color for active item,
+        Inactive color when its view is disabled.
+        Will not be visible if setColored(true) and default current item is set.
+         */
+        bottomNavigation.setDefaultBackgroundColor(Color.WHITE);
+        bottomNavigation.setAccentColor(fetchColor(R.color.maps_tab));
+        bottomNavigation.setInactiveColor(fetchColor(R.color.bottom_tab_item_resting));
+
+        // Colors for selected (active) and non-selected items.
+        bottomNavigation.setColoredModeColors(Color.WHITE,
+                fetchColor(R.color.bottom_tab_item_resting));
+
+        //  Enables Reveal effect
+        bottomNavigation.setColored(true);
+
+        //  Displays item Title always (for selected and non-selected items)
+        bottomNavigation.setTitleState(AHBottomNavigation.TitleState.ALWAYS_SHOW);
+    }
+
+
+    /**
+     * Adds (items) {@link AHBottomNavigationItem} to {@link AHBottomNavigation}
+     * Also assigns a distinct color to each Bottom Navigation item, used for the color ripple.
+     */
+    private void addBottomNavigationItems() {
+        AHBottomNavigationItem item1 = new AHBottomNavigationItem(R.string.maps_tab, R.drawable.ic_search_tab, colors[0]);
+        AHBottomNavigationItem item2 = new AHBottomNavigationItem(R.string.words_tab, R.drawable.ic_words_tab, colors[1]);
+        AHBottomNavigationItem item3 = new AHBottomNavigationItem(R.string.guess_tab, R.drawable.ic_guess_tab, colors[2]);
+
+        bottomNavigation.addItem(item1);
+        bottomNavigation.addItem(item2);
+        bottomNavigation.addItem(item3);
+    }
+
+
+    /**
+     * Simple facade to fetch color resource, so I avoid writing a huge line every time.
+     *
+     * @param color to fetch
+     * @return int color value.
+     */
+    private int fetchColor(@ColorRes int color) {
+        return ContextCompat.getColor(this, color);
+    }
+
 }
