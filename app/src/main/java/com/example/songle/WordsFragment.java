@@ -29,6 +29,8 @@ public class WordsFragment extends Fragment {
         super.onCreate(savedInstanceState);
         this.sharedPreference = new SharedPreference(getActivity().getApplicationContext());
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
+        String songNumber = sharedPreference.getCurrentSongNumber();
+        lyrics = sharedPreference.getLyrics(songNumber);
     }
 
 
@@ -45,7 +47,7 @@ public class WordsFragment extends Fragment {
 
     private String lyricsToString(){
         Log.d(TAG, "lyricsToString called");
-        ArrayList<String> sizes = lyrics.get("SIZES");
+        ArrayList<String> sizes = lyrics.get("SIZE");
         int numLines = sizes.size();
         StringBuilder sb = new StringBuilder("");
         for (int line = 1; line < numLines + 1; line++) {

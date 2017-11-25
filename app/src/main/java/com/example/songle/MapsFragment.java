@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -18,7 +19,11 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -35,9 +40,12 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.SphericalUtil;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Paul on 21/11/2017.
@@ -69,28 +77,47 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     private ArrayList<Placemark> placemarks;
     private String currentDiff;
     private String songNumber;
-    private static final BitmapDescriptor IC_UNCLASSIFIED = BitmapDescriptorFactory.fromResource(
-            R.drawable.marker_unclassified);
-    private static final BitmapDescriptor IC_BORING = BitmapDescriptorFactory.fromResource(
-            R.drawable.marker_boring);
-    private static final BitmapDescriptor IC_NOTBORING = BitmapDescriptorFactory.fromResource(
-            R.drawable.marker_notboring);
-    private static final BitmapDescriptor IC_INTERESTING = BitmapDescriptorFactory.fromResource(
-            R.drawable.marker_interesting);
-    private static final BitmapDescriptor IC_VERYINTERESTING = BitmapDescriptorFactory.fromResource(
-            R.drawable.marker_veryinteresting);
+    private BitmapDescriptor IC_UNCLASSIFIED;
+    private BitmapDescriptor IC_BORING;
+    private BitmapDescriptor IC_NOTBORING;
+    private BitmapDescriptor IC_INTERESTING;
+    private BitmapDescriptor IC_VERYINTERESTING;
+    private FusedLocationProviderClient mFusedLocationClient;
 
 
     @Override
     public void onCreate(Bundle savedInstanceState){
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
+        MapsInitializer.initialize(getActivity().getApplicationContext());
         activity = getActivity();
         sharedPreference = new SharedPreference(getActivity().getApplicationContext());
         currentDiff = sharedPreference.getCurrentDifficultyLevelNumber();
         songNumber = sharedPreference.getCurrentSongNumber();
         lyrics = sharedPreference.getLyrics(songNumber);
         placemarks = sharedPreference.getMap(currentDiff);
+        // Create an instance of GoogleAPIClient.
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+        }
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity().getApplicationContext());
+
+        this.IC_BORING = BitmapDescriptorFactory.fromResource(
+                R.drawable.marker_boring);
+        this.IC_UNCLASSIFIED = BitmapDescriptorFactory.fromResource(
+                R.drawable.marker_unclassified);
+        this.IC_NOTBORING  = BitmapDescriptorFactory.fromResource(
+                R.drawable.marker_notboring);
+        this.IC_INTERESTING = BitmapDescriptorFactory.fromResource(
+                R.drawable.marker_interesting);
+        this.IC_VERYINTERESTING = BitmapDescriptorFactory.fromResource(
+                R.drawable.marker_veryinteresting);
+
+
     }
 
     @Override
@@ -120,7 +147,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
             }
         });
-        addMarkers();
+
         return rootView;
     }
 
@@ -129,6 +156,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         // Set view to bounds and move camera there
         googleMap.setLatLngBoundsForCameraTarget(UNIVERSITY_EDINBURGH);
         googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(EDINBURGH_CAMERA));
+        addMarkers();
     }
 
     /**
@@ -229,7 +257,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         mLocationRequest.setInterval(5000); // preferably every 5 seconds
         mLocationRequest.setFastestInterval(1000); //at most every second
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
+/*
         //Can we access the users current location?
         int permissionCheck = ContextCompat.checkSelfPermission(activity.getApplicationContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION);
@@ -237,6 +265,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
             LocationServices.FusedLocationApi.requestLocationUpdates(
                     mGoogleApiClient, mLocationRequest, (com.google.android.gms.location.LocationListener) this);
         }
+        */
     }
 
 
