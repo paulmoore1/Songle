@@ -11,7 +11,6 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -37,7 +36,7 @@ public class SharedPreference {
     private static final String LYRICS_4 = "Lyrics4";
     private static final String LYRIC_STATUS = "LyricStatus";
     private static final String NEXT_LYRIC_LOCATION = "NextLyricLocation";
-    private static final String SONG_SIZES = "SongSizes";
+    private static final String NUM_WORDS_FOUND = "WordsFound";
     private static final String MAP_1 = "Map1";
     private static final String MAP_2 = "Map2";
     private static final String MAP_3 = "Map3";
@@ -212,11 +211,13 @@ public class SharedPreference {
     //following are methods for saving and getting the current song number
     //needed to check if maps or lyrics need to be redownloaded.
     public void saveCurrentSongNumber(String songNum){
+        Log.d(TAG, "saveCurrentSongNumber called");
         editor.putString(CURRENT_SONG_NUMBER, songNum);
         editor.apply();
     }
 
     public String getCurrentSongNumber(){
+        Log.d(TAG, "getCurrentSongNumber called");
         String songNum = null;
         if (settings.contains(CURRENT_SONG_NUMBER)){
             songNum = settings.getString(CURRENT_SONG_NUMBER, null);
@@ -227,6 +228,7 @@ public class SharedPreference {
     //following are methods for saving and getting the current difficulty level
 
     public void saveCurrentDifficultyLevel(String diffLevel){
+        Log.d(TAG, "saveCurrentDifficultyLevelNumber called");
         //check diffLevel is one of the appropriate ones for difficulty level
         if (diffLevel.equals(context.getString(R.string.difficulty_insane))
                 || diffLevel.equals(context.getString(R.string.difficulty_hard))
@@ -241,12 +243,42 @@ public class SharedPreference {
     }
 
     public String getCurrentDifficultyLevel(){
+        Log.d(TAG, "getCurrentDifficultyLevel called");
         String diffLevel = null;
         if (settings.contains(CURRENT_DIFFICULTY_LEVEL)){
             diffLevel = settings.getString(CURRENT_DIFFICULTY_LEVEL, null);
 
         }
         return diffLevel;
+    }
+
+    public String getCurrentDifficultyLevelNumber(){
+        Log.d(TAG, "getCurrentDifficultyLevelNumber called");
+        if (settings.contains(CURRENT_DIFFICULTY_LEVEL)){
+            String text = settings.getString(CURRENT_DIFFICULTY_LEVEL, null);
+            if (text != null){
+                switch (text){
+                    case "Insane":
+                        return "1";
+                    case "Hard":
+                        return "2";
+                    case "Moderate":
+                        return "3";
+                    case "Easy":
+                        return "4";
+                    case "Very Easy":
+                        return "5";
+                    default:
+                        return "1";
+                }
+            } else {
+                return "1";
+            }
+
+        } else {
+            //return 1 as default
+            return "1";
+        }
     }
 
     public void saveCurrentSong(Song song){
@@ -313,10 +345,10 @@ public class SharedPreference {
 
     }
 
-    public ArrayList<Placemark> getMap(String num){
-        List<Placemark> placemarks;
+    public ArrayList<Placemark> getMap(String mapNum){
+        ArrayList<Placemark> placemarks;
         String targetMap;
-        switch (num) {
+        switch (mapNum) {
             case "1":
                 targetMap = MAP_1;
                 break;
@@ -339,10 +371,9 @@ public class SharedPreference {
         if (settings.contains(targetMap)){
             String jsonPlacemarks = settings.getString(targetMap, null);
             Gson gson = new Gson();
-            Placemark[] placemarksArray = gson.fromJson(jsonPlacemarks, Placemark[].class);
-            placemarks = Arrays.asList(placemarksArray);
-            placemarks = new ArrayList<>(placemarks);
-            return (ArrayList<Placemark>) placemarks;
+            Type type = new TypeToken<ArrayList<Placemark>>(){}.getType();
+            placemarks = gson.fromJson(jsonPlacemarks, type);
+            return placemarks;
 
         } else {
             Log.e(TAG, "Map not found");
@@ -389,8 +420,11 @@ public class SharedPreference {
         if (settings.contains(targetMapNumber)){
             //return 0 as default to indicate no song is there
             songNumber = settings.getString(targetMapNumber, "0");
+            return Integer.parseInt(songNumber);
+        } else {
+            return 0;
         }
-        return Integer.parseInt(songNumber);
+
     }
 
     /**
@@ -409,8 +443,6 @@ public class SharedPreference {
         return result;
     }
 
-
-
     /**
      * Check if the lyrics for a certain song are stored.
      * @param songNumber - number of song being checked
@@ -421,6 +453,17 @@ public class SharedPreference {
         int target = Integer.parseInt(songNumber);
         //check if the song number is already in the statuses
         return currentStatuses.contains(target);
+    }
+
+    /**
+     * Find which lyrics file a song number is stored in.
+     * @param songNumber - number of song being looked for
+     * @return - index where that song is stored.
+     */
+    private int getSongLocation(String songNumber){
+        ArrayList<Integer> currentStatuses = getLyricStatuses();
+        int target = Integer.parseInt(songNumber);
+        return currentStatuses.indexOf(target);
     }
 
     /**
@@ -475,7 +518,6 @@ public class SharedPreference {
         editor.apply();
     }
 
-
     private int getNextLyricLocation(){
         //if there was no previously stored location, return 0 (and save)
         if (!settings.contains(NEXT_LYRIC_LOCATION)) {
@@ -486,13 +528,13 @@ public class SharedPreference {
         else {
             int prevLocation = settings.getInt(NEXT_LYRIC_LOCATION, 0);
             ArrayList<Integer> currentStatuses = getLyricStatuses();
+            Log.d(TAG, "Song statuses" + currentStatuses.toString());
             // Check if there are any empty spaces in the lyrics (marked by 0)
             int possibleEmptyLocation = currentStatuses.indexOf(0);
             //no empty spots, return the default next location
             if (possibleEmptyLocation == -1) return prevLocation;
             //empty spot, return this
             else return possibleEmptyLocation;
-
         }
     }
 
@@ -503,6 +545,7 @@ public class SharedPreference {
      */
     private int getSongAtLyricLocation(int location){
         ArrayList<Integer> statuses = getLyricStatuses();
+        Log.d(TAG, "Song statuses" + statuses.toString());
         return statuses.get(location);
     }
 
@@ -519,7 +562,6 @@ public class SharedPreference {
         } else {
             Log.e(TAG, "Unexpected Location found: " + prevLocation);
         }
-
     }
 
     /**
@@ -528,7 +570,8 @@ public class SharedPreference {
      * @param lyrics the lyrics to store
      * @param songNumber the song number for those lyrics
      */
-    public void saveLyrics(HashMap<String, ArrayList<String>> lyrics, String songNumber){
+    public void saveNewLyrics(HashMap<String, ArrayList<String>> lyrics, String songNumber){
+        Log.d(TAG, "saveNewLyrics called");
         Gson gson = new Gson();
         String jsonLyrics = gson.toJson(lyrics);
 
@@ -558,15 +601,48 @@ public class SharedPreference {
         ArrayList<Integer> statuses = getLyricStatuses();
         statuses.set(nextLyricLocation, Integer.parseInt(songNumber));
         saveLyricStatuses(statuses);
+        resetNumberWordsFound(songNumber);
         //move to the next default location
         incrementNextLyricLocation();
     }
 
+    /**
+     * Updates an already-stored lyrics file.
+     * If there is not a lyrics file for that number, does nothing.
+     * @param lyrics the lyrics to store
+     * @param songNumber the song number for those lyrics
+     */
+    public void updateLyrics(HashMap<String, ArrayList<String>> lyrics, String songNumber){
+        Gson gson = new Gson();
+        String jsonLyrics = gson.toJson(lyrics);
+        int lyricLocation = getSongLocation(songNumber);
+        // If the lyrics are stored there
+        if (lyricLocation != -1){
+            //save in the next location indicated
+            switch(lyricLocation) {
+                case 0:
+                    editor.putString(LYRICS_0, jsonLyrics);
+                case 1:
+                    editor.putString(LYRICS_1, jsonLyrics);
+                case 2:
+                    editor.putString(LYRICS_2, jsonLyrics);
+                case 3:
+                    editor.putString(LYRICS_3, jsonLyrics);
+                case 4:
+                    editor.putString(LYRICS_4, jsonLyrics);
+            }
+            editor.apply();
+        }
+    }
 
+    /**
+     * Return the lyrics for a song number
+     * @param songNumber - number of song to get lyrics for
+     * @return - the lyrics, null if they aren't stored.
+     */
     public HashMap<String, ArrayList<String>> getLyrics(String songNumber){
         HashMap<String, ArrayList<String>> lyrics;
-        ArrayList<Integer> currentLyricStatuses = getLyricStatuses();
-        int lyricLocation = currentLyricStatuses.indexOf(Integer.parseInt(songNumber));
+        int lyricLocation = getSongLocation(songNumber);
         //return null if the song is not there.
         if (lyricLocation == -1) {
             Log.e(TAG, "Song lyrics not found for song #" + songNumber);
@@ -601,10 +677,6 @@ public class SharedPreference {
                 Log.e(TAG, "Unexpected lyric location: " + lyricLocation);
                 return null;
         }
-
-
-
-
     }
 
     public void eraseLyrics(String songNumber){
@@ -622,7 +694,6 @@ public class SharedPreference {
         currentStatuses.set(lyricLocation, 0);
         saveLyricStatuses(currentStatuses);
 
-
         switch(lyricLocation){
             case 0:
                 editor.putString(LYRICS_0, null);
@@ -638,33 +709,61 @@ public class SharedPreference {
                 Log.e(TAG, "Unexpected location erased: " + lyricLocation);
 
         }
-
-
-
-
     }
 
-    public void saveLyricDimensions(ArrayList<Integer> sizes){
-        Gson gson = new Gson();
-        String jsonLyrics = gson.toJson(sizes);
-
-        editor.putString(SONG_SIZES, jsonLyrics);
-        editor.apply();
-    }
-
-    public ArrayList<Integer> getLyricDimensions(){
-        ArrayList<Integer> sizes;
-
-        if (settings.contains(SONG_SIZES)){
-            String jsonSizes = settings.getString(SONG_SIZES, null);
-            Gson gson = new Gson();
-            Type type = new TypeToken<ArrayList<Integer>>(){}.getType();
-            sizes = gson.fromJson(jsonSizes, type);
-            return sizes;
+    public void resetNumberWordsFound(String songNumber){
+        Log.d(TAG, "resetNumberWordsFound called");
+        ArrayList<Integer> wordsList = getWordsFoundList();
+        int loc = getSongLocation(songNumber);
+        if (loc != -1){
+            wordsList.set(loc, 0);
+            saveWordsFoundList(wordsList);
         } else {
-            Log.e(TAG, "Song sizes not found");
-            return null;
+            Log.e(TAG, "Song not found in words list");
         }
     }
 
+    public void incrementNumberWordsFound(String songNumber){
+        Log.d(TAG, "incrementNumberWordsFound called");
+        ArrayList<Integer> wordsList = getWordsFoundList();
+        int loc = getSongLocation(songNumber);
+        int prev = wordsList.get(loc);
+        prev++;
+        wordsList.set(loc, prev);
+        saveWordsFoundList(wordsList);
+    }
+
+    public int getNumberWordsFound(String songNumber){
+        Log.d(TAG, "getNumberWordsFound called");
+        ArrayList<Integer> wordsFoundList = getWordsFoundList();
+        int location = getSongLocation(songNumber);
+        return wordsFoundList.get(location);
+    }
+
+    private ArrayList<Integer> getWordsFoundList(){
+        // if there is no words list object stored make one.
+        if(!settings.contains(NUM_WORDS_FOUND)){
+            ArrayList<Integer> numWordsList = new ArrayList<>();
+            for (int i = 0; i < 5; i++){
+                numWordsList.add(0);
+            }
+            Gson gson = new Gson();
+            String jsonWordsList = gson.toJson(numWordsList);
+            editor.putString(NUM_WORDS_FOUND, jsonWordsList);
+            return numWordsList;
+        } else {
+            // find and return the array
+            Gson gson = new Gson();
+            String jsonWordsList = settings.getString(NUM_WORDS_FOUND, null);
+            Type type = new TypeToken<ArrayList<Integer>>(){}.getType();
+            return gson.fromJson(jsonWordsList, type);
+        }
+    }
+
+    private void saveWordsFoundList(ArrayList<Integer> wordsList){
+        Gson gson = new Gson();
+        String jsonWordsList = gson.toJson(wordsList);
+        editor.putString(NUM_WORDS_FOUND, jsonWordsList);
+        editor.apply();
+    }
 }

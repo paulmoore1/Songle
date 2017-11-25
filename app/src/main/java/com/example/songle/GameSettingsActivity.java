@@ -250,13 +250,12 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             String overwrittenSongNumber = sharedPreference.nextSongOverwritten();
             beginMessage = "Chosen song number: " + chosenSongNumber +
                     "\nChosen difficulty level: " + chosenDiff +
-                    "\nThis will overwrite your saved game with song #" + overwrittenSongNumber +
-                    "\n" + beginQuestion;
+                    "\nThis will overwrite your saved game (Song #" + overwrittenSongNumber +
+                    ")\n" + beginQuestion;
         } else {
             beginMessage = "Chosen song number: " + chosenSongNumber + "\nChosen difficulty level: " +
                     chosenDiff + "\n" + beginQuestion;
         }
-
 
         adb.setMessage(beginMessage);
         //if user is happy with settings, start the game
@@ -296,12 +295,6 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
         //check lyrics are stored - if not then download them
         if (!sharedPreference.checkLyricsStored(songNumber)){
-            String mUrlStringLyrics = getString(R.string.url_general) +
-                    songNumber + "/words.txt";
-
-            mNetworkFragmentLyrics = NetworkFragment.getInstance(getSupportFragmentManager(),
-                    mUrlStringLyrics);
-
    /*     // Register BroadcastReceiver to track connection changes
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         NetworkReceiver receiver = new NetworkReceiver();
@@ -319,9 +312,6 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
         //check maps are stored - if not then download them.
         if (!sharedPreference.checkMaps(songNumber)){
-            String mUrlStringMaps = getString(R.string.url_general) + songNumber + "/map";
-            mNetworkFragmentMaps = NetworkFragment.getInstance(getSupportFragmentManager(),
-                    mUrlStringMaps);
             Log.d(TAG, "Started downloading Kml");
             startMapsDownload();
             //do nothing further until download is finished

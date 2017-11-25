@@ -19,7 +19,7 @@ public class GuessFragment extends Fragment {
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
     }
-
+/*
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState){
@@ -27,5 +27,6 @@ public class GuessFragment extends Fragment {
 
         return view;
     }
+    */
 
 }

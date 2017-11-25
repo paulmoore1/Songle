@@ -95,7 +95,7 @@ public class LyricsTextParser {
         lyrics.put("SIZE", sizes);
         lyrics.put("NUMBER", songNumList);
 
-        sharedPreference.saveLyrics(lyrics, songNumber);
+        sharedPreference.saveNewLyrics(lyrics, songNumber);
 
         Log.d(TAG, "Lyrics saved");
 

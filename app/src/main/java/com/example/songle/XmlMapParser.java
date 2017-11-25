@@ -42,6 +42,7 @@ public class XmlMapParser {
         Log.d(TAG, "readPlacemarks called");
         List<Placemark> placemarks = new ArrayList<Placemark>();
         parser.require(XmlPullParser.START_TAG, ns, "kml");
+
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
                 continue;
@@ -60,6 +61,7 @@ public class XmlMapParser {
 
     private Placemark readPlacemark(XmlPullParser parser) throws
             XmlPullParserException, IOException {
+        Log.d(TAG, "readPlacemark called");
         parser.require(XmlPullParser.START_TAG, ns, "Placemark");
         String key = null;
         String description = null;

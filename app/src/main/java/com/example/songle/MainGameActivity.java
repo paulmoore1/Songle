@@ -18,15 +18,17 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
 import com.aurelhubert.ahbottomnavigation.notification.AHNotification;
+import com.google.android.gms.maps.MapFragment;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
 public class MainGameActivity extends AppCompatActivity {
-
+    private static final String TAG = "MainGameActivity";
     private final int[] colors = {R.color.maps_tab, R.color.words_tab, R.color.guess_tab};
     private boolean permission;
     private Toolbar toolbar;
@@ -47,12 +49,13 @@ public class MainGameActivity extends AppCompatActivity {
             requestPermission();
         }
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "super onCreate called");
         setContentView(R.layout.main_game_screen);
-
+        Log.d(TAG, "managed to set content view");
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         //noinspection ConstantConditions
-        getSupportActionBar().setTitle("Bottom Navigation");
+        getSupportActionBar().setTitle("Let's play!");
 
 
         setupViewPager();
@@ -104,16 +107,30 @@ public class MainGameActivity extends AppCompatActivity {
         viewPager.setPagingEnabled(false);
         pagerAdapter = new BottomBarAdapter(getSupportFragmentManager());
 
-        pagerAdapter.addFragments(createFragment(R.color.maps_tab));
-        pagerAdapter.addFragments(createFragment(R.color.words_tab));
-        pagerAdapter.addFragments(createFragment(R.color.guess_tab));
+        pagerAdapter.addFragments(createMapFragment(R.color.maps_tab));
+        pagerAdapter.addFragments(createWordsFragment(R.color.words_tab));
+        pagerAdapter.addFragments(createGuessFragment(R.color.guess_tab));
 
         viewPager.setAdapter(pagerAdapter);
     }
 
     @NonNull
-    private DummyFragment createFragment(int color) {
-        DummyFragment fragment = new DummyFragment();
+    private MapsFragment createMapFragment(int color) {
+        MapsFragment fragment = new MapsFragment();
+        fragment.setArguments(passFragmentArguments(fetchColor(color)));
+        return fragment;
+    }
+
+    @NonNull
+    private WordsFragment createWordsFragment(int color) {
+        WordsFragment fragment = new WordsFragment();
+        fragment.setArguments(passFragmentArguments(fetchColor(color)));
+        return fragment;
+    }
+
+    @NonNull
+    private GuessFragment createGuessFragment(int color) {
+        GuessFragment fragment = new GuessFragment();
         fragment.setArguments(passFragmentArguments(fetchColor(color)));
         return fragment;
     }

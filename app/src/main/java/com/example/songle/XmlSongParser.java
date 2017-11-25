@@ -28,19 +28,23 @@ public class XmlSongParser {
         sharedPreference = new SharedPreference(context);
     }
 
-    public List<Song> parse(InputStream in) throws XmlPullParserException,
+    public void parse(InputStream in) throws XmlPullParserException,
             IOException{
+
         try {
             Log.d(TAG, "parse called");
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(in, null);
             parser.nextTag();
-            return readSongs(parser);
+            List<Song> songs =  readSongs(parser);
+            sharedPreference.saveSongs(songs);
+
         } finally {
             in.close();
             Log.d(TAG, "input stream closed");
         }
+
     }
 
     private List<Song> readSongs(XmlPullParser parser) throws

@@ -136,7 +136,7 @@ public class NetworkFragment extends Fragment {
     }
 
     public void retryDownload(){
-        Log.d(TAG, "retryDownload called");
+        Log.d(TAG, "retryDownload called for: " + downloadType);
         //check that a download task was executed already
         switch (downloadType) {
             case "Lyrics":
@@ -204,7 +204,7 @@ public class NetworkFragment extends Fragment {
             Log.v(TAG, "Started loading lyrics in the background");
             String result = null;
             try {
-                result = loadLyricsFromNetwork(urls[0]);
+                result = loadLyricsFromNetwork();
             } catch (IOException e){
                 Log.e(TAG, "Unable to load content");
             }
@@ -218,18 +218,19 @@ public class NetworkFragment extends Fragment {
 
         }
 
-        private String loadLyricsFromNetwork(String urlString) throws
+        private String loadLyricsFromNetwork() throws
         IOException{
-            String songNumber = sharedPreferenceLyrics.getCurrentSongNumber(
-            );
+            String songNumber = sharedPreferenceLyrics.getCurrentSongNumber();
+            String mUrlString = getString(R.string.url_general) +
+                    songNumber + "/words.txt";
 
             Log.d(TAG,"loadLyricsFromNetwork called");
             //TODO try removing
             InputStream stream = null;
             LyricsTextParser ltp = new LyricsTextParser(getActivity().getApplicationContext(), songNumber);
             try {
-                Log.d(TAG, "URL is: " + urlString);
-                stream = downloadUrl(urlString);
+                Log.d(TAG, "URL is: " + mUrlString);
+                stream = downloadUrl(mUrlString);
                 ltp.parse(stream);
                 return "Parsed";
             } catch (IOException e){
@@ -278,7 +279,7 @@ public class NetworkFragment extends Fragment {
          * it will throw an IOException.
          */
         private InputStream downloadUrl(String urlString) throws IOException {
-            Log.d(TAG, "downloadUrl called");
+            Log.d(TAG, "downloadPlacemarks called");
             InputStream stream = null;
             URL url = new URL(urlString);
 
@@ -323,9 +324,8 @@ public class NetworkFragment extends Fragment {
         @Override
         protected String doInBackground(String... urls){
             Log.d(TAG, "doInBackground called");
-            List<Song> songs;
             try {
-                songs = loadXmlFromNetwork(urls[0]);
+                loadXmlFromNetwork(urls[0]);
             }catch (XmlPullParserException e){
                 Log.e(TAG,"Error parsing XML: " + e);
                 return null;
@@ -333,39 +333,30 @@ public class NetworkFragment extends Fragment {
                 Log.e(TAG,"IO exception thrown: " + e);
                 return null;
             }
-            //songs will not be null if the timestamp is new. In that case save the new songs list
-            if (songs != null){
-                sharedPreferenceXml.saveSongs(songs);
-                Log.d(TAG, "finished background task");
-                onPostExecute("Updated");
-                return "Songs updated";
-            } else {
-                onPostExecute("Not updated");
-                return "Songs not updated";
-            }
+            onPostExecute("Updated");
+            return "Updated";
+
         }
 
-        private List<Song> loadXmlFromNetwork(String urlString) throws
+        private void loadXmlFromNetwork(String urlString) throws
                 XmlPullParserException, IOException{
             Log.d(TAG, "loadXmlFromNetwork called");
             InputStream stream = null;
             //Instantiate the parser.
             XmlSongParser parser = new XmlSongParser(getActivity().getApplicationContext());
-            List<Song> songs = null;
-
             try {
-                stream = downloadUrl(urlString);
-                songs = parser.parse(stream);
+                downloadUrl(urlString);
             } catch(Exception e){
                 Log.e(TAG, "Exception: " + e);
             }
-            return songs;
+
         }
 
-        //Given a string representation of a URL, sets up a connection and gets
-        //an input stream
-        private InputStream downloadUrl(String urlString) throws IOException {
-            Log.d(TAG, "downloadUrl called");
+        //Given a string representation of a URL, sets up a connection, downloads and parses it
+        // The parsing is done here because otherwise strange errors occurred.
+        private void downloadUrl(String urlString) throws IOException {
+            Log.v(TAG, "downloadUrl called");
+            XmlSongParser parser = new XmlSongParser(getActivity().getApplicationContext());
             InputStream stream;
             URL url = new URL(urlString);
 
@@ -377,9 +368,12 @@ public class NetworkFragment extends Fragment {
             conn.setDoInput(true);
             conn.connect();
             stream = conn.getInputStream();
+            try {
+                parser.parse(stream);
+            } catch (XmlPullParserException e) {
+                e.printStackTrace();
+            }
             conn.disconnect();
-            return stream;
-
         }
 
 
@@ -451,35 +445,35 @@ public class NetworkFragment extends Fragment {
             }
             if (allDownloadedCorrectly){
                 onPostExecute("Updated");
-                return "Maps updated";
+                return "Updated";
             } else {
                 onPostExecute("Not updated");
                 return "Maps not updated";
             }
-
         }
 
         private List<Placemark> loadKmlFromNetwork(String urlString) throws
                 XmlPullParserException, IOException{
-            Log.d(TAG, "loadKmlFromNetwork called");
+            Log.v(TAG, "loadKmlFromNetwork called");
             InputStream stream = null;
             //Instantiate the parser.
             XmlMapParser parser = new XmlMapParser();
             List<Placemark> placemarks = null;
 
             try {
-                stream = downloadUrl(urlString);
-                placemarks = parser.parse(stream);
+                placemarks = downloadPlacemarks(urlString);
             } catch(Exception e){
                 Log.e(TAG, "Exception: " + e);
             }
             return placemarks;
         }
 
-        //Given a string representation of a URL, sets up a connection and gets
-        //an input stream
-        private InputStream downloadUrl(String urlString) throws IOException {
-            Log.d(TAG, "downloadUrl called");
+        //Given a string representation of a URL, sets up a connection and parses the placemarks
+        // Parsing done here as odd errors were coming up with the input stream.
+        private List<Placemark> downloadPlacemarks(String urlString) throws IOException {
+            Log.v(TAG, "downloadPlacemarks called");
+            XmlMapParser parser = new XmlMapParser();
+            List<Placemark> placemarks = null;
             InputStream stream;
             URL url = new URL(urlString);
 
@@ -491,25 +485,26 @@ public class NetworkFragment extends Fragment {
             conn.setDoInput(true);
             conn.connect();
             stream = conn.getInputStream();
+            try {
+                placemarks = parser.parse(stream);
+            } catch (XmlPullParserException e) {
+                e.printStackTrace();
+            }
             conn.disconnect();
-            return stream;
+            return placemarks;
 
         }
-
-
 
         @Override
         protected void onPostExecute(String result){
             Log.d(TAG, "onPostExecute called");
             if (result != null && mCallback != null) {
+                Log.e(TAG, "Result = " + result);
                 mCallback.updateFromDownload(result);
-                Log.d(TAG, "Finished downloading");
+                Log.d(TAG, "Finished downloading maps");
 
                 mCallback.finishDownloading();
             }
-
         }
-
-
     }
 }
