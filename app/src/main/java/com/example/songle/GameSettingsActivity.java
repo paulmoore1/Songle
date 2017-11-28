@@ -313,7 +313,9 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         //check maps are stored - if not then download them.
         if (!sharedPreference.checkMaps(songNumber)){
             Log.d(TAG, "Started downloading Kml");
+            Log.v(TAG, "mDownloading before startMapsDownload" + mDownloading);
             startMapsDownload();
+            Log.v(TAG, "mDownloading after startMapsDownload" + mDownloading);
             //do nothing further until download is finished
             while (mDownloading){
 
@@ -322,11 +324,15 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         } else {
             Log.d(TAG, "Maps already stored");
         }
-
+        Log.d(TAG, "Downloaded maps and lyrics, ready to start");
         //now ready to start game
         Intent intent = new Intent(GameSettingsActivity.this, MainGameActivity.class);
         //all data loaded, cancel handler
         handler.removeCallbacks(resetSettingsActivity);
+
+        //Reset the incorrect guesses for loading a new or old game
+        sharedPreference.resetIncorrectGuess();
+
 
         //finished downloading, unregister.
        // this.unregisterReceiver(receiver);
@@ -446,11 +452,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
     @Override
     public void updateFromDownload(Object result) {
-        if(result.equals("Updated")){
-            finishDownloading();
-        } else {
-            mNetworkFragmentLyrics.retryDownload();
-        }
+
     }
 
 
@@ -478,12 +480,16 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     @Override
     public void finishDownloading() {
         Log.d(TAG, "finishDownloading called");
-        mDownloading = false;
+        Log.v(TAG, "mDownloading before = " + mDownloading);
+
         if (mNetworkFragmentLyrics != null) {
             mNetworkFragmentLyrics.cancelDownload();
         } else if (mNetworkFragmentMaps != null){
             mNetworkFragmentMaps.cancelDownload();
         }
+        mDownloading = false;
+        Log.v(TAG, "finishDownloading finished");
+        Log.v(TAG, "mDownloading after = " + mDownloading);
 
     }
 

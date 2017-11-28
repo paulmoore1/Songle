@@ -6,6 +6,7 @@ package com.example.songle;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,7 +20,7 @@ import java.util.List;
  */
 
 public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleItemVH> {
-
+    private static final String TAG = "SimpleAdapter";
     //  Data
     private List<Song> songs = new ArrayList<>();
     private SharedPreference sharedPreference;

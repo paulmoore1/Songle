@@ -30,7 +30,16 @@ public class WordsFragment extends Fragment {
         this.sharedPreference = new SharedPreference(getActivity().getApplicationContext());
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
         String songNumber = sharedPreference.getCurrentSongNumber();
+        Log.v(TAG, "songNumber " + songNumber);
         lyrics = sharedPreference.getLyrics(songNumber);
+
+        // refresh the lyrics when the shared preferences are updated as lyrics are found
+        listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                refreshLyrics();
+            }
+        };
     }
 
 
@@ -41,6 +50,10 @@ public class WordsFragment extends Fragment {
         wordsTextView = (TextView) rootView.findViewById(R.id.wordsTextView);
         wordsTextView.setText(lyricsToString());
         return rootView;
+    }
+
+    private void refreshLyrics(){
+        wordsTextView.setText(lyricsToString());
     }
 
 
@@ -79,6 +92,6 @@ public class WordsFragment extends Fragment {
         // If lyric is a blank it must be a new line
         else if(lyricList.get(0).equals("")) return "\n";
         // Otherwise not found, so show blank space.
-        else return " ____";
+        else return " " + lyricList.get(0);
     }
 }

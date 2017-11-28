@@ -38,7 +38,9 @@ public class XmlSongParser {
             parser.setInput(in, null);
             parser.nextTag();
             List<Song> songs =  readSongs(parser);
-            sharedPreference.saveSongs(songs);
+            if(songs != null){
+                sharedPreference.saveSongs(songs);
+            }
 
         } finally {
             in.close();

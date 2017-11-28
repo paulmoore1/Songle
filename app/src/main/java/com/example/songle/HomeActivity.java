@@ -208,11 +208,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
 
     @Override
     public void updateFromDownload(Object result) {
-        if(result.equals("Updated")){
-            finishDownloading();
-        } else {
-            mNetworkFragment.retryDownload();
-        }
+
     }
 
 

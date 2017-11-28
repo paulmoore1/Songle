@@ -72,8 +72,21 @@
     <string name="maps_tab">Find</string>
     <string name="words_tab">Words</string>
     <string name="guess_tab">Guess</string>
-    <string name="btn_guess">Guess</string>
+    <string name="btn_txt_guess">Guess</string>
+    <string name="btn_txt_give_up">Give up?</string>
+    <string name="txt_default_artist">Artist unknown - reveal with a hint!</string>
+    <string name="txt_default_words_to_line">5 more words needed to reveal a line</string>
+    <string name="txt_default_words_to_artist">15 more words needed to reveal the artist</string>
+
     <string name="msg_enter_guess">Enter your guess for the song\'s title!</string>
+    <string name="are_you_sure">Are you sure?</string>
+    <string name="msg_check_give_up">Do you really want to give up?\nIf you collect more words you can get hints which may help!</string>
+    <string name="txt_give_up">Give up</string>
+    <string name="txt_keep_playing">Keep playing</string>
+    <string name="congratulations">Congratulations!</string>
+    <string name="msg_game_win">You\'ve won this game!\nWould you like to see the music video or start a new game?</string>
+    <string name="watch_video">Watch video</string>
+    <string name="quit">Quit</string>
 
     <!-- Strings related to Settings -->
 

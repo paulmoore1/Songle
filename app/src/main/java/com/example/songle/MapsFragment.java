@@ -349,8 +349,6 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     public void onPause(){
         super.onPause();
         mMapView.onPause();
-        // Save any changes to the lyrics.
-        sharedPreference.saveNewLyrics(lyrics, songNumber);
     }
 
     @Override

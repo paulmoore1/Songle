@@ -48,6 +48,7 @@ public class NetworkFragment extends Fragment {
     private DownloadKmlTask mDownloadKmlTask;
     private String mUrlString;
     private String downloadType;
+    private static int numRetries;
 
     /**
      * Static initializer for NetworkFragment that sets the URL of the host it will be downloading
@@ -77,7 +78,7 @@ public class NetworkFragment extends Fragment {
         super.onCreate(savedInstanceState);
         // Retain this Fragment across configuration changes in the host Activity.
         setRetainInstance(true);
-
+        numRetries = 5;
         mUrlString = getArguments().getString(URL_KEY);
         Log.d(TAG, "URL String:" + mUrlString);
     }
@@ -168,6 +169,7 @@ public class NetworkFragment extends Fragment {
             mDownloadKmlTask.cancel(true);
             mDownloadKmlTask = null;
         }
+        Log.d(TAG, "completed cancelling download");
     }
 
 
@@ -210,22 +212,21 @@ public class NetworkFragment extends Fragment {
             }
             if (result != null && result.equals("Parsed")){
                 onPostExecute("Updated");
-                return "Lyrics updated";
+                return "Updated";
             } else {
                 onPostExecute("Not updated");
-                return "Lyrics not updated";
+                return "Not updated";
             }
 
         }
 
         private String loadLyricsFromNetwork() throws
         IOException{
+            Log.v(TAG, "loadLyricsFromNetwork called");
             String songNumber = sharedPreferenceLyrics.getCurrentSongNumber();
             String mUrlString = getString(R.string.url_general) +
                     songNumber + "/words.txt";
 
-            Log.d(TAG,"loadLyricsFromNetwork called");
-            //TODO try removing
             InputStream stream = null;
             LyricsTextParser ltp = new LyricsTextParser(getActivity().getApplicationContext(), songNumber);
             try {
@@ -255,6 +256,7 @@ public class NetworkFragment extends Fragment {
          */
         @Override
         protected void onPostExecute(String result) {
+            Log.v(TAG, "onPostExecute called");
             if (result != null && mCallback != null) {
                 mCallback.updateFromDownload(result);
                 Log.d(TAG, "Finished downloading");
@@ -347,7 +349,7 @@ public class NetworkFragment extends Fragment {
             try {
                 downloadUrl(urlString);
             } catch(Exception e){
-                Log.e(TAG, "Exception: " + e);
+                Log.e(TAG, "Exception when downloading: " + e);
             }
 
         }
@@ -383,8 +385,6 @@ public class NetworkFragment extends Fragment {
             Log.d(TAG, "onPostExecute called");
             if (result != null && mCallback != null) {
                 mCallback.updateFromDownload(result);
-                Log.d(TAG, "Finished downloading");
-
                 mCallback.finishDownloading();
             }
 

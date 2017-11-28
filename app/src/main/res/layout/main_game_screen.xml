@@ -10,13 +10,12 @@
     <!-- Had to include layout height/width - not in tutorial at
     http://blog.iamsuleiman.com/bottom-navigation-bar-android-tutorial/-->
     <android.support.design.widget.AppBarLayout
-        android:layout_height="match_parent"
+        android:layout_height="@dimen/statusBarSize"
         android:layout_width="match_parent">
-<!--
-        <LinearLayout
 
-            android:layout_height="match_parent"
+        <LinearLayout
             android:layout_width="match_parent"
+            android:layout_height="@dimen/statusBarSize"
             android:orientation="vertical">
             <View
                 android:layout_width="match_parent"
@@ -27,15 +26,11 @@
                 android:layout_height="?attr/actionBarSize"
                 android:background="?attr/colorPrimary"/>
         </LinearLayout>
--->     <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"/>
+
     </android.support.design.widget.AppBarLayout>
 
     <!-- Your Fragment or ViewPager layout here...
-     Don't attribute app:layout_behavior="@string/appbar_scrolling_view_behavior" -->
+     Don't attribute app:layout_behavior="@string/appbar_scrolling_view_behavior"
     <FrameLayout
         android:id="@+id/frame"
         android:layout_width="match_parent"
@@ -43,20 +38,20 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:background="#EFEFEF"/>
 
-    <!--Separate Frame Layout for words so app scrolling usable -->
+    <!-Separate Frame Layout for words so app scrolling usable -->
+    <!--
     <FrameLayout
         android:id="@+id/words_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:background="#EFEFEF"/>
-
+    -->
     <com.example.songle.NoSwipePager
         android:id="@+id/viewpager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:background="#EFEFEF"
-        class = "com.songle.bottomnav.NoSwipePager"/>
+        tools:background="#EFEFEF" />
 
     <com.aurelhubert.ahbottomnavigation.AHBottomNavigation
         android:id="@+id/bottom_navigation"

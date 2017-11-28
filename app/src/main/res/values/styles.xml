@@ -37,6 +37,10 @@
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
     <style name="MyTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/bg_light</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
@@ -49,5 +53,7 @@
     <style name="MyTheme.TranslucentNavigation" parent="MyTheme">
         <item name="android:windowTranslucentNavigation">true</item>
     </style>
+
+
 
 </resources>

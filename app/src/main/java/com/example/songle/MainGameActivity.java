@@ -4,6 +4,7 @@ package com.example.songle;
 
 import android.Manifest;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
@@ -45,9 +46,9 @@ public class MainGameActivity extends AppCompatActivity {
         AppCompatDelegate.setDefaultNightMode(
                 AppCompatDelegate.MODE_NIGHT_AUTO);
         //if location permissions not available request them.
-        if(!checkPermission()){
+    /*    if(!checkPermission()){
             requestPermission();
-        }
+        }*/
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super onCreate called");
         setContentView(R.layout.main_game_screen);
@@ -55,7 +56,6 @@ public class MainGameActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         //noinspection ConstantConditions
         getSupportActionBar().setTitle("Let's play!");
-
 
         setupViewPager();
 
@@ -88,8 +88,8 @@ public class MainGameActivity extends AppCompatActivity {
                 if (!wasSelected)
                     viewPager.setCurrentItem(position);
                 //allow translucent scrolling for middle position only.
-                    if(position == 1) bottomNavigation.setTranslucentNavigationEnabled(true);
-                    else bottomNavigation.setTranslucentNavigationEnabled(false);
+                //    if(position == 1) bottomNavigation.setTranslucentNavigationEnabled(true);
+                //    else bottomNavigation.setTranslucentNavigationEnabled(false);
 
                 // remove notification badge
                 int lastItemPos = bottomNavigation.getItemsCount() - 1;
@@ -102,15 +102,26 @@ public class MainGameActivity extends AppCompatActivity {
     }
 
     private void setupViewPager() {
+        Log.v(TAG, "setupViewPager called");
         viewPager = (NoSwipePager) findViewById(R.id.viewpager);
         viewPager.setPagingEnabled(false);
         pagerAdapter = new BottomBarAdapter(getSupportFragmentManager());
-
+        pagerAdapter.addFragments(createDummyFragment(R.color.maps_tab));
+        pagerAdapter.addFragments(createWordsFragment(R.color.words_tab));
+        pagerAdapter.addFragments(createGuessFragment(R.color.guess_tab));
+        /*
         pagerAdapter.addFragments(createMapFragment(R.color.maps_tab));
         pagerAdapter.addFragments(createWordsFragment(R.color.words_tab));
         pagerAdapter.addFragments(createGuessFragment(R.color.guess_tab));
-
+*/
         viewPager.setAdapter(pagerAdapter);
+    }
+
+    @NonNull
+    private DummyFragment createDummyFragment(int color) {
+        DummyFragment fragment = new DummyFragment();
+        fragment.setArguments(passFragmentArguments(fetchColor(color)));
+        return fragment;
     }
 
     @NonNull
@@ -142,6 +153,7 @@ public class MainGameActivity extends AppCompatActivity {
     }
 
     private void createFakeNotification() {
+        Log.v(TAG, "createFakeNotification called");
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -161,6 +173,7 @@ public class MainGameActivity extends AppCompatActivity {
 
 
     public void setupBottomNavBehaviors() {
+        Log.v(TAG, "setupBottomNavBehaviours called");
 //       bottomNavigation.setBehaviorTranslationEnabled(false);
 
         /*
@@ -169,13 +182,14 @@ public class MainGameActivity extends AppCompatActivity {
         Warning: Toolbar Clipping might occur. Solve this by wrapping it in a LinearLayout with a top
         View of 24dp (status bar size) height.
          */
-        bottomNavigation.setTranslucentNavigationEnabled(false);
+        bottomNavigation.setTranslucentNavigationEnabled(true);
     }
 
     /**
      * Adds styling properties to {@link AHBottomNavigation}
      */
     private void setupBottomNavStyle() {
+        Log.v(TAG, "setupBottomNavStyle called");
         /*
         Set Bottom Navigation colors. Accent color for active item,
         Inactive color when its view is disabled.
@@ -202,6 +216,7 @@ public class MainGameActivity extends AppCompatActivity {
      * Also assigns a distinct color to each Bottom Navigation item, used for the color ripple.
      */
     private void addBottomNavigationItems() {
+        Log.v(TAG, "addBottomNavigationItems called");
         AHBottomNavigationItem item1 = new AHBottomNavigationItem(R.string.maps_tab, R.drawable.ic_search_tab, colors[0]);
         AHBottomNavigationItem item2 = new AHBottomNavigationItem(R.string.words_tab, R.drawable.ic_words_tab, colors[1]);
         AHBottomNavigationItem item3 = new AHBottomNavigationItem(R.string.guess_tab, R.drawable.ic_guess_tab, colors[2]);
@@ -271,6 +286,12 @@ public class MainGameActivity extends AppCompatActivity {
                 .setNegativeButton(R.string.txt_cancel, null)
                 .create()
                 .show();
+    }
+
+    @Override
+    public void onBackPressed(){
+        Intent intent = new Intent(this, HomeActivity.class);
+        startActivity(intent);
     }
 
 }
