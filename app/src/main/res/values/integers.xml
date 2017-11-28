@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="hint_line_very_easy">5</integer>
+    <integer name="hint_line_easy">8</integer>
+    <integer name="hint_line_moderate">10</integer>
+    <integer name="hint_line_hard">12</integer>
+    <integer name="hint_line_insane">15</integer>
+    <integer name="hint_artist_very_easy">15</integer>
+    <integer name="hint_artist_easy">20</integer>
+    <integer name="hint_artist_moderate">25</integer>
+    <integer name="hint_artist_hard">30</integer>
+    <integer name="hint_artist_insane">35</integer>
+
+</resources>

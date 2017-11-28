@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,10 +18,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -40,12 +36,9 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.SphericalUtil;
 
-import java.io.FileDescriptor;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Paul on 21/11/2017.
@@ -227,7 +220,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
             ArrayList<String> newLyric = new ArrayList<>(Arrays.asList(word, "True"));
             lyrics.put(key, newLyric);
             sharedPreference.updateLyrics(lyrics, songNumber);
-            sharedPreference.incrementNumberWordsFound(songNumber);
+            sharedPreference.incrementNumberWordsFound();
 
         } else {
             //too far away from marker, show a Toast but nothing more.

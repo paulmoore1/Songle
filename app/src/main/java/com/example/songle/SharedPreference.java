@@ -37,6 +37,8 @@ public class SharedPreference {
     private static final String LYRIC_STATUS = "LyricStatus";
     private static final String NEXT_LYRIC_LOCATION = "NextLyricLocation";
     private static final String NUM_WORDS_FOUND = "WordsFound";
+    private static final String NUM_WORDS_AVAILABLE = "WordsAvailable";
+    private static final String ARTIST_REVEALED = "ArtistRevealed";
     private static final String MAP_1 = "Map1";
     private static final String MAP_2 = "Map2";
     private static final String MAP_3 = "Map3";
@@ -611,7 +613,7 @@ public class SharedPreference {
             ArrayList<Integer> statuses = getLyricStatuses();
             statuses.set(nextLyricLocation, Integer.parseInt(songNumber));
             saveLyricStatuses(statuses);
-            resetNumberWordsFound(songNumber);
+            resetNumberWordsFound();
             //move to the next default location
             incrementNextLyricLocation();
         }
@@ -705,6 +707,11 @@ public class SharedPreference {
 
         saveSongStatus(songNumString, "N");
 
+        resetNumberWordsFound();
+        resetNumberWordsAvailable();
+        resetIncorrectGuess();
+        artistHidden();
+
         //update statuses
         ArrayList<Integer> currentStatuses = getLyricStatuses();
         int lyricLocation = currentStatuses.indexOf(songNumber);
@@ -730,6 +737,7 @@ public class SharedPreference {
                 Log.e(TAG, "Unexpected location erased: " + lyricLocation);
 
         }
+        editor.apply();
     }
 
     public void completeSong(String songNumber){
@@ -747,8 +755,10 @@ public class SharedPreference {
             Log.e(TAG, "Song not saved in lyrics when it was completed");
             return;
         }
-        resetNumberWordsFound(songNumber);
+        resetNumberWordsFound();
+        resetNumberWordsAvailable();
         resetIncorrectGuess();
+        artistHidden();
 
         //song was in statuses, update to 0.
         currentStatuses.set(lyricLocation, 0);
@@ -772,8 +782,10 @@ public class SharedPreference {
         editor.apply();
     }
 
-    public void resetNumberWordsFound(String songNumber){
+    public void resetNumberWordsFound(){
         Log.d(TAG, "resetNumberWordsFound called");
+        String songNumber = getCurrentSongNumber();
+        Log.v(TAG, "songNumber is: " + songNumber);
         ArrayList<Integer> wordsList = getWordsFoundList();
         int loc = getSongLocation(songNumber);
         if (loc != -1){
@@ -784,18 +796,23 @@ public class SharedPreference {
         }
     }
 
-    public void incrementNumberWordsFound(String songNumber){
+    public void incrementNumberWordsFound(){
         Log.d(TAG, "incrementNumberWordsFound called");
+        String songNumber = getCurrentSongNumber();
+        Log.v(TAG, "songNumber is: " + songNumber);
         ArrayList<Integer> wordsList = getWordsFoundList();
         int loc = getSongLocation(songNumber);
         int prev = wordsList.get(loc);
         prev++;
         wordsList.set(loc, prev);
         saveWordsFoundList(wordsList);
+        incrementNumAvailableWords(loc);
     }
 
-    public int getNumberWordsFound(String songNumber){
+    public int getNumberWordsFound(){
         Log.d(TAG, "getNumberWordsFound called");
+        String songNumber = getCurrentSongNumber();
+        Log.v(TAG, "songNumber is: " + songNumber);
         ArrayList<Integer> wordsFoundList = getWordsFoundList();
         int location = getSongLocation(songNumber);
         return wordsFoundList.get(location);
@@ -828,6 +845,130 @@ public class SharedPreference {
         editor.apply();
     }
 
+    public void resetNumberWordsAvailable(){
+        Log.d(TAG, "resetNumberWordsAvailable called");
+        String songNumber = getCurrentSongNumber();
+        Log.v(TAG, "songNumber is: " + songNumber);
+        ArrayList<Integer> wordsList = getWordsAvailableList();
+        int loc = getSongLocation(songNumber);
+        if (loc != -1){
+            wordsList.set(loc, 0);
+            saveWordsAvailableList(wordsList);
+        } else {
+            Log.e(TAG, "Song not found in words list");
+        }
+    }
+
+    public int getNumAvailableWords(){
+        Log.d(TAG, "getNumAvailableWords called");
+        String songNumber = getCurrentSongNumber();
+        Log.v(TAG, "songNumber is: " + songNumber);
+        ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
+        int location = getSongLocation(songNumber);
+        return wordsAvailableList.get(location);
+    }
+
+
+    //Called whenever numWords Found is incremented.
+    private void incrementNumAvailableWords(int loc){
+        Log.d(TAG, "incrementNumAvailableWords called");
+        ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
+        Log.v(TAG, "list before: " + wordsAvailableList.toString());
+        int prev = wordsAvailableList.get(loc);
+        prev++;
+        wordsAvailableList.set(loc, prev);
+        saveWordsAvailableList(wordsAvailableList);
+        Log.v(TAG, "list after: " + wordsAvailableList.toString());
+    }
+
+    /**
+     * Removes a number of words from the words available to spend on hints.
+     * Used to update the shared preferences with this change.
+     * @param numToRemove - number of words spent on hint
+     */
+    public void removeNumAvailableWords(int numToRemove){
+        Log.d(TAG, "removeNumAvailableWords called");
+        String songNumber = getCurrentSongNumber();
+        int loc = getSongLocation(songNumber);
+        ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
+        Log.v(TAG, "list before: " + wordsAvailableList.toString());
+        int prev = wordsAvailableList.get(loc);
+        int newVal = prev - numToRemove;
+        wordsAvailableList.set(loc, newVal);
+        saveWordsAvailableList(wordsAvailableList);
+        Log.v(TAG, "list after: " + wordsAvailableList.toString());
+    }
+
+    private ArrayList<Integer> getWordsAvailableList(){
+        // if there is no words list object stored make one.
+        if(!settings.contains(NUM_WORDS_AVAILABLE)){
+            ArrayList<Integer> numWordsList = new ArrayList<>();
+            for (int i = 0; i < 5; i++){
+                numWordsList.add(0);
+            }
+            Gson gson = new Gson();
+            String jsonWordsList = gson.toJson(numWordsList);
+            editor.putString(NUM_WORDS_AVAILABLE, jsonWordsList);
+            return numWordsList;
+        } else {
+            // find and return the array
+            Gson gson = new Gson();
+            String jsonWordsList = settings.getString(NUM_WORDS_AVAILABLE, null);
+            Type type = new TypeToken<ArrayList<Integer>>(){}.getType();
+            return gson.fromJson(jsonWordsList, type);
+        }
+    }
+
+    private void saveWordsAvailableList(ArrayList<Integer> wordsList){
+        Gson gson = new Gson();
+        String jsonWordsList = gson.toJson(wordsList);
+        editor.putString(NUM_WORDS_AVAILABLE, jsonWordsList);
+        editor.apply();
+    }
+
+    public void artistRevealed(){
+        String songNumber = getCurrentSongNumber();
+        int loc = getSongLocation(songNumber);
+        ArrayList<Boolean> currentArtistStatuses = getArtistList();
+        currentArtistStatuses.set(loc, true);
+        saveArtistList(currentArtistStatuses);
+    }
+
+    public void artistHidden(){
+        String songNumber = getCurrentSongNumber();
+        int loc = getSongLocation(songNumber);
+        ArrayList<Boolean> currentArtistStatuses = getArtistList();
+        currentArtistStatuses.set(loc, false);
+        saveArtistList(currentArtistStatuses);
+    }
+
+    private ArrayList<Boolean> getArtistList(){
+        // if there is no artist list object stored make one.
+        if(!settings.contains(ARTIST_REVEALED)){
+            ArrayList<Boolean> artistList = new ArrayList<>();
+            for (int i = 0; i < 5; i++){
+                artistList.add(false);
+            }
+            Gson gson = new Gson();
+            String jsonArtistList = gson.toJson(artistList);
+            editor.putString(ARTIST_REVEALED, jsonArtistList);
+            return artistList;
+        } else {
+            // find and return the array
+            Gson gson = new Gson();
+            String jsonArtistList = settings.getString(ARTIST_REVEALED, null);
+            Type type = new TypeToken<ArrayList<Boolean>>(){}.getType();
+            return gson.fromJson(jsonArtistList, type);
+        }
+    }
+
+    private void saveArtistList(ArrayList<Boolean> artistList){
+        Gson gson = new Gson();
+        String jsonArtistList = gson.toJson(artistList);
+        editor.putString(ARTIST_REVEALED, jsonArtistList);
+        editor.apply();
+    }
+
     public void saveIncorrectGuess(){
         editor.putBoolean(INCORRECT_GUESS, true);
         editor.apply();
@@ -840,5 +981,7 @@ public class SharedPreference {
     public boolean getIncorrectGuess(){
         return settings.getBoolean(INCORRECT_GUESS, false);
     }
+
+
 
 }

@@ -52,6 +52,7 @@
     <string name="difficulty_easy">Easy</string>
     <string name="difficulty_very_easy">Very Easy</string>
 
+
     <string-array name="difficulty_levels">
         <item>Very Easy</item>
         <item>Easy</item>
@@ -74,11 +75,18 @@
     <string name="guess_tab">Guess</string>
     <string name="btn_txt_guess">Guess</string>
     <string name="btn_txt_give_up">Give up?</string>
-    <string name="txt_default_artist">Artist unknown - reveal with a hint!</string>
-    <string name="txt_default_words_to_line">5 more words needed to reveal a line</string>
-    <string name="txt_default_words_to_artist">15 more words needed to reveal the artist</string>
+    <string name="txt_default_artist">Artist unknown!</string>
+    <string name="artist_revealed">Artist: %1$s</string>
+    <string name="txt_words_to_line_plural">%1$d more words needed to reveal a line</string>
+    <string name="txt_words_to_artist_plural">%1$d more words needed to reveal the artist</string>
 
-    <string name="msg_enter_guess">Enter your guess for the song\'s title!</string>
+    <string name="txt_words_to_line_singular">%1$d more word needed to reveal a line</string>
+    <string name="txt_words_to_artist_singular">%1$d more word needed to reveal the artist</string>
+
+    <string name="txt_words_to_line_enough">You can reveal a line using your words!</string>
+    <string name="txt_words_to_artist_enough">You can reveal the artist using your words!</string>
+
+    <string name="msg_enter_guess">What\'s the song called?</string>
     <string name="are_you_sure">Are you sure?</string>
     <string name="msg_check_give_up">Do you really want to give up?\nIf you collect more words you can get hints which may help!</string>
     <string name="txt_give_up">Give up</string>

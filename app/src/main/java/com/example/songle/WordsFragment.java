@@ -94,4 +94,16 @@ public class WordsFragment extends Fragment {
         // Otherwise not found, so show blank space.
         else return " " + lyricList.get(0);
     }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+        sharedPreference.registerOnSharedPreferenceChangedListener(listener);
+    }
+
+    @Override
+    public void onPause(){
+        sharedPreference.unregisterOnSharedPreferenceChangedListener(listener);
+        super.onPause();
+    }
 }
