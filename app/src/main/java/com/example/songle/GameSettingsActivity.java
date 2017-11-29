@@ -342,8 +342,11 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     private Runnable resetSettingsActivity = new Runnable() {
         @Override
         public void run() {
+            Log.e(TAG, "Download took too long - reset activity");
+            finishDownloading();
             Intent intent = new Intent(getApplicationContext(), GameSettingsActivity.class);
             intent.putExtra("DOWNLOAD_ERROR", true);
+            intent.putExtra("GAME_TYPE", gameType);
             startActivity(intent);
         }
     };

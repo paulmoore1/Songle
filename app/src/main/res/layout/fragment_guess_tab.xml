@@ -121,7 +121,7 @@
         app:menu_buttonToggleAnimation="@anim/fab_scale_up"
         app:menu_icon="@drawable/ic_hint"
         app:menu_backgroundColor="@color/transparent"
-        app:menu_fab_label="Choose an action"
+        app:menu_fab_label="@string/fam_get_hint"
         app:menu_labels_colorNormal="@color/colorPrimary"
         app:menu_labels_colorPressed="@color/colorPrimaryDark"
         app:menu_labels_colorRipple="#66FFFFFF"

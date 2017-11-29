@@ -31,17 +31,38 @@ public class XmlMapParser {
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(in, null);
             parser.nextTag();
-            return readPlacemarks(parser);
+            return readDocument(parser);
         } finally {
             in.close();
         }
+    }
+
+    private List<Placemark> readDocument(XmlPullParser parser) throws
+            XmlPullParserException, IOException {
+        Log.d(TAG, "readDocument called");
+        parser.require(XmlPullParser.START_TAG, ns, "kml");
+        List<Placemark> placemarks = null;
+        while (parser.next() != XmlPullParser.END_TAG) {
+            if (parser.getEventType() != XmlPullParser.START_TAG) {
+                continue;
+            }
+            String name = parser.getName();
+            Log.v(TAG, "name = " + name);
+            //Starts by looking for the Document tag
+            if (name.equals("Document")) {
+                placemarks = readPlacemarks(parser);
+            } else {
+                skip(parser);
+            }
+        }
+        return placemarks;
     }
 
     private List<Placemark> readPlacemarks(XmlPullParser parser) throws
             XmlPullParserException, IOException {
         Log.d(TAG, "readPlacemarks called");
         List<Placemark> placemarks = new ArrayList<Placemark>();
-        parser.require(XmlPullParser.START_TAG, ns, "kml");
+        parser.require(XmlPullParser.START_TAG, ns, "Document");
 
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
@@ -53,15 +74,15 @@ public class XmlMapParser {
                 placemarks.add(readPlacemark(parser));
             } else {
                 skip(parser);
+
             }
         }
-        Log.d(TAG, "All Placemarks read");
+
         return placemarks;
     }
 
     private Placemark readPlacemark(XmlPullParser parser) throws
             XmlPullParserException, IOException {
-        Log.d(TAG, "readPlacemark called");
         parser.require(XmlPullParser.START_TAG, ns, "Placemark");
         String key = null;
         String description = null;
@@ -81,6 +102,7 @@ public class XmlMapParser {
             }
         }
         return new Placemark(key, description, location);
+
     }
 
     private String readName(XmlPullParser parser) throws IOException,

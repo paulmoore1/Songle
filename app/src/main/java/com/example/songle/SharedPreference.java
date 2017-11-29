@@ -317,6 +317,7 @@ public class SharedPreference {
      * @param songNumber - the song number of this map
      */
     public void saveMap(List<Placemark> placemarks, String mapNumber, String songNumber){
+        Log.v(TAG, "saveMap called");
 
         Gson gson = new Gson();
         String jsonPlacemarks = gson.toJson(placemarks);
@@ -351,6 +352,7 @@ public class SharedPreference {
     }
 
     public ArrayList<Placemark> getMap(String mapNum){
+        Log.v(TAG, "getMap called for map #" + mapNum);
         ArrayList<Placemark> placemarks;
         String targetMap;
         switch (mapNum) {
@@ -375,6 +377,7 @@ public class SharedPreference {
         }
         if (settings.contains(targetMap)){
             String jsonPlacemarks = settings.getString(targetMap, null);
+            Log.e(TAG, "map song number: " + getMapsSongNumber(Integer.parseInt(mapNum)));
             Gson gson = new Gson();
             Type type = new TypeToken<ArrayList<Placemark>>(){}.getType();
             placemarks = gson.fromJson(jsonPlacemarks, type);
@@ -932,17 +935,28 @@ public class SharedPreference {
     public void artistRevealed(){
         String songNumber = getCurrentSongNumber();
         int loc = getSongLocation(songNumber);
-        ArrayList<Boolean> currentArtistStatuses = getArtistList();
-        currentArtistStatuses.set(loc, true);
-        saveArtistList(currentArtistStatuses);
+        if (loc != -1) {
+            ArrayList<Boolean> currentArtistStatuses = getArtistList();
+            currentArtistStatuses.set(loc, true);
+            saveArtistList(currentArtistStatuses);
+        }
     }
 
     public void artistHidden(){
         String songNumber = getCurrentSongNumber();
         int loc = getSongLocation(songNumber);
+        if (loc != -1){
         ArrayList<Boolean> currentArtistStatuses = getArtistList();
         currentArtistStatuses.set(loc, false);
         saveArtistList(currentArtistStatuses);
+        }
+    }
+
+    public boolean isArtistRevealed(){
+        String songNumber = getCurrentSongNumber();
+        int loc = getSongLocation(songNumber);
+        if (loc == - 1) return false;
+        return getArtistList().get(loc);
     }
 
     private ArrayList<Boolean> getArtistList(){

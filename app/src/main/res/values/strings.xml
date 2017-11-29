@@ -69,10 +69,16 @@
     <string name="default_no_difficulty_selected">No difficulty selected yet.</string>
     <string name="default_no_song_selected">No song selected yet.</string>
 
+
     <!--Strings for playing the game-->
     <string name="maps_tab">Find</string>
     <string name="words_tab">Words</string>
     <string name="guess_tab">Guess</string>
+
+    <!--Game strings for the words tab -->
+    <string name="msg_title_words_fragment">Words you\'ve collected so far</string>
+
+    <!--Game strings for the guess tab -->
     <string name="btn_txt_guess">Guess</string>
     <string name="btn_txt_give_up">Give up?</string>
     <string name="txt_default_artist">Artist unknown!</string>
@@ -84,16 +90,22 @@
 
     <string name="txt_words_to_line_plural">%1$d more words needed to reveal a line</string>
     <string name="txt_words_to_artist_plural">%1$d more words needed to reveal the artist</string>
-    <string name="txt_words_to_line_singular">%1$d more word needed to reveal a line</string>
-    <string name="txt_words_to_artist_singular">%1$d more word needed to reveal the artist</string>
+    <string name="txt_words_to_line_singular">1 more word needed to reveal a line</string>
+    <string name="txt_words_to_artist_singular">1 more word needed to reveal the artist</string>
     <string name="txt_words_to_line_enough">You can reveal a line using your words!</string>
     <string name="txt_words_to_artist_enough">You can reveal the artist using your words!</string>
 
     <string name="msg_enter_guess">What\'s the song called?</string>
-    <string name="are_you_sure">Are you sure?</string>
-    <string name="msg_check_give_up">Do you really want to give up?\nIf you collect more words you can get hints which may help!</string>
+    <string name="txt_are_you_sure">Are you sure?</string>
+    <string name="msg_check_give_up">Do you really want to give up?</string>
+    <string name="msg_check_give_up_very_easy">Do you really want to give up?\n
+        If you collect more words you can get hints which may help!</string>
     <string name="txt_give_up">Give up</string>
+    <string name="txt_change_difficulty">Change difficulty</string>
     <string name="txt_keep_playing">Keep playing</string>
+    <string name="txt_unlucky">Unlucky!</string>
+    <string name="msg_give_up">The song was %1$s by %2$s.\nTry another game!</string>
+
     <string name="congratulations">Congratulations!</string>
     <string name="msg_game_win">You\'ve won this game!\nWould you like to see the music video or start a new game?</string>
     <string name="watch_video">Watch video</string>
@@ -172,8 +184,10 @@
 
     <!-- Strings for saving values -->
     <string name="default_timestamp">2017-10-08T10:00:33.775+01:00[Europe/London]</string>
+    <string name="google_maps_key">AIzaSyDxdj9m4tadoZalHo2get5nvX2y_UWQTK4</string>
     <string name="song">Songs</string>
     <string name="title_activity_new_game_settings">Game Settings</string>
     <string name="title_activity_main_game">Let\'s Play!</string>
     <string name="section_format">Hello World from section: %1$d</string>
+    <string name="title_activity_maps2">Map</string>
 </resources>

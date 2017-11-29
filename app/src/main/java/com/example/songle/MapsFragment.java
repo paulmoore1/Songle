@@ -45,7 +45,8 @@ import java.util.HashMap;
  * From https://stackoverflow.com/questions/19353255/how-to-put-google-maps-v2-on-a-fragment-using-viewpager
  */
 
-public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback,
+public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickListener,
+        OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
@@ -76,6 +77,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     private BitmapDescriptor IC_INTERESTING;
     private BitmapDescriptor IC_VERYINTERESTING;
     private FusedLocationProviderClient mFusedLocationClient;
+    private ArrayList<Marker> markers;
 
 
     @Override
@@ -88,6 +90,16 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         currentDiff = sharedPreference.getCurrentDifficultyLevelNumber();
         songNumber = sharedPreference.getCurrentSongNumber();
         lyrics = sharedPreference.getLyrics(songNumber);
+        Log.v(TAG, "lyrics: ");
+        for (String name: lyrics.keySet()){
+
+            String key =name.toString();
+            String value = lyrics.get(name).toString();
+            Log.v(TAG, (key + " " + value));
+        }
+
+        Log.e(TAG, "songNumber for lyrics: " + songNumber);
+        Log.e(TAG, "stored song number = " + lyrics.get("NUMBER"));
         placemarks = sharedPreference.getMap(currentDiff);
         // Create an instance of GoogleAPIClient.
         if (mGoogleApiClient == null) {
@@ -97,7 +109,8 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                     .addApi(LocationServices.API)
                     .build();
         }
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity().getApplicationContext());
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(
+                getActivity().getApplicationContext());
 
         this.IC_BORING = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_boring);
@@ -109,43 +122,40 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                 R.drawable.marker_interesting);
         this.IC_VERYINTERESTING = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_veryinteresting);
-
+        markers = new ArrayList<>();
 
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
+        Log.v(TAG, "onCreateView called");
         View rootView = inflater.inflate(R.layout.fragment_maps, container, false);
         mMapView = (MapView) rootView.findViewById(R.id.mapView);
         mMapView.onCreate(savedInstanceState);
         mMapView.onResume(); //needed to get the map to display immediately
-
+/*
         try {
             MapsInitializer.initialize(getActivity().getApplicationContext());
         } catch (Exception e){
             e.printStackTrace();
-        }
-        mMapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(GoogleMap mMap) {
-                MapsFragment.this.mMap = mMap;
-                //For showing a move to my location button
-                try{
-                    MapsFragment.this.mMap.setMyLocationEnabled(true);
-
-                } catch (SecurityException e){
-                    Log.e(TAG, "Error" + e);
-                    e.printStackTrace();
-                }
-
-            }
-        });
-
+        }*/
+        mMapView.getMapAsync(this);
         return rootView;
     }
 
+
+
     @Override
     public void onMapReady(GoogleMap googleMap){
+        Log.d(TAG, "onMapReady called");
+        mMap = googleMap;
+        //For showing a move to my location button
+        try{
+            mMap.setMyLocationEnabled(true);
+        } catch (SecurityException e){
+            Log.e(TAG, "Error" + e);
+            e.printStackTrace();
+        }
         // Set view to bounds and move camera there
         googleMap.setLatLngBoundsForCameraTarget(UNIVERSITY_EDINBURGH);
         googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(EDINBURGH_CAMERA));
@@ -156,14 +166,19 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
      * Adds all the markers on to the map.
      */
     private void addMarkers(){
+        markers = new ArrayList<>();
+        Log.v(TAG, "addMarkers called");
         int n = placemarks.size();
+        Log.v(TAG, "n = " + n);
         for (int i = 0; i < n; i++){
             Placemark placemark = placemarks.get(i);
             String key = placemark.getKey();
-
             ArrayList<String> lyric = lyrics.get(key);
             // If that lyric is unfound
+            Log.v(TAG, "Key = " + key);
+            Log.v(TAG, "Lyric = " + lyric.toString());
             if (checkLyric(lyric)){
+                Marker marker;
                 String tag = lyric.get(0);
                 LatLng location = placemark.getLocation();
                 String description = placemark.getDescription();
@@ -189,8 +204,10 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                         bitmap = IC_UNCLASSIFIED;
                         break;
                 }
-                Marker marker = mMap.addMarker(new MarkerOptions().position(location).icon(bitmap));
+                marker = mMap.addMarker(new MarkerOptions().position(location).icon(bitmap));
+                Log.v(TAG, "Marker for " + key + " added");
                 marker.setTag(new ArrayList<>(Arrays.asList(tag, key)));
+                markers.add(marker);
             }
         }
         //set a listener for marker clicks.
@@ -256,7 +273,8 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                 Manifest.permission.ACCESS_FINE_LOCATION);
         if(permissionCheck == PackageManager.PERMISSION_GRANTED){
             LocationServices.FusedLocationApi.requestLocationUpdates(
-                    mGoogleApiClient, mLocationRequest, (com.google.android.gms.location.LocationListener) this);
+                    mGoogleApiClient, mLocationRequest,
+                    (com.google.android.gms.location.LocationListener) this);
         }
         */
     }

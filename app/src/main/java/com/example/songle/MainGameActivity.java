@@ -5,6 +5,7 @@ package com.example.songle;
 import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
@@ -37,47 +38,68 @@ public class MainGameActivity extends AppCompatActivity {
     private AHBottomNavigation bottomNavigation;
     private BottomBarAdapter pagerAdapter;
     private static final int MY_PERMISSIONS_REQUEST_FINE_LOCATION = 1;
+    private SharedPreference sharedPreference;
+    private SharedPreferences.OnSharedPreferenceChangeListener listener;
 
-    private boolean notificationVisible = false;
+    private boolean wordsNotificationVisible = false;
+    private boolean hintNotificationVisible = false;
+    private int lastNumWordsFound = 0;
+    private int lastNumWordsAvailable = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         AppCompatDelegate.setDefaultNightMode(
                 AppCompatDelegate.MODE_NIGHT_AUTO);
-        //if location permissions not available request them.
-    /*    if(!checkPermission()){
-            requestPermission();
-        }*/
+
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super onCreate called");
         setContentView(R.layout.main_game_screen);
+
+        //if location permissions not available request them.
+        if(!checkPermission()){
+            requestPermission();
+        }
+/*
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         //noinspection ConstantConditions
         getSupportActionBar().setTitle("Let's play!");
-
+*/
         setupViewPager();
 
 
-//        final DummyFragment fragment = new DummyFragment();
-//        Bundle bundle = new Bundle();
-//        bundle.putInt("color", ContextCompat.getColor(this, colors[0]));
-//        fragment.setArguments(bundle);
 
-//        getSupportFragmentManager()
-//                .beginTransaction()
-//                .add(R.id.frame, fragment, DummyFragment.TAG)
-//                .commit();
+        sharedPreference = new SharedPreference(getApplicationContext());
+        lastNumWordsFound = sharedPreference.getNumberWordsFound();
+        lastNumWordsAvailable = sharedPreference.getNumAvailableWords();
+
+        sharedPreference.registerOnSharedPreferenceChangedListener(listener);
+        listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                int newNumWordsFound = sharedPreference.getNumberWordsFound();
+                int newNumWordsAvailable = sharedPreference.getNumAvailableWords();
+                if (newNumWordsFound > lastNumWordsFound){
+                    lastNumWordsFound = newNumWordsFound;
+                    createWordsFoundNotification();
+                }
+                int difference = newNumWordsAvailable - lastNumWordsAvailable;
+                int requiredNumForHint = requiredWords();
+                if (difference > requiredNumForHint){
+                    lastNumWordsAvailable += requiredNumForHint;
+                    createHintNotification();
+                }
+            }
+        };
+
 
         bottomNavigation = (AHBottomNavigation) findViewById(R.id.bottom_navigation);
         setupBottomNavBehaviors();
         setupBottomNavStyle();
 
-        createFakeNotification();
-
         addBottomNavigationItems();
-        bottomNavigation.setCurrentItem(1);
+        bottomNavigation.setCurrentItem(0);
 
 
         bottomNavigation.setOnTabSelectedListener(new AHBottomNavigation.OnTabSelectedListener() {
@@ -91,9 +113,12 @@ public class MainGameActivity extends AppCompatActivity {
                 //    if(position == 1) bottomNavigation.setTranslucentNavigationEnabled(true);
                 //    else bottomNavigation.setTranslucentNavigationEnabled(false);
 
-                // remove notification badge
-                int lastItemPos = bottomNavigation.getItemsCount() - 1;
-                if (notificationVisible && position == lastItemPos)
+                // remove notification badge if it was there
+                int middleItemPos = 1;
+                int lastItemPos = 2;
+                if (wordsNotificationVisible && position == middleItemPos)
+                    bottomNavigation.setNotification(new AHNotification(), middleItemPos);
+                if (hintNotificationVisible && position == lastItemPos)
                     bottomNavigation.setNotification(new AHNotification(), lastItemPos);
                 return true;
             }
@@ -106,7 +131,7 @@ public class MainGameActivity extends AppCompatActivity {
         viewPager = (NoSwipePager) findViewById(R.id.viewpager);
         viewPager.setPagingEnabled(false);
         pagerAdapter = new BottomBarAdapter(getSupportFragmentManager());
-        pagerAdapter.addFragments(createDummyFragment(R.color.maps_tab));
+        pagerAdapter.addFragments(createMapFragment(R.color.maps_tab));
         pagerAdapter.addFragments(createWordsFragment(R.color.words_tab));
         pagerAdapter.addFragments(createGuessFragment(R.color.guess_tab));
         /*
@@ -115,13 +140,6 @@ public class MainGameActivity extends AppCompatActivity {
         pagerAdapter.addFragments(createGuessFragment(R.color.guess_tab));
 */
         viewPager.setAdapter(pagerAdapter);
-    }
-
-    @NonNull
-    private DummyFragment createDummyFragment(int color) {
-        DummyFragment fragment = new DummyFragment();
-        fragment.setArguments(passFragmentArguments(fetchColor(color)));
-        return fragment;
     }
 
     @NonNull
@@ -152,23 +170,26 @@ public class MainGameActivity extends AppCompatActivity {
         return bundle;
     }
 
-    private void createFakeNotification() {
-        Log.v(TAG, "createFakeNotification called");
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                AHNotification notification = new AHNotification.Builder()
-                        .setText("1")
-                        .setBackgroundColor(Color.YELLOW)
-                        .setTextColor(Color.BLACK)
-                        .build();
-                // Adding notification to last item.
+    private void createWordsFoundNotification(){
+        Log.d(TAG, "createWordsFoundNotification called");
+        AHNotification notification = new AHNotification.Builder()
+                .setText("!")
+                .setBackgroundColor(getColor(R.color.colorBottomNavigationPrimaryDark))
+                .setTextColor(Color.WHITE)
+                .build();
+        bottomNavigation.setNotification(notification, bottomNavigation.getItemsCount() - 2);
+        wordsNotificationVisible = true;
+    }
 
-                bottomNavigation.setNotification(notification, bottomNavigation.getItemsCount() - 1);
-
-                notificationVisible = true;
-            }
-        }, 1000);
+    private void createHintNotification(){
+        Log.d(TAG, "createHintNotification called");
+        AHNotification notification = new AHNotification.Builder()
+                .setText("!")
+                .setBackgroundColor(getColor(R.color.colorBottomNavigationPrimaryDark))
+                .setTextColor(Color.WHITE)
+                .build();
+        bottomNavigation.setNotification(notification, bottomNavigation.getItemsCount() - 1);
+        hintNotificationVisible = true;
     }
 
 
@@ -177,8 +198,6 @@ public class MainGameActivity extends AppCompatActivity {
 //       bottomNavigation.setBehaviorTranslationEnabled(false);
 
         /*
-        Before enabling this. Change MainActivity theme to MyTheme.TranslucentNavigation in
-        AndroidManifest.
         Warning: Toolbar Clipping might occur. Solve this by wrapping it in a LinearLayout with a top
         View of 24dp (status bar size) height.
          */
@@ -288,10 +307,45 @@ public class MainGameActivity extends AppCompatActivity {
                 .show();
     }
 
+    private int requiredWords(){
+        String difficulty = sharedPreference.getCurrentDifficultyLevel();
+        switch(difficulty){
+            case "Insane":
+                return fetchInteger(R.integer.hint_line_insane);
+            case "Hard":
+                return fetchInteger(R.integer.hint_line_hard);
+            case "Moderate":
+                return fetchInteger(R.integer.hint_line_moderate);
+            case "Easy":
+                return fetchInteger(R.integer.hint_line_easy);
+            case "Very Easy":
+                return fetchInteger(R.integer.hint_line_very_easy);
+            default:
+                Log.e(TAG, "Should not be in default case. Difficulty: " + difficulty);
+                return 0;
+        }
+    }
+
+    private int fetchInteger(int id){
+        return getResources().getInteger(id);
+    }
+
     @Override
     public void onBackPressed(){
         Intent intent = new Intent(this, HomeActivity.class);
         startActivity(intent);
+    }
+
+    @Override
+    public void onPause(){
+        sharedPreference.unregisterOnSharedPreferenceChangedListener(listener);
+        super.onPause();
+    }
+
+    @Override
+    public void onResume(){
+        sharedPreference.registerOnSharedPreferenceChangedListener(listener);
+        super.onResume();
     }
 
 }

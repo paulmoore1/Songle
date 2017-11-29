@@ -19,6 +19,7 @@ import java.util.HashMap;
 public class WordsFragment extends Fragment {
     private static final String TAG = "WordsFragment";
     private HashMap<String, ArrayList<String>> lyrics;
+    private String songNumber;
     private SharedPreference sharedPreference;
     private SharedPreferences.OnSharedPreferenceChangeListener listener;
     private TextView wordsTextView;
@@ -29,7 +30,7 @@ public class WordsFragment extends Fragment {
         super.onCreate(savedInstanceState);
         this.sharedPreference = new SharedPreference(getActivity().getApplicationContext());
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
-        String songNumber = sharedPreference.getCurrentSongNumber();
+        songNumber = sharedPreference.getCurrentSongNumber();
         Log.v(TAG, "songNumber " + songNumber);
         lyrics = sharedPreference.getLyrics(songNumber);
 
@@ -37,6 +38,7 @@ public class WordsFragment extends Fragment {
         listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                if (sharedPreference.getSongLocation(songNumber) != -1)
                 refreshLyrics();
             }
         };
@@ -53,6 +55,8 @@ public class WordsFragment extends Fragment {
     }
 
     private void refreshLyrics(){
+        songNumber = sharedPreference.getCurrentSongNumber();
+        lyrics = sharedPreference.getLyrics(songNumber);
         wordsTextView.setText(lyricsToString());
     }
 
@@ -62,7 +66,7 @@ public class WordsFragment extends Fragment {
         Log.d(TAG, "lyricsToString called");
         ArrayList<String> sizes = lyrics.get("SIZE");
         int numLines = sizes.size();
-        StringBuilder sb = new StringBuilder("");
+        StringBuilder sb = new StringBuilder("\n");
         for (int line = 1; line < numLines + 1; line++) {
             int numWords = Integer.parseInt(sizes.get(line - 1));
             for (int word = 1; word < numWords + 1; word++) {
@@ -75,6 +79,8 @@ public class WordsFragment extends Fragment {
                 sb.append(lyric);
             }
         }
+        //append newlines as fix to lyrics hidden below status bar
+        sb.append("\n\n\n\n\n");
         return sb.toString();
     }
 
@@ -88,7 +94,7 @@ public class WordsFragment extends Fragment {
         if (lyricList == null) return " null";
         boolean display = Boolean.valueOf(lyricList.get(1));
         // If lyric is found, return it
-        if (display) return lyricList.get(0);
+        if (display) return " " + lyricList.get(0);
         // If lyric is a blank it must be a new line
         else if(lyricList.get(0).equals("")) return "\n";
         // Otherwise not found, so show blank space.

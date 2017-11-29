@@ -42,6 +42,12 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super.onCreate() called");
+
+        // Used to quit the app from other fragments (otherwise can result in loading errors)
+        if (getIntent().getBooleanExtra("LOGOUT", false))
+        {
+            finish();
+        }
         setContentView(R.layout.home_screen);
         Log.d(TAG, "Layout loaded");
 

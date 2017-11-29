@@ -81,7 +81,6 @@ public class LyricsTextParser {
             sizes.add(currentLineNum - 1, Integer.toString(m - 1));
 
             currentLineNum++;
-            Log.v(TAG, "Line number: " + currentLineNum);
         }
         scanner.close();
         try {
@@ -94,6 +93,14 @@ public class LyricsTextParser {
 
         lyrics.put("SIZE", sizes);
         lyrics.put("NUMBER", songNumList);
+        Log.e(TAG, "#################################################");
+        for (String name: lyrics.keySet()){
+
+            String key =name.toString();
+            String value = lyrics.get(name).toString();
+            System.out.println(key + " " + value);
+        }
+        Log.e(TAG, "#################################################");
 
         sharedPreference.saveNewLyrics(lyrics, songNumber);
 

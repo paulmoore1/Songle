@@ -7,5 +7,6 @@
     <dimen name="statusBarSize">24dp</dimen>
     <dimen name="fab_menu_width">96dp</dimen>
     <dimen name="fab_menu_height_2_items">96dp</dimen>
+    <dimen name="scrollViewMaxHeight">300dp</dimen>
 
 </resources>

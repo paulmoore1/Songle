@@ -22,6 +22,7 @@ import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -35,11 +36,12 @@ public class GuessFragment extends Fragment {
     private SharedPreference sharedPreference;
     private Button guess;
     private Button giveUp;
-    private TextView artist;
+    private TextView revealArtistText;
     private EditText enterGuess;
     private Song currentSong;
     private String currentSongNumber;
     private String currentDifficulty;
+    private ArrayList<String> mChosenDifficulty;
     private SharedPreferences.OnSharedPreferenceChangeListener listener;
     private ProgressBar lineProgress;
     private ProgressBar artistProgress;
@@ -83,7 +85,11 @@ public class GuessFragment extends Fragment {
         if (!sharedPreference.getIncorrectGuess()){
             giveUp.setVisibility(View.INVISIBLE);
         }
-        artist = view.findViewById(R.id.textViewArtist);
+        revealArtistText = view.findViewById(R.id.textViewArtist);
+        if (sharedPreference.isArtistRevealed()){
+            revealArtist();
+        }
+
         enterGuess = view.findViewById(R.id.editTextGuess);
 
         createProgressBars(view);
@@ -104,13 +110,19 @@ public class GuessFragment extends Fragment {
         giveUp.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                sharedPreference.incrementNumberWordsFound();
+                showCheckGiveUpDialog();
             }
         });
 
         fabLine = (FloatingActionButton) view.findViewById(R.id.fab_reveal_line);
         fabArtist = (FloatingActionButton) view.findViewById(R.id.fab_reveal_artist);
         fam = (FloatingActionMenu) view.findViewById(R.id.fab_menu);
+
+        //Set colors here (wouldn't work in xml layout file)
+        fabLine.setColorNormalResId(R.color.fab_menu_hint);
+        fabLine.setColorPressedResId(R.color.fab_menu_hint_pressed);
+        fabArtist.setColorNormalResId(R.color.fab_menu_hint);
+        fabArtist.setColorPressedResId(R.color.fab_menu_hint_pressed);
 
 
         //handling menu status (open or close)
@@ -222,11 +234,116 @@ public class GuessFragment extends Fragment {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
-                getActivity().finish();
+                quitAppSafe();
             }
         });
         AlertDialog alertDialog = adb.create();
         alertDialog.show();
+    }
+
+    private void showCheckGiveUpDialog(){
+        AlertDialog.Builder adb = new AlertDialog.Builder(getActivity());
+        adb.setTitle(R.string.txt_are_you_sure);
+        adb.setMessage(R.string.msg_check_give_up);
+        adb.setPositiveButton(R.string.txt_give_up, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                showGiveUpDialog();
+            }
+        });
+        //Only show the option to make it easier if the difficulty is not already very easy
+        if (!currentDifficulty.equals(getString(R.string.difficulty_very_easy)))
+        adb.setNeutralButton(R.string.txt_change_difficulty, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                sendSelectEasierDifficultyDialog();
+            }
+        });
+        adb.setNegativeButton(R.string.txt_keep_playing, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
+    }
+
+    private void showGiveUpDialog(){
+        AlertDialog.Builder adb = new AlertDialog.Builder(getActivity());
+        adb.setTitle(R.string.txt_unlucky);
+        String messageFormat = getString(R.string.msg_give_up);
+        String artist = currentSong.getArtist();
+        String title = currentSong.getTitle();
+        String message = String.format(messageFormat, title, artist);
+        adb.setMessage(message);
+        adb.setPositiveButton(R.string.txt_new_game, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                startNewGame();
+            }
+        });
+        adb.setNegativeButton(R.string.quit, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                quitAppSafe();
+            }
+        });
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
+    }
+
+    public void sendSelectEasierDifficultyDialog(){
+        Log.d(TAG, "sendSelectDifficultyDialog called");
+        mChosenDifficulty = new ArrayList<>(2);
+        CharSequence[] diffList = getResources().getStringArray(R.array.difficulty_levels);
+        // Find how many difficulties should be hidden based on current difficulty
+        int numToKeep = calculateDifficultiesToRemove(currentDifficulty);
+        final CharSequence[] diffListShort = Arrays.copyOfRange(diffList, 0, numToKeep);
+        AlertDialog.Builder adb = new AlertDialog.Builder(getActivity());
+        adb.setTitle(R.string.txt_select_difficulty);
+        adb.setSingleChoiceItems(diffListShort, -1,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        String chosenDiff = diffListShort[i].toString();
+                        mChosenDifficulty.add(0, chosenDiff);
+
+                    }
+                }).setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                String chosenDiff = mChosenDifficulty.get(0);
+                //save value in private string
+                currentDifficulty = chosenDiff;
+                //save value in shared preferences
+                sharedPreference.saveCurrentDifficultyLevel(chosenDiff);
+                refreshProgress();
+            }
+        });
+        AlertDialog ad = adb.create();
+        ad.show();
+
+    }
+
+    private int calculateDifficultiesToRemove(String difficulty){
+        if(difficulty.equals(getString(R.string.difficulty_insane))) return 4;
+        else if (difficulty.equals(getString(R.string.difficulty_hard))) return 3;
+        else if (difficulty.equals(getString(R.string.difficulty_moderate))) return 2;
+        else if (difficulty.equals(getString(R.string.difficulty_easy))) return 1;
+        else return 0;
+    }
+
+    /**
+     * Quits app by returning to the home, with LOGOUT set to true.
+     * This stops the app, and if it reselected from recent screens, it will load from the start.
+     */
+    private void quitAppSafe(){
+        Intent intent = new Intent(getActivity(), HomeActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra("LOGOUT", true);
+        startActivity(intent);
     }
 
     private void createProgressBars(View view){
@@ -329,15 +446,14 @@ public class GuessFragment extends Fragment {
         int neededForArtist = artistMax - wordsAvailable;
 
         String lineMessage = "";
-        String artistMessage="";
+        String artistMessage = "";
 
         //Set the messages appropriately depending on how many words are needed.
         if (neededForLine > 1){
             String lineFormat = getString(R.string.txt_words_to_line_plural);
             lineMessage = String.format(lineFormat, neededForLine);
         } else if (neededForLine == 1){
-            String lineFormat = getString(R.string.txt_words_to_line_singular);
-            lineMessage = String.format(lineFormat, neededForLine);
+            lineMessage = getString(R.string.txt_words_to_line_singular);
         } else if (neededForLine < 1 ){
             lineMessage = getString(R.string.txt_words_to_line_enough);
         }
@@ -346,8 +462,7 @@ public class GuessFragment extends Fragment {
             String lineFormat = getString(R.string.txt_words_to_artist_plural);
             artistMessage = String.format(lineFormat, neededForArtist);
         } else if (neededForArtist == 1){
-            String lineFormat = getString(R.string.txt_words_to_artist_singular);
-            artistMessage = String.format(lineFormat, neededForArtist);
+            artistMessage = getString(R.string.txt_words_to_artist_singular);
         } else if (neededForArtist < 1 ){
             artistMessage = getString(R.string.txt_words_to_artist_enough);
         }
@@ -402,7 +517,7 @@ public class GuessFragment extends Fragment {
             String artistFormat = getString(R.string.artist_revealed);
             String artistMessage = String.format(artistFormat, artist);
             Log.v(TAG, "message is: " + artistMessage);
-            artistText.setText(artistMessage);
+            revealArtistText.setText(artistMessage);
             sharedPreference.removeNumAvailableWords(artistMax);
         } else {
             String msg = getString(R.string.toast_not_enough_words);

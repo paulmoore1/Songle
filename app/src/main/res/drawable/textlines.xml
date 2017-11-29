@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--From https://stackoverflow.com/questions/1598119/is-there-an-easy-way-to-add-a-border-to-the-top-and-bottom-of-an-android-view-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:top="-2dp" android:left="-2dp" android:right="-2dp">
+        <shape android:shape="rectangle">
+            <stroke android:width="1dp" android:color="@color/view_divider_color" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+</layer-list>
