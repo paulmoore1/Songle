@@ -5,35 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <EditText
-        android:id="@+id/editTextGuess"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="28dp"
-        android:ems="10"
-        android:inputType="text"
-        app:layout_constraintEnd_toStartOf="@+id/btn_guess"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewGuess" />
-
-    <TextView
-        android:id="@+id/textViewGuess"
-        android:layout_width="wrap_content"
-        android:layout_height="22dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:text="@string/msg_enter_guess"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <Button
         android:id="@+id/btn_guess"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="28dp"
+        android:layout_marginEnd="24dp"
         android:layout_marginTop="68dp"
         android:text="@string/btn_txt_guess"
         app:layout_constraintEnd_toEndOf="parent"
@@ -43,27 +19,11 @@
         android:id="@+id/btn_give_up"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="28dp"
+        android:layout_marginEnd="24dp"
         android:layout_marginTop="16dp"
         android:text="@string/btn_txt_give_up"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_guess" />
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/floatingActionButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="40dp"
-        android:layout_marginTop="8dp"
-        android:clickable="true"
-        android:focusable="true"
-        app:backgroundTint="@android:color/holo_orange_light"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btn_give_up"
-        app:layout_constraintVertical_bias="0.387"
-        app:srcCompat="@drawable/ic_hint" />
 
 
     <ImageView
@@ -132,5 +92,78 @@
         android:text="@string/txt_words_to_artist_plural"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/hintArtistProgress" />
+
+    <com.github.clans.fab.FloatingActionMenu
+        android:id="@+id/fab_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/fab_menu_height_2_items"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:paddingBottom="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@+id/hintArtistTextView"
+        app:layout_constraintTop_toBottomOf="@+id/btn_give_up"
+        app:layout_constraintVertical_bias="0.135"
+        app:fab_colorRipple="#99FFFFFF"
+        app:fab_shadowColor="#66000000"
+        app:fab_showShadow="true"
+        app:menu_colorNormal="@color/fab_menu_hint"
+        app:menu_colorPressed="@color/fab_menu_hint_pressed"
+        app:fab_colorNormal="@color/fab_menu_hint"
+        app:fab_colorPressed="@color/fab_menu_hint_pressed"
+        app:menu_buttonToggleAnimation="@anim/fab_scale_up"
+        app:menu_icon="@drawable/ic_hint"
+        app:menu_backgroundColor="@color/transparent"
+        app:menu_fab_label="Choose an action"
+        app:menu_labels_colorNormal="@color/colorPrimary"
+        app:menu_labels_colorPressed="@color/colorPrimaryDark"
+        app:menu_labels_colorRipple="#66FFFFFF"
+        app:menu_labels_ellipsize="end"
+        app:menu_labels_maxLines="-1"
+        app:menu_labels_position="left"
+        app:menu_labels_showShadow="true"
+        app:menu_labels_singleLine="true"
+        app:menu_openDirection="up">
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/fab_reveal_line"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_music_note_white"
+            app:fab_label="@string/fab_reveal_line_txt"
+            app:fab_size="mini" />
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/fab_reveal_artist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_person_white"
+            app:fab_label="@string/fab_reveal_artist_txt"
+            app:fab_size="mini" />
+
+
+    </com.github.clans.fab.FloatingActionMenu>
+
+    <EditText
+        android:id="@+id/editTextGuess"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="68dp"
+        android:ems="10"
+        android:hint="@string/msg_enter_guess"
+        android:inputType="text"
+        app:layout_constraintEnd_toStartOf="@+id/btn_guess"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

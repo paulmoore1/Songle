@@ -467,7 +467,7 @@ public class SharedPreference {
      * @param songNumber - number of song being looked for
      * @return - index where that song is stored.
      */
-    private int getSongLocation(String songNumber){
+    public int getSongLocation(String songNumber){
         Log.v(TAG, "getSongLocation called");
         ArrayList<Integer> currentStatuses = getLyricStatuses();
         Log.v(TAG, "current Statuses: " + currentStatuses);
@@ -865,6 +865,9 @@ public class SharedPreference {
         Log.v(TAG, "songNumber is: " + songNumber);
         ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
         int location = getSongLocation(songNumber);
+        if (location == -1){
+            return -1;
+        }
         return wordsAvailableList.get(location);
     }
 

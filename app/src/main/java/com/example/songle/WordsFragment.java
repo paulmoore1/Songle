@@ -92,7 +92,7 @@ public class WordsFragment extends Fragment {
         // If lyric is a blank it must be a new line
         else if(lyricList.get(0).equals("")) return "\n";
         // Otherwise not found, so show blank space.
-        else return " " + lyricList.get(0);
+        else return " ____";// + lyricList.get(0);
     }
 
     @Override

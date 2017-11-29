@@ -12,8 +12,11 @@
 
     <!-- Colours for bottom tabs -->
     <color name="bottom_tab_item_resting">#36000000</color>
-
     <color name="maps_tab">#6CCC3D</color>
     <color name="words_tab">#EA5C46</color>
     <color name="guess_tab">#33b3cc</color>
+
+    <!-- Colours for hint FAB menu and FABS-->
+    <color name="fab_menu_hint">#FFC107</color>
+    <color name="fab_menu_hint_pressed">#FFA000</color>
 </resources>

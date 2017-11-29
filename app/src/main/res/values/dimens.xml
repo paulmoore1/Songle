@@ -5,4 +5,7 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="activity_margin_half">8dp</dimen>
     <dimen name="statusBarSize">24dp</dimen>
+    <dimen name="fab_menu_width">96dp</dimen>
+    <dimen name="fab_menu_height_2_items">96dp</dimen>
+
 </resources>

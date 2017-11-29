@@ -16,6 +16,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +27,7 @@ import java.util.HashMap;
 
 /**
  * Created by Paul on 21/11/2017.
+ * Floating action menu adapted from http://www.devexchanges.info/2016/07/floating-action-menu-in-android.html
  */
 
 public class GuessFragment extends Fragment {
@@ -32,7 +37,8 @@ public class GuessFragment extends Fragment {
     private Button giveUp;
     private TextView artist;
     private EditText enterGuess;
-    private Song correctSong;
+    private Song currentSong;
+    private String currentSongNumber;
     private String currentDifficulty;
     private SharedPreferences.OnSharedPreferenceChangeListener listener;
     private ProgressBar lineProgress;
@@ -44,6 +50,9 @@ public class GuessFragment extends Fragment {
     private TextView lineText;
     private TextView artistText;
 
+    private FloatingActionMenu fam;
+    private FloatingActionButton fabLine, fabArtist;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState){
@@ -53,11 +62,13 @@ public class GuessFragment extends Fragment {
         sharedPreference = new SharedPreference(getActivity().getApplicationContext());
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
 
-        correctSong = sharedPreference.getCurrentSong();
+        currentSong = sharedPreference.getCurrentSong();
+        currentSongNumber = sharedPreference.getCurrentSongNumber();
         listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                refreshProgress();
+                // Only refresh if the song is still being worked on.
+                if (sharedPreference.getSongLocation(currentSongNumber) != -1) refreshProgress();
             }
         };
     }
@@ -97,6 +108,45 @@ public class GuessFragment extends Fragment {
             }
         });
 
+        fabLine = (FloatingActionButton) view.findViewById(R.id.fab_reveal_line);
+        fabArtist = (FloatingActionButton) view.findViewById(R.id.fab_reveal_artist);
+        fam = (FloatingActionMenu) view.findViewById(R.id.fab_menu);
+
+
+        //handling menu status (open or close)
+        fam.setOnMenuToggleListener(new FloatingActionMenu.OnMenuToggleListener() {
+            @Override
+            public void onMenuToggle(boolean opened) {
+
+            }
+        });
+
+        fam.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                if (fam.isOpened()){
+                    fam.close(true);
+                }
+            }
+        });
+
+        fabLine.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                revealLine();
+                fam.close(true);
+            }
+        });
+
+        fabArtist.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                revealArtist();
+                fam.close(true);
+            }
+        });
+
+
         return view;
     }
 
@@ -113,7 +163,7 @@ public class GuessFragment extends Fragment {
     }
 
     private boolean checkGuess(String guess){
-        String correctTitle = correctSong.getTitle().toLowerCase();
+        String correctTitle = currentSong.getTitle().toLowerCase();
         guess = guess.toLowerCase();
         return(guess.equals(correctTitle));
     }
@@ -125,7 +175,7 @@ public class GuessFragment extends Fragment {
 
     private void winGame(){
 
-        String songNumber = correctSong.getNumber();
+        String songNumber = currentSong.getNumber();
         sharedPreference.completeSong(songNumber);
 
         showWinDialog();
@@ -133,7 +183,7 @@ public class GuessFragment extends Fragment {
 
     // from https://stackoverflow.com/questions/42024058/how-to-open-youtube-video-link-in-android-app
     private void watchYouTubeVideo(){
-        String link = correctSong.getLink();
+        String link = currentSong.getLink();
         //extract last 11 characters of link as the id
         String id = link.substring(link.length() - 11);
         Intent applicationIntent = new  Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + id));
@@ -307,36 +357,58 @@ public class GuessFragment extends Fragment {
     }
 
     public void revealLine(){
-        String songNumber = correctSong.getNumber();
-        HashMap<String, ArrayList<String>> lyrics = sharedPreference.getLyrics(songNumber);
-        if (lyrics == null) return;
-        ArrayList<String> sizes = lyrics.get("SIZE");
+        int wordsAvailable = sharedPreference.getNumAvailableWords();
+        // If the user has enough words to reveal a line
+        if (wordsAvailable >= lineMax){
+            String songNumber = currentSong.getNumber();
+            HashMap<String, ArrayList<String>> lyrics = sharedPreference.getLyrics(songNumber);
+            if (lyrics == null) return;
+            ArrayList<String> sizes = lyrics.get("SIZE");
 
-        // Pick a random line by making a list of the number of blank words in each line
-        // e.g. blanks(2) = 5 means line 3 (add one) has 5 blank words.
-        ArrayList<Integer> blanks = getNumBlankWords(sizes, lyrics);
-        // Remove blank lines of length one as they aren't useful at all
-        blanks = filterLengthOne(blanks);
-        // Randomize the order
-        Collections.shuffle(blanks);
-        // Pick a random line
-        String lineNum = String.valueOf(blanks.get(0) + 1);
+            // Pick a random line by making a list of the number of blank words in each line
+            // e.g. blanks(2) = 5 means line 3 (add one) has 5 blank words.
+            ArrayList<Integer> blanks = getNumBlankWords(sizes, lyrics);
+            // Remove blank lines of length one as they aren't useful at all
+            blanks = filterLengthOne(blanks);
+            // Randomize the order
+            Collections.shuffle(blanks);
+            // Pick a random line
+            String lineNum = String.valueOf(blanks.get(0) + 1);
+            Log.v(TAG, "Revealed line #" + lineNum);
 
-        int lineLength = Integer.parseInt(sizes.get(Integer.parseInt(lineNum) - 1));
-        for (int word = 1; word < lineLength + 1; word++){
-            String key = lineNum + ":" + String.valueOf(word);
-            ArrayList<String> lyric = lyrics.get(key);
-            lyric.set(1, "True");
-            lyrics.put(key, lyric);
+            int lineLength = Integer.parseInt(sizes.get(Integer.parseInt(lineNum) - 1));
+            for (int word = 1; word < lineLength + 1; word++){
+                String key = lineNum + ":" + String.valueOf(word);
+                ArrayList<String> lyric = lyrics.get(key);
+                lyric.set(1, "True");
+                lyrics.put(key, lyric);
+            }
+            //Remove those words
+            sharedPreference.removeNumAvailableWords(lineMax);
+            sharedPreference.updateLyrics(lyrics, songNumber);
+        } else {
+            String msg = getString(R.string.toast_not_enough_words);
+            Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
         }
-        sharedPreference.updateLyrics(lyrics, songNumber);
+
+
     }
 
     public void revealArtist(){
-        String artist = correctSong.getArtist();
-        String artistFormat = getString(R.string.artist_revealed);
-        String artistMessage = String.format(artistFormat, artist);
-        artistText.setText(artistMessage);
+        int wordsAvailable = sharedPreference.getNumAvailableWords();
+        if (wordsAvailable >= artistMax){
+            String artist = currentSong.getArtist();
+
+            String artistFormat = getString(R.string.artist_revealed);
+            String artistMessage = String.format(artistFormat, artist);
+            Log.v(TAG, "message is: " + artistMessage);
+            artistText.setText(artistMessage);
+            sharedPreference.removeNumAvailableWords(artistMax);
+        } else {
+            String msg = getString(R.string.toast_not_enough_words);
+            Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     private ArrayList<Integer> getNumBlankWords(ArrayList<String> sizes,
