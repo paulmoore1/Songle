@@ -64,8 +64,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
             new LatLng(55.942617, -3.192473), new LatLng(55.946233, -3.184319)
     );
 
-    private static final CameraPosition EDINBURGH_CAMERA = new CameraPosition.Builder()
-            .target(new LatLng(55.944425, -3.1884)).zoom(4.0f).bearing(0).tilt(0).build();
+    private static final LatLng EDINBURGH_POSITION = new LatLng(55.944425, -3.1884);
 
     private HashMap<String, ArrayList<String>> lyrics;
     private ArrayList<Placemark> placemarks;
@@ -90,16 +89,14 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         currentDiff = sharedPreference.getCurrentDifficultyLevelNumber();
         songNumber = sharedPreference.getCurrentSongNumber();
         lyrics = sharedPreference.getLyrics(songNumber);
-        Log.v(TAG, "lyrics: ");
-        for (String name: lyrics.keySet()){
-
-            String key =name.toString();
-            String value = lyrics.get(name).toString();
-            Log.v(TAG, (key + " " + value));
+        Log.e(TAG, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        for (String key : lyrics.keySet()){
+            String value = lyrics.get(key).toString();
+            Log.v(TAG, key + " " + value);
         }
+        Log.e(TAG, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-        Log.e(TAG, "songNumber for lyrics: " + songNumber);
-        Log.e(TAG, "stored song number = " + lyrics.get("NUMBER"));
+
         placemarks = sharedPreference.getMap(currentDiff);
         // Create an instance of GoogleAPIClient.
         if (mGoogleApiClient == null) {
@@ -109,18 +106,22 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                     .addApi(LocationServices.API)
                     .build();
         }
+        //Set default location.
+        mLastLocation.setLatitude(55.944425);
+        mLastLocation.setLongitude(-3.1884);
+
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(
                 getActivity().getApplicationContext());
 
-        this.IC_BORING = BitmapDescriptorFactory.fromResource(
+        IC_BORING = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_boring);
-        this.IC_UNCLASSIFIED = BitmapDescriptorFactory.fromResource(
+        IC_UNCLASSIFIED = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_unclassified);
-        this.IC_NOTBORING  = BitmapDescriptorFactory.fromResource(
+        IC_NOTBORING  = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_notboring);
-        this.IC_INTERESTING = BitmapDescriptorFactory.fromResource(
+        IC_INTERESTING = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_interesting);
-        this.IC_VERYINTERESTING = BitmapDescriptorFactory.fromResource(
+        IC_VERYINTERESTING = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_veryinteresting);
         markers = new ArrayList<>();
 
@@ -149,16 +150,21 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     public void onMapReady(GoogleMap googleMap){
         Log.d(TAG, "onMapReady called");
         mMap = googleMap;
+
         //For showing a move to my location button
         try{
+            Log.v(TAG, "Trying to set location enabled");
             mMap.setMyLocationEnabled(true);
+            Log.v(TAG, "location enabled");
         } catch (SecurityException e){
             Log.e(TAG, "Error" + e);
             e.printStackTrace();
         }
+        Log.v(TAG, "About to set bounds");
         // Set view to bounds and move camera there
-        googleMap.setLatLngBoundsForCameraTarget(UNIVERSITY_EDINBURGH);
-        googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(EDINBURGH_CAMERA));
+        mMap.setLatLngBoundsForCameraTarget(UNIVERSITY_EDINBURGH);
+        Log.v(TAG, "Bounds set");
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(getLatLngFromLastLocation(), 18.0f));
         addMarkers();
     }
 
@@ -166,7 +172,6 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
      * Adds all the markers on to the map.
      */
     private void addMarkers(){
-        markers = new ArrayList<>();
         Log.v(TAG, "addMarkers called");
         int n = placemarks.size();
         Log.v(TAG, "n = " + n);
@@ -174,12 +179,14 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
             Placemark placemark = placemarks.get(i);
             String key = placemark.getKey();
             ArrayList<String> lyric = lyrics.get(key);
+            if (lyric == null){
+                Log.e(TAG, "null lyric  for key: " + key);
+                continue;
+            }
             // If that lyric is unfound
-            Log.v(TAG, "Key = " + key);
-            Log.v(TAG, "Lyric = " + lyric.toString());
             if (checkLyric(lyric)){
                 Marker marker;
-                String tag = lyric.get(0);
+                String word = lyric.get(0);
                 LatLng location = placemark.getLocation();
                 String description = placemark.getDescription();
                 BitmapDescriptor bitmap;
@@ -205,9 +212,8 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                         break;
                 }
                 marker = mMap.addMarker(new MarkerOptions().position(location).icon(bitmap));
-                Log.v(TAG, "Marker for " + key + " added");
-                marker.setTag(new ArrayList<>(Arrays.asList(tag, key)));
-                markers.add(marker);
+                marker.setTag(new ArrayList<>(Arrays.asList(word, key)));
+
             }
         }
         //set a listener for marker clicks.
@@ -218,35 +224,33 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     @Override
     public boolean onMarkerClick(Marker marker) {
         //may change this if necessary
-        double requiredDistance = 10;
+        double requiredDistance = 1000;
         //find distance between last location and location of marker
-        double mLastLat = mLastLocation.getLatitude();
-        double mLastLong = mLastLocation.getLongitude();
-        LatLng mLastLatLong = new LatLng(mLastLat, mLastLong);
+        LatLng mLastLatLong = getLatLngFromLastLocation();
         double distance = SphericalUtil.computeDistanceBetween(mLastLatLong, marker.getPosition());
         //if you are close enough to the marker
         if (distance < requiredDistance){
+            marker.remove();
             ArrayList<String> lyric = (ArrayList<String>) marker.getTag();
             String word = lyric.get(0);
             String key = lyric.get(1);
             Toast.makeText(getContext(), "Found word: " + word + "!",
                     Toast.LENGTH_SHORT).show();
-            //delete the marker
-            marker.remove();
             //update lyrics to show that word is found.
             ArrayList<String> newLyric = new ArrayList<>(Arrays.asList(word, "True"));
             lyrics.put(key, newLyric);
             sharedPreference.updateLyrics(lyrics, songNumber);
             sharedPreference.incrementNumberWordsFound();
-
+            return true;
         } else {
             //too far away from marker, show a Toast but nothing more.
             Toast.makeText(getContext(), "Too far from marker", Toast.LENGTH_SHORT).show();
+            return false;
         }
         // Return false to indicate that we have not consumed the event and that we wish
         // for the default behavior to occur (which is for the camera to move such that the
         // marker is centered and for the marker's info window to open, if it has one).
-        return false;
+        //return false;
     }
 
     /**
@@ -258,6 +262,12 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     private boolean checkLyric(ArrayList<String> lyric) {
         return lyric != null && !Boolean.valueOf(lyric.get(1));
 
+    }
+
+    private LatLng getLatLngFromLastLocation(){
+        double mLastLat = mLastLocation.getLatitude();
+        double mLastLong = mLastLocation.getLongitude();
+        return new LatLng(mLastLat, mLastLong);
     }
 
 
@@ -281,11 +291,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
 
     public void onLocationChanged(Location current) {
-        System.out.println(
-                "[onLocationChanged] Lat/long now (" +
-                        String.valueOf(current.getLatitude()) + "," +
-                        String.valueOf(current.getLongitude()) + ")"
-        );
+        Log.v(TAG, "location changed");
         mLastLocation = current;
         //Do something with current location
     }
@@ -352,6 +358,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     public void onResume(){
         super.onResume();
         mMapView.onResume();
+        mMapView.getMapAsync(this);
         //unnecessary?
         //lyrics = sharedPreference.getLyrics(songNumber);
     }

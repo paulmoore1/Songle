@@ -226,13 +226,9 @@ public class NetworkFragment extends Fragment {
             String songNumber = sharedPreferenceLyrics.getCurrentSongNumber();
             String mUrlString = getString(R.string.url_general) +
                     songNumber + "/words.txt";
-
-            InputStream stream = null;
-            LyricsTextParser ltp = new LyricsTextParser(getActivity().getApplicationContext(), songNumber);
             try {
                 Log.d(TAG, "URL is: " + mUrlString);
-                stream = downloadUrl(mUrlString);
-                ltp.parse(stream);
+                downloadUrl(mUrlString);
                 return "Parsed";
             } catch (IOException e){
                 Log.e(TAG, "Error: " + e);
@@ -277,24 +273,35 @@ public class NetworkFragment extends Fragment {
 
         /**
          * Given a URL, sets up a connection and gets the HTTP response body from the server.
-         * If the network request is successful, it returns the response body in String form. Otherwise,
-         * it will throw an IOException.
+         * Downloads and parses the entire stream.
          */
-        private InputStream downloadUrl(String urlString) throws IOException {
-            Log.d(TAG, "downloadPlacemarks called");
+        private void downloadUrl(String urlString) throws IOException {
+            Log.d(TAG, "downloadUrl called");
+            String songNumber = sharedPreferenceLyrics.getCurrentSongNumber();
+            LyricsTextParser ltp = new LyricsTextParser(getActivity().getApplicationContext(), songNumber);
+
             InputStream stream = null;
             URL url = new URL(urlString);
+            HttpURLConnection conn = null;
+            try{
+                conn = (HttpURLConnection) url.openConnection();
 
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(10000 /*milliseconds*/);
+                conn.setConnectTimeout(15000 /*milliseconds*/);
+                conn.setRequestMethod("GET");
+                conn.setDoInput(true);
+                conn.connect();
+                stream = conn.getInputStream();
+                ltp.parse(stream);
+            } finally{
+                if (stream != null){
+                    stream.close();
+                }
+                if (conn != null){
+                    conn.disconnect();
+                }
 
-            conn.setReadTimeout(10000 /*milliseconds*/);
-            conn.setConnectTimeout(15000 /*milliseconds*/);
-            conn.setRequestMethod("GET");
-            conn.setDoInput(true);
-            conn.connect();
-            stream = conn.getInputStream();
-            conn.disconnect();
-            return stream;
+            }
 
         }
 

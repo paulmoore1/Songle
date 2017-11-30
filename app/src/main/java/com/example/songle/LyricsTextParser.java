@@ -93,14 +93,15 @@ public class LyricsTextParser {
 
         lyrics.put("SIZE", sizes);
         lyrics.put("NUMBER", songNumList);
-        Log.e(TAG, "#################################################");
+        Log.v(TAG, "Lyrics:\n########################################################");
         for (String name: lyrics.keySet()){
 
             String key =name.toString();
             String value = lyrics.get(name).toString();
-            System.out.println(key + " " + value);
+            Log.v(TAG, key + " " + value);
         }
-        Log.e(TAG, "#################################################");
+        Log.v(TAG, "########################################################");
+
 
         sharedPreference.saveNewLyrics(lyrics, songNumber);
 

@@ -222,7 +222,7 @@ public class SharedPreference {
     }
 
     public String getCurrentSongNumber(){
-        Log.d(TAG, "getCurrentSongNumber called");
+        Log.v(TAG, "getCurrentSongNumber called");
         String songNum = null;
         if (settings.contains(CURRENT_SONG_NUMBER)){
             songNum = settings.getString(CURRENT_SONG_NUMBER, null);
@@ -788,37 +788,44 @@ public class SharedPreference {
     public void resetNumberWordsFound(){
         Log.d(TAG, "resetNumberWordsFound called");
         String songNumber = getCurrentSongNumber();
-        Log.v(TAG, "songNumber is: " + songNumber);
         ArrayList<Integer> wordsList = getWordsFoundList();
         int loc = getSongLocation(songNumber);
         if (loc != -1){
             wordsList.set(loc, 0);
             saveWordsFoundList(wordsList);
         } else {
-            Log.e(TAG, "Song not found in words list");
+            Log.e(TAG, "Song not found in storage");
         }
     }
 
     public void incrementNumberWordsFound(){
         Log.d(TAG, "incrementNumberWordsFound called");
         String songNumber = getCurrentSongNumber();
-        Log.v(TAG, "songNumber is: " + songNumber);
         ArrayList<Integer> wordsList = getWordsFoundList();
         int loc = getSongLocation(songNumber);
-        int prev = wordsList.get(loc);
-        prev++;
-        wordsList.set(loc, prev);
-        saveWordsFoundList(wordsList);
-        incrementNumAvailableWords(loc);
+        if (loc != -1){
+            int prev = wordsList.get(loc);
+            prev++;
+            wordsList.set(loc, prev);
+            saveWordsFoundList(wordsList);
+            incrementNumAvailableWords(loc);
+        } else {
+            Log.e(TAG, "Song not found in storage");
+        }
+
     }
 
     public int getNumberWordsFound(){
         Log.d(TAG, "getNumberWordsFound called");
         String songNumber = getCurrentSongNumber();
-        Log.v(TAG, "songNumber is: " + songNumber);
         ArrayList<Integer> wordsFoundList = getWordsFoundList();
-        int location = getSongLocation(songNumber);
-        return wordsFoundList.get(location);
+        int loc = getSongLocation(songNumber);
+        if (loc != -1)
+        return wordsFoundList.get(loc);
+        else {
+            Log.e(TAG, "Song not found in storage");
+            return 0;
+        }
     }
 
     private ArrayList<Integer> getWordsFoundList(){
@@ -851,14 +858,13 @@ public class SharedPreference {
     public void resetNumberWordsAvailable(){
         Log.d(TAG, "resetNumberWordsAvailable called");
         String songNumber = getCurrentSongNumber();
-        Log.v(TAG, "songNumber is: " + songNumber);
         ArrayList<Integer> wordsList = getWordsAvailableList();
         int loc = getSongLocation(songNumber);
         if (loc != -1){
             wordsList.set(loc, 0);
             saveWordsAvailableList(wordsList);
         } else {
-            Log.e(TAG, "Song not found in words list");
+            Log.e(TAG, "Song not found in storage");
         }
     }
 
@@ -869,22 +875,22 @@ public class SharedPreference {
         ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
         int location = getSongLocation(songNumber);
         if (location == -1){
-            return -1;
+            Log.e(TAG, "Song not found in storage");
+            return 0;
         }
         return wordsAvailableList.get(location);
     }
 
 
-    //Called whenever numWords Found is incremented.
+    // Called whenever incrementNumWordsFound is called.
+    // Already checked that it's not -1 in numWordsFound method.
     private void incrementNumAvailableWords(int loc){
         Log.d(TAG, "incrementNumAvailableWords called");
         ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
-        Log.v(TAG, "list before: " + wordsAvailableList.toString());
         int prev = wordsAvailableList.get(loc);
         prev++;
         wordsAvailableList.set(loc, prev);
         saveWordsAvailableList(wordsAvailableList);
-        Log.v(TAG, "list after: " + wordsAvailableList.toString());
     }
 
     /**
@@ -896,13 +902,17 @@ public class SharedPreference {
         Log.d(TAG, "removeNumAvailableWords called");
         String songNumber = getCurrentSongNumber();
         int loc = getSongLocation(songNumber);
-        ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
-        Log.v(TAG, "list before: " + wordsAvailableList.toString());
-        int prev = wordsAvailableList.get(loc);
-        int newVal = prev - numToRemove;
-        wordsAvailableList.set(loc, newVal);
-        saveWordsAvailableList(wordsAvailableList);
-        Log.v(TAG, "list after: " + wordsAvailableList.toString());
+        if (loc != -1){
+            ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
+            int prev = wordsAvailableList.get(loc);
+            int newVal = prev - numToRemove;
+            wordsAvailableList.set(loc, newVal);
+            saveWordsAvailableList(wordsAvailableList);
+        } else {
+            Log.e(TAG, "Song not found in storage");
+        }
+
+
     }
 
     private ArrayList<Integer> getWordsAvailableList(){

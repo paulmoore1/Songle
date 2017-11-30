@@ -40,7 +40,7 @@ public class MainGameActivity extends AppCompatActivity {
     private static final int MY_PERMISSIONS_REQUEST_FINE_LOCATION = 1;
     private SharedPreference sharedPreference;
     private SharedPreferences.OnSharedPreferenceChangeListener listener;
-
+    private String songNumber;
     private boolean wordsNotificationVisible = false;
     private boolean hintNotificationVisible = false;
     private int lastNumWordsFound = 0;
@@ -71,6 +71,8 @@ public class MainGameActivity extends AppCompatActivity {
 
 
         sharedPreference = new SharedPreference(getApplicationContext());
+
+        songNumber = sharedPreference.getCurrentSongNumber();
         lastNumWordsFound = sharedPreference.getNumberWordsFound();
         lastNumWordsAvailable = sharedPreference.getNumAvailableWords();
 
@@ -78,18 +80,22 @@ public class MainGameActivity extends AppCompatActivity {
         listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                int newNumWordsFound = sharedPreference.getNumberWordsFound();
-                int newNumWordsAvailable = sharedPreference.getNumAvailableWords();
-                if (newNumWordsFound > lastNumWordsFound){
-                    lastNumWordsFound = newNumWordsFound;
-                    createWordsFoundNotification();
+                //Only refresh if the song is still incomplete.
+                if (sharedPreference.getSongLocation(songNumber) != -1){
+                    int newNumWordsFound = sharedPreference.getNumberWordsFound();
+                    int newNumWordsAvailable = sharedPreference.getNumAvailableWords();
+                    if (newNumWordsFound > lastNumWordsFound){
+                        lastNumWordsFound = newNumWordsFound;
+                        createWordsFoundNotification();
+                    }
+                    int difference = newNumWordsAvailable - lastNumWordsAvailable;
+                    int requiredNumForHint = requiredWords();
+                    if (difference > requiredNumForHint){
+                        lastNumWordsAvailable += requiredNumForHint;
+                        createHintNotification();
+                    }
                 }
-                int difference = newNumWordsAvailable - lastNumWordsAvailable;
-                int requiredNumForHint = requiredWords();
-                if (difference > requiredNumForHint){
-                    lastNumWordsAvailable += requiredNumForHint;
-                    createHintNotification();
-                }
+
             }
         };
 

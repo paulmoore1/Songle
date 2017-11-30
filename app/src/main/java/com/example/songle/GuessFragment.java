@@ -1,5 +1,6 @@
 package com.example.songle;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
@@ -8,6 +9,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -55,12 +57,14 @@ public class GuessFragment extends Fragment {
     private FloatingActionMenu fam;
     private FloatingActionButton fabLine, fabArtist;
 
+    private FragmentActivity mainActivity;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState){
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
-
+        mainActivity = getActivity();
         sharedPreference = new SharedPreference(getActivity().getApplicationContext());
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
 
@@ -450,21 +454,21 @@ public class GuessFragment extends Fragment {
 
         //Set the messages appropriately depending on how many words are needed.
         if (neededForLine > 1){
-            String lineFormat = getString(R.string.txt_words_to_line_plural);
+            String lineFormat = mainActivity.getString(R.string.txt_words_to_line_plural);
             lineMessage = String.format(lineFormat, neededForLine);
         } else if (neededForLine == 1){
-            lineMessage = getString(R.string.txt_words_to_line_singular);
+            lineMessage = mainActivity.getString(R.string.txt_words_to_line_singular);
         } else if (neededForLine < 1 ){
-            lineMessage = getString(R.string.txt_words_to_line_enough);
+            lineMessage = mainActivity.getString(R.string.txt_words_to_line_enough);
         }
 
         if (neededForArtist > 1){
-            String lineFormat = getString(R.string.txt_words_to_artist_plural);
+            String lineFormat = mainActivity.getString(R.string.txt_words_to_artist_plural);
             artistMessage = String.format(lineFormat, neededForArtist);
         } else if (neededForArtist == 1){
-            artistMessage = getString(R.string.txt_words_to_artist_singular);
+            artistMessage = mainActivity.getString(R.string.txt_words_to_artist_singular);
         } else if (neededForArtist < 1 ){
-            artistMessage = getString(R.string.txt_words_to_artist_enough);
+            artistMessage = mainActivity.getString(R.string.txt_words_to_artist_enough);
         }
 
         lineText.setText(lineMessage);
@@ -519,6 +523,7 @@ public class GuessFragment extends Fragment {
             Log.v(TAG, "message is: " + artistMessage);
             revealArtistText.setText(artistMessage);
             sharedPreference.removeNumAvailableWords(artistMax);
+            sharedPreference.artistRevealed();
         } else {
             String msg = getString(R.string.toast_not_enough_words);
             Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();

@@ -144,8 +144,8 @@ public class XmlMapParser {
         String coordinates = readText(parser);
         String[] split = coordinates.split(",");
         double[] latlng = new double[2];
-        latlng[0] = Double.parseDouble(split[0]);
-        latlng[1] = Double.parseDouble(split[1]);
+        latlng[0] = Double.parseDouble(split[1]);
+        latlng[1] = Double.parseDouble(split[0]);
         LatLng location = new LatLng(latlng[0], latlng[1]);
         parser.require(XmlPullParser.END_TAG, ns, "coordinates");
         return location;
