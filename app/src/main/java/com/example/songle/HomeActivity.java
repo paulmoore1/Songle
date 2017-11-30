@@ -103,51 +103,26 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         Log.d(TAG, "Continue Game button clicked");
         Song song = sharedPreference.getCurrentSong();
         String diffLevel = sharedPreference.getCurrentDifficultyLevel();
+        Log.v(TAG, "song: " + song.toString());
         //check there is actually a song in the current song list and a difficulty chosen
         if (song != null && diffLevel != null){
             //song is incomplete as expected, check that necessary files are present
             if (song.isSongIncomplete()){
                 String songNumber = song.getNumber();
-                //check lyrics and map are already downloaded and stored.
-                HashMap<String, ArrayList<String>> lyrics = null;
-                if(sharedPreference.checkLyricsStored(songNumber)){
-                    lyrics = sharedPreference.getLyrics(songNumber);
+                //If the lyrics are not stored
+                if(!sharedPreference.checkLyricsStored(songNumber)){
+                    Log.e(TAG, "Lyrics not stored correctly");
+                    sendGameNotFoundDialog();
+                    return;
                 }
-
-                List<Placemark> placemarks = sharedPreference.getMap(diffLevel);
-                if (lyrics != null && placemarks != null){
-                    //have lyrics file and song in place, can load MainGameActivity with this
-                    //check in that activity for internet before allowing maps
-                    Intent intent = new Intent(this, MainGameActivity.class);
-
-                    //convert to JSON format for sending and extracting
-                    Gson gson = new Gson();
-                    String jsonLyrics = gson.toJson(lyrics);
-                    String jsonSong = gson.toJson(song);
-                    String jsonPlacemarks = gson.toJson(placemarks);
-
-                    Bundle info = new Bundle();
-                    info.putString("JSON_LYRICS", jsonLyrics);
-                    info.putString("JSON_SONG", jsonSong);
-                    info.putString("JSON_PLACEMARKS", jsonPlacemarks);
-                    intent.putExtras(info);
-                    startActivity(intent);
-
-                } else {
-                    //no lyrics/map found
-                    //check if network is available so we can download
-                    boolean networkAvailable = isNetworkAvailable(this);
-                    //network is active, so download files and start the game.
-                    if (networkAvailable){
-                        //TODO download and send the files as before above
-                    } else {
-                        //give up as a network is needed
-                        sendNetworkErrorDialog();
-                        
-                    }
-
-
+                if (!sharedPreference.checkMaps(songNumber)){
+                    Log.e(TAG, "Maps not stored correctly");
+                    sendGameNotFoundDialog();
+                    return;
                 }
+                //Lyrics and map stored correctly, can load game.
+                Intent intent = new Intent(this, MainGameActivity.class);
+                startActivity(intent);
 
             } else if (song.isSongComplete()) {
                 //send alert dialog that the song has already been done.
@@ -170,21 +145,20 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
     }
 
     public void loadGame(View view){
-        Log.d(TAG, "Load Game button pressed");
+        Log.d(TAG, "loadGame called");
         //check the network is available - we will probably need to download the maps.
         boolean networkOn = isNetworkAvailable(this);
         if (!networkOn){
             sendNetworkErrorDialog();
             return;
         }
-        Log.d(TAG,"Network connection found");
+        Log.v(TAG,"Network connection found");
 
         //now ready to start new activity
         Intent intent = new Intent(this, GameSettingsActivity.class);
         //make sure game type is old game for the game settings activity.
         intent.putExtra("GAME_TYPE", getString(R.string.txt_load_old_game));
         startActivity(intent);
-        Log.d(TAG, "Started Game Settings Activity");
 
     }
 

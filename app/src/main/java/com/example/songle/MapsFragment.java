@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
@@ -55,7 +57,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     private MapView mMapView;
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
-    private Location mLastLocation;
+    private Location mLastLocation = new Location("");
     private final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean mLocationPermissionGranted = false;
     private Activity activity;
@@ -89,13 +91,16 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         currentDiff = sharedPreference.getCurrentDifficultyLevelNumber();
         songNumber = sharedPreference.getCurrentSongNumber();
         lyrics = sharedPreference.getLyrics(songNumber);
+
+        /*
+        //Used for debugging
         Log.e(TAG, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         for (String key : lyrics.keySet()){
             String value = lyrics.get(key).toString();
             Log.v(TAG, key + " " + value);
         }
         Log.e(TAG, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-
+        */
 
         placemarks = sharedPreference.getMap(currentDiff);
         // Create an instance of GoogleAPIClient.
@@ -112,7 +117,6 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(
                 getActivity().getApplicationContext());
-
         IC_BORING = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_boring);
         IC_UNCLASSIFIED = BitmapDescriptorFactory.fromResource(
@@ -151,20 +155,20 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         Log.d(TAG, "onMapReady called");
         mMap = googleMap;
 
+        //Remove any old markers.
+        mMap.clear();
+
         //For showing a move to my location button
         try{
-            Log.v(TAG, "Trying to set location enabled");
             mMap.setMyLocationEnabled(true);
-            Log.v(TAG, "location enabled");
         } catch (SecurityException e){
             Log.e(TAG, "Error" + e);
             e.printStackTrace();
         }
-        Log.v(TAG, "About to set bounds");
         // Set view to bounds and move camera there
         mMap.setLatLngBoundsForCameraTarget(UNIVERSITY_EDINBURGH);
-        Log.v(TAG, "Bounds set");
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(getLatLngFromLastLocation(), 18.0f));
+        mMap.setMinZoomPreference(15.0f);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(getLatLngFromLastLocation(), 17.0f));
         addMarkers();
     }
 
@@ -211,8 +215,10 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                         bitmap = IC_UNCLASSIFIED;
                         break;
                 }
-                marker = mMap.addMarker(new MarkerOptions().position(location).icon(bitmap));
-                marker.setTag(new ArrayList<>(Arrays.asList(word, key)));
+                marker = mMap.addMarker(new MarkerOptions().position(location).icon(bitmap).
+                        title("Word type: " + description));
+                ArrayList<String> tag = new ArrayList<>(Arrays.asList(word, key));
+                marker.setTag(tag);
 
             }
         }
@@ -224,33 +230,41 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     @Override
     public boolean onMarkerClick(Marker marker) {
         //may change this if necessary
-        double requiredDistance = 1000;
+        double requiredDistance = 50;
         //find distance between last location and location of marker
         LatLng mLastLatLong = getLatLngFromLastLocation();
         double distance = SphericalUtil.computeDistanceBetween(mLastLatLong, marker.getPosition());
         //if you are close enough to the marker
         if (distance < requiredDistance){
-            marker.remove();
-            ArrayList<String> lyric = (ArrayList<String>) marker.getTag();
+
+            Object obj = marker.getTag();
+            if (obj == null){
+                Log.e(TAG, "Clicked on null marker");
+                return false;
+            }
+            ArrayList<String> lyric = (ArrayList<String>) obj;
             String word = lyric.get(0);
             String key = lyric.get(1);
-            Toast.makeText(getContext(), "Found word: " + word + "!",
+            Toast.makeText(getContext(), "Found word: " + word,
                     Toast.LENGTH_SHORT).show();
             //update lyrics to show that word is found.
             ArrayList<String> newLyric = new ArrayList<>(Arrays.asList(word, "True"));
             lyrics.put(key, newLyric);
             sharedPreference.updateLyrics(lyrics, songNumber);
             sharedPreference.incrementNumberWordsFound();
+            marker.remove();
             return true;
+
         } else {
             //too far away from marker, show a Toast but nothing more.
             Toast.makeText(getContext(), "Too far from marker", Toast.LENGTH_SHORT).show();
+            // Return false to indicate that we have not consumed the event and that we wish
+            // for the default behavior to occur (which is for the camera to move such that the
+            // marker is centered and for the marker's info window to open, if it has one).
             return false;
         }
-        // Return false to indicate that we have not consumed the event and that we wish
-        // for the default behavior to occur (which is for the camera to move such that the
-        // marker is centered and for the marker's info window to open, if it has one).
-        //return false;
+
+
     }
 
     /**
@@ -294,6 +308,24 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         Log.v(TAG, "location changed");
         mLastLocation = current;
         //Do something with current location
+    }
+
+    //From https://stackoverflow.com/questions/4837715/how-to-resize-a-bitmap-in-android
+    public Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // CREATE A MATRIX FOR THE MANIPULATION
+        Matrix matrix = new Matrix();
+        // RESIZE THE BIT MAP
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        // "RECREATE" THE NEW BITMAP
+        Bitmap resizedBitmap = Bitmap.createBitmap(
+                bm, 0, 0, width, height, matrix, false);
+        bm.recycle();
+        return resizedBitmap;
     }
 
     @Override

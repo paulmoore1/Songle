@@ -73,7 +73,6 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Song song = (Song) parent.getItemAtPosition(position);
         String songNum = song.getNumber();
-        Toast.makeText(activity, song.showSong(), Toast.LENGTH_SHORT).show();
         //save these values to shared preferences.
         sharedPreference.saveCurrentSong(song);
         sharedPreference.saveCurrentSongNumber(songNum);

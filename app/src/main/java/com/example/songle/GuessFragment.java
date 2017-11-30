@@ -106,7 +106,11 @@ public class GuessFragment extends Fragment {
                 if (checkGuess(str)){
                     winGame();
                 } else {
-                    incorrectGuess();
+                    //TODO - remove - being used for testing.
+                    sharedPreference.incrementNumberWordsFound();
+                    //If this is the first time the word has been guessed wrong.
+                    if (!sharedPreference.getIncorrectGuess())
+                        incorrectGuess();
                 }
             }
         });

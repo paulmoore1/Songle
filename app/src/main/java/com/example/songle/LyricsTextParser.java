@@ -93,6 +93,9 @@ public class LyricsTextParser {
 
         lyrics.put("SIZE", sizes);
         lyrics.put("NUMBER", songNumList);
+
+        /*
+        //Used for debugging
         Log.v(TAG, "Lyrics:\n########################################################");
         for (String name: lyrics.keySet()){
 
@@ -101,7 +104,7 @@ public class LyricsTextParser {
             Log.v(TAG, key + " " + value);
         }
         Log.v(TAG, "########################################################");
-
+        */
 
         sharedPreference.saveNewLyrics(lyrics, songNumber);
 

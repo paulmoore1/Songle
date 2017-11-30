@@ -119,6 +119,15 @@ public class SharedPreference {
             Log.e(TAG, "Song number not found in songs list");
             return;
         }
+        //update the current song status in the shared preferences if it's the one being updated.
+        Song currentSong = getCurrentSong();
+        Log.v(TAG, "currentSong before " + currentSong.toString());
+        if (currentSong.getNumber().equals(songNumber)){
+            currentSong.setStatus(status);
+            Log.v(TAG, "currentSong after " + currentSong.toString());
+            saveCurrentSong(currentSong);
+        }
+
 
         //update the song's status
         song.setStatus(status);
@@ -150,7 +159,6 @@ public class SharedPreference {
     }
 
     public ArrayList<Song> getAllSongs(){
-        Log.d(TAG, "getAllSongs called");
         List<Song> songs;
         if (settings.contains(SONGS)){
             String jsonSongs = settings.getString(SONGS, null);
@@ -558,7 +566,6 @@ public class SharedPreference {
     private int getSongAtLyricLocation(int location){
         Log.v(TAG, "getSongAtLyricLocation called");
         ArrayList<Integer> statuses = getLyricStatuses();
-        Log.d(TAG, "Song statuses" + statuses.toString());
         return statuses.get(location);
     }
 
@@ -593,6 +600,7 @@ public class SharedPreference {
             Log.v(TAG, "Will store in " + nextLyricLocation);
 
             int prevSongNumber = getSongAtLyricLocation(nextLyricLocation);
+            Log.v(TAG, "old song: " + prevSongNumber);
             //if there was a song already there, erase it
             if(prevSongNumber != 0) {
                 eraseLyrics(prevSongNumber);
