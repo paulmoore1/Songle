@@ -9,21 +9,31 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.provider.Settings;
 
+import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.games.Games;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class HomeActivity extends FragmentActivity implements DownloadCallback {
+public class HomeActivity extends FragmentActivity implements DownloadCallback, View.OnClickListener{
     private static final String TAG = "HomeActivity";
-
+    private static final int RC_SIGN_IN = 66;
     private SharedPreference sharedPreference;
     //Broadcast receiver that tracks network connectivity changes
     //private NetworkReceiver receiver = new NetworkReceiver();
@@ -61,8 +71,18 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
             sendNetworkWarningDialog();
         }
 
+
+
         mNetworkFragment  = NetworkFragment.getInstance(getSupportFragmentManager(),
                 getString(R.string.url_songs_xml));
+
+        findViewById(R.id.btn_sign_in).setOnClickListener(this);
+        findViewById(R.id.btn_sign_out).setOnClickListener(this);
+        findViewById(R.id.btn_new_game).setOnClickListener(this);
+        findViewById(R.id.btn_continue_game).setOnClickListener(this);
+        findViewById(R.id.btn_load_game).setOnClickListener(this);
+        //signInSilently();
+
 
 /*
         // Register BroadcastReceiver to track connection changes
@@ -73,10 +93,32 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
 
 
     }
+    @Override
+    public void onClick(View view) {
+        if (view.getId() == R.id.btn_sign_in) {
+            // start the asynchronous sign in flow
+            startSignInIntent();
+        } else if (view.getId() == R.id.btn_sign_out) {
+            // sign out.
+            signOut();
+            // show sign-in button, hide the sign-out button
+            findViewById(R.id.btn_sign_in).setVisibility(View.VISIBLE);
+            findViewById(R.id.btn_sign_out).setVisibility(View.GONE);
+        } else if (view.getId() == R.id.btn_new_game){
+            Log.e(TAG, "New game button clicked");
+            newGame();
+        } else if (view.getId() == R.id.btn_continue_game){
+            continueGame();
+        } else if (view.getId() == R.id.btn_load_game){
+            loadGame();
+        }
+    }
+
+
 
     //called when the New Game button is clicked
 
-    public void newGame(View view){
+    public void newGame(){
         //check the network is available.
         boolean networkOn = isNetworkAvailable(this);
         if (!networkOn){
@@ -99,11 +141,10 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
 
     }
 
-    public void continueGame(View view){
+    public void continueGame(){
         Log.d(TAG, "Continue Game button clicked");
         Song song = sharedPreference.getCurrentSong();
         String diffLevel = sharedPreference.getCurrentDifficultyLevel();
-        Log.v(TAG, "song: " + song.toString());
         //check there is actually a song in the current song list and a difficulty chosen
         if (song != null && diffLevel != null){
             //song is incomplete as expected, check that necessary files are present
@@ -129,6 +170,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
                 sendGameCompletedAlreadyDialog();
 
             } else if (song.isSongNotStarted()){
+                sendGameNotFoundDialog();
                 //error, should have been marked as incomplete if it is in currentSong
                 Log.e(TAG, "Song marked as not started when tried to continue");
 
@@ -144,7 +186,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         }
     }
 
-    public void loadGame(View view){
+    public void loadGame(){
         Log.d(TAG, "loadGame called");
         //check the network is available - we will probably need to download the maps.
         boolean networkOn = isNetworkAvailable(this);
@@ -180,6 +222,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
         receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);*/
         super.onResume();
+
     }
     public void startXmlDownload(){
         mNetworkFragment.startXmlDownload();
@@ -262,6 +305,69 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback {
 
         return super.onOptionsItemSelected(item);
     }
+
+    private void signInSilently() {
+        Log.d(TAG, "Signing in");
+        GoogleSignInClient signInClient = GoogleSignIn.getClient(this,
+                GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+        signInClient.silentSignIn().addOnCompleteListener(this,
+                new OnCompleteListener<GoogleSignInAccount>() {
+                    @Override
+                    public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
+                        if (task.isSuccessful()) {
+                            // The signed in account is stored in the task's result.
+                            GoogleSignInAccount signedInAccount = task.getResult();
+                        } else {
+                            startSignInIntent();
+                            // Player will need to sign-in explicitly using via UI
+                        }
+                    }
+                });
+    }
+
+    private void startSignInIntent() {
+        Log.d(TAG, "startSignInIntent called");
+        GoogleSignInClient signInClient = GoogleSignIn.getClient(this,
+                GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+        Intent intent = signInClient.getSignInIntent();
+        startActivityForResult(intent, RC_SIGN_IN);
+    }
+
+    private boolean isSignedIn() {
+        return GoogleSignIn.getLastSignedInAccount(this) != null;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_SIGN_IN) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            if (result.isSuccess()) {
+                // The signed in account is stored in the result.
+                GoogleSignInAccount signedInAccount = result.getSignInAccount();
+            } else {
+                String message = result.getStatus().getStatusMessage();
+                if (message == null || message.isEmpty()) {
+                    message = getString(R.string.signin_other_error);
+                }
+                new AlertDialog.Builder(this).setMessage(message)
+                        .setNeutralButton(android.R.string.ok, null).show();
+            }
+        }
+    }
+
+    private void signOut() {
+        GoogleSignInClient signInClient = GoogleSignIn.getClient(this,
+                GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+        signInClient.signOut().addOnCompleteListener(this,
+                new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        // at this point, the user is signed out.
+                    }
+                });
+    }
+
 
     //use if a network connection is required for the selected option to work
     private void sendNetworkErrorDialog(){

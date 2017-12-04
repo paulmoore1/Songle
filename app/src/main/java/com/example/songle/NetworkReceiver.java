@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.util.Log;
 
 import java.util.Arrays;
 
@@ -14,7 +15,7 @@ import java.util.Arrays;
 
 public class NetworkReceiver extends BroadcastReceiver {
 
-
+    private static final String TAG = "NetworkReceiver";
     private String networkPref = "wifi";
     private final String WIFI = "wifi";
     private final String ANY = "any";
@@ -24,7 +25,7 @@ public class NetworkReceiver extends BroadcastReceiver {
         if (preference.equals(WIFI) || preference.equals(ANY)){
             this.networkPref = preference;
         } else {
-            System.err.println("Unexpected preference String");
+            Log.e(TAG, "Unexpected preference String");
         }
 
     }

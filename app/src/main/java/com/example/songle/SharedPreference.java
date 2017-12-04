@@ -54,6 +54,7 @@ public class SharedPreference {
     private static final String CURRENT_SONG_NUMBER = "CurrentSongNumber";
     private static final String CURRENT_DIFFICULTY_LEVEL = "CurrentDifficultyLevel";
     private static final String INCORRECT_GUESS = "IncorrectGuess";
+    private static final String HEIGHT = "Height";
 
     @SuppressLint("CommitPrefEdits")
     public SharedPreference(Context context){
@@ -1015,6 +1016,16 @@ public class SharedPreference {
 
     public boolean getIncorrectGuess(){
         return settings.getBoolean(INCORRECT_GUESS, false);
+    }
+
+    public void saveHeight(int height){
+        editor.putInt(HEIGHT, height);
+        editor.apply();
+    }
+
+    public int getHeight(){
+        if (settings.contains(HEIGHT))return settings.getInt(HEIGHT, 180);
+        else return -1;
     }
 
 

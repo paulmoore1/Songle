@@ -20,7 +20,9 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.Toolbar;
+import android.text.InputType;
 import android.util.Log;
+import android.widget.EditText;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
@@ -68,9 +70,11 @@ public class MainGameActivity extends AppCompatActivity {
 */
         setupViewPager();
 
-
-
         sharedPreference = new SharedPreference(getApplicationContext());
+        if (sharedPreference.getHeight() == -1){
+            Log.e(TAG, "Height not saved");
+            sendRequestHeightDialog(0);
+        }
 
         songNumber = sharedPreference.getCurrentSongNumber();
         lastNumWordsFound = sharedPreference.getNumberWordsFound();
@@ -352,6 +356,41 @@ public class MainGameActivity extends AppCompatActivity {
     public void onResume(){
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
         super.onResume();
+    }
+
+    public void sendRequestHeightDialog(int numTimesShown){
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.txt_enter_height);
+        if (numTimesShown == 0) adb.setMessage(R.string.msg_enter_height);
+        else adb.setMessage(R.string.msg_enter_height_try_again);
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        adb.setView(input);
+
+        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                try {
+                    int height = Integer.parseInt(input.getText().toString());
+                    if (height > 70 && height < 272){
+                        sharedPreference.saveHeight(height);
+                    } else {
+                        sendRequestHeightDialog(1);
+                    }
+
+                } catch(NumberFormatException e){
+                    sendRequestHeightDialog(1);
+                }
+            }
+        });
+        adb.setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+
+
     }
 
 }
