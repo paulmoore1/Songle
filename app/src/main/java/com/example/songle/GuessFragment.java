@@ -1,6 +1,5 @@
 package com.example.songle;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -43,7 +42,7 @@ public class GuessFragment extends Fragment {
     private TextView revealArtistText;
     private EditText enterGuess;
     private Song currentSong;
-    private String currentSongNumber;
+    private String songNumber;
     private String currentDifficulty;
     private ArrayList<String> mChosenDifficulty;
     private SharedPreferences.OnSharedPreferenceChangeListener listener;
@@ -52,6 +51,7 @@ public class GuessFragment extends Fragment {
     //Stores the number of words needed to get a hint for a line/artist
     private int lineMax;
     private int artistMax;
+    private SongInfo songInfo;
 
     private Context context;
 
@@ -79,12 +79,13 @@ public class GuessFragment extends Fragment {
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
 
         currentSong = sharedPreference.getCurrentSong();
-        currentSongNumber = sharedPreference.getCurrentSongNumber();
+        songNumber = sharedPreference.getCurrentSongNumber();
+        songInfo = sharedPreference.getSongInfo(songNumber);
+
         listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                // Only refresh if the song is still being worked on.
-                if (sharedPreference.getSongLocation(currentSongNumber) != -1) refreshProgress();
+                refreshProgress();
             }
         };
 
@@ -102,12 +103,12 @@ public class GuessFragment extends Fragment {
         guess = view.findViewById(R.id.btn_guess);
         giveUp = view.findViewById(R.id.btn_give_up);
         //If there wasn't an incorrect guess before, make giving up invisible
-        if (!sharedPreference.getIncorrectGuess()){
+        if (!songInfo.isIncorrectlyGuessed()){
             giveUp.setVisibility(View.INVISIBLE);
         }
         revealArtistText = view.findViewById(R.id.textViewArtist);
-        if (sharedPreference.isArtistRevealed()){
-            revealArtist();
+        if (songInfo.isArtistRevealed()){
+            hintRevealArtist();
         }
 
         enterGuess = view.findViewById(R.id.editTextGuess);
@@ -123,9 +124,10 @@ public class GuessFragment extends Fragment {
                     winGame();
                 } else {
                     //TODO - remove - being used for testing.
-                    sharedPreference.incrementNumberWordsFound();
+                    songInfo.incrementNumWordsFound();
+                    sharedPreference.saveSongInfo(songNumber, songInfo);
                     //If this is the first time the word has been guessed wrong.
-                    if (!sharedPreference.getIncorrectGuess())
+                    if (!songInfo.isIncorrectlyGuessed())
                         incorrectGuess();
                 }
             }
@@ -172,7 +174,7 @@ public class GuessFragment extends Fragment {
         fabLine.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                revealLine();
+                hintRevealLine();
                 fam.close(true);
             }
         });
@@ -180,7 +182,7 @@ public class GuessFragment extends Fragment {
         fabArtist.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                revealArtist();
+                hintRevealArtist();
                 fam.close(true);
             }
         });
@@ -208,7 +210,8 @@ public class GuessFragment extends Fragment {
     }
 
     private void incorrectGuess(){
-        sharedPreference.saveIncorrectGuess();
+        songInfo.setIncorrectlyGuessed();
+        sharedPreference.saveSongInfo(songNumber, songInfo);
         giveUp.setVisibility(View.VISIBLE);
     }
 
@@ -380,7 +383,7 @@ public class GuessFragment extends Fragment {
         artistProgress = view.findViewById(R.id.hintArtistProgress);
         lineText = view.findViewById(R.id.hintLinetextView);
         artistText = view.findViewById(R.id.hintArtistTextView);
-        int wordsAvailable = sharedPreference.getNumAvailableWords();
+        int wordsAvailable = songInfo.getNumWordsAvailable();
 
         setupProgressBars(wordsAvailable, currentDifficulty);
     }
@@ -390,7 +393,14 @@ public class GuessFragment extends Fragment {
     }
 
     private void refreshProgress(){
-        int wordsAvailable = sharedPreference.getNumAvailableWords();
+        songInfo = sharedPreference.getSongInfo(songNumber);
+
+        //If artist has been revealed previously show it, and hide bars
+        if(songInfo.isArtistRevealed()){
+            showArtist();
+        }
+
+        int wordsAvailable = songInfo.getNumWordsAvailable();
         // Check the difficulty hasn't changed
         String checkDifficulty = sharedPreference.getCurrentDifficultyLevel();
         if(currentDifficulty.equals(checkDifficulty)){
@@ -499,11 +509,10 @@ public class GuessFragment extends Fragment {
         artistText.setText(artistMessage);
     }
 
-    public void revealLine(){
-        int wordsAvailable = sharedPreference.getNumAvailableWords();
+    public void hintRevealLine(){
+        int wordsAvailable = songInfo.getNumWordsAvailable();
         // If the user has enough words to reveal a line
         if (wordsAvailable >= lineMax){
-            String songNumber = currentSong.getNumber();
             HashMap<String, ArrayList<String>> lyrics = sharedPreference.getLyrics(songNumber);
             if (lyrics == null) return;
             ArrayList<String> sizes = lyrics.get("SIZE");
@@ -513,22 +522,31 @@ public class GuessFragment extends Fragment {
             ArrayList<Integer> blanks = getNumBlankWords(sizes, lyrics);
             // Remove blank lines of length one as they aren't useful at all
             blanks = filterLengthOne(blanks);
-            // Randomize the order
-            Collections.shuffle(blanks);
-            // Pick a random line
-            String lineNum = String.valueOf(blanks.get(0) + 1);
-            Log.v(TAG, "Revealed line #" + lineNum);
 
-            int lineLength = Integer.parseInt(sizes.get(Integer.parseInt(lineNum) - 1));
-            for (int word = 1; word < lineLength + 1; word++){
-                String key = lineNum + ":" + String.valueOf(word);
-                ArrayList<String> lyric = lyrics.get(key);
-                lyric.set(1, "True");
-                lyrics.put(key, lyric);
+            //Check that there are still lines left to reveal
+            if (blanks.size() > 0){
+                // Randomize the order
+                Collections.shuffle(blanks);
+                // Pick a random line
+                String lineNum = String.valueOf(blanks.get(0) + 1);
+                Log.v(TAG, "Revealed line #" + lineNum);
+
+                int lineLength = Integer.parseInt(sizes.get(Integer.parseInt(lineNum) - 1));
+                for (int word = 1; word < lineLength + 1; word++){
+                    String key = lineNum + ":" + String.valueOf(word);
+                    ArrayList<String> lyric = lyrics.get(key);
+                    lyric.set(1, "True");
+                    lyrics.put(key, lyric);
+                }
+                //Remove those words
+                songInfo.removeNumWordsAvailable(lineMax);
+                songInfo.setLineRevealed();
+                sharedPreference.saveSongInfo(songNumber, songInfo);
+                sharedPreference.saveLyrics(songNumber, lyrics);
+            } else {
+                String msg = getString(R.string.msg_lines_too_short);
+                Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
             }
-            //Remove those words
-            sharedPreference.removeNumAvailableWords(lineMax);
-            sharedPreference.updateLyrics(lyrics, songNumber);
         } else {
             String msg = getString(R.string.toast_not_enough_words);
             Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
@@ -537,23 +555,6 @@ public class GuessFragment extends Fragment {
 
     }
 
-    public void revealArtist(){
-        int wordsAvailable = sharedPreference.getNumAvailableWords();
-        if (wordsAvailable >= artistMax){
-            String artist = currentSong.getArtist();
-
-            String artistFormat = getString(R.string.artist_revealed);
-            String artistMessage = String.format(artistFormat, artist);
-            Log.v(TAG, "message is: " + artistMessage);
-            revealArtistText.setText(artistMessage);
-            sharedPreference.removeNumAvailableWords(artistMax);
-            sharedPreference.artistRevealed();
-        } else {
-            String msg = getString(R.string.toast_not_enough_words);
-            Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
-        }
-
-    }
 
     private ArrayList<Integer> getNumBlankWords(ArrayList<String> sizes,
                                 HashMap<String, ArrayList<String>> lyrics){
@@ -583,6 +584,32 @@ public class GuessFragment extends Fragment {
             if (blanks.get(i) != 1) filtered.add(i);
         }
         return filtered;
+    }
+
+
+    public void hintRevealArtist(){
+        int wordsAvailable = songInfo.getNumWordsAvailable();
+        if (wordsAvailable >= artistMax){
+            showArtist();
+            songInfo.removeNumWordsAvailable(artistMax);
+            songInfo.setArtistRevealed();
+            sharedPreference.saveSongInfo(songNumber, songInfo);
+        } else {
+            String msg = getString(R.string.toast_not_enough_words);
+            Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    public void showArtist(){
+        String artist = songInfo.getArtist();
+        String artistFormat = getString(R.string.artist_revealed);
+        String artistMessage = String.format(artistFormat, artist);
+        Log.v(TAG, "message is: " + artistMessage);
+        revealArtistText.setText(artistMessage);
+        artistProgress.setVisibility(View.GONE);
+        artistText.setVisibility(View.GONE);
+        fabArtist.setVisibility(View.GONE);
     }
 
 

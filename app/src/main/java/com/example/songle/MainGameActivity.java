@@ -2,19 +2,13 @@ package com.example.songle;
 //adapted from https://github.com/Suleiman19/Bottom-Navigation-Demo/blob/master/app/src/main/java/com/grafixartist/bottomnav/MainActivity.java
 
 
-import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.ColorRes;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -27,9 +21,6 @@ import android.widget.EditText;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
 import com.aurelhubert.ahbottomnavigation.notification.AHNotification;
-import com.google.android.gms.maps.MapFragment;
-
-import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
 public class MainGameActivity extends AppCompatActivity {
     private static final String TAG = "MainGameActivity";
@@ -43,6 +34,7 @@ public class MainGameActivity extends AppCompatActivity {
     private SharedPreference sharedPreference;
     private SharedPreferences.OnSharedPreferenceChangeListener listener;
     private String songNumber;
+    private SongInfo songInfo;
     private boolean wordsNotificationVisible = false;
     private boolean hintNotificationVisible = false;
     private int lastNumWordsFound = 0;
@@ -72,29 +64,29 @@ public class MainGameActivity extends AppCompatActivity {
         }
 
         songNumber = sharedPreference.getCurrentSongNumber();
-        lastNumWordsFound = sharedPreference.getNumberWordsFound();
-        lastNumWordsAvailable = sharedPreference.getNumAvailableWords();
+        songInfo = sharedPreference.getSongInfo(songNumber);
+        lastNumWordsFound = songInfo.getNumWordsFound();
+        lastNumWordsAvailable = songInfo.getNumWordsAvailable();
 
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
         listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                //Only refresh if the song is still incomplete.
-                if (sharedPreference.getSongLocation(songNumber) != -1){
-                    int newNumWordsFound = sharedPreference.getNumberWordsFound();
-                    int newNumWordsAvailable = sharedPreference.getNumAvailableWords();
-                    if (newNumWordsFound > lastNumWordsFound){
-                        lastNumWordsFound = newNumWordsFound;
-                        createWordsFoundNotification();
-                    }
-                    int difference = newNumWordsAvailable - lastNumWordsAvailable;
-                    int requiredNumForHint = requiredWords();
-                    if (difference > requiredNumForHint){
-                        lastNumWordsAvailable += requiredNumForHint;
-                        createHintNotification();
-                    }
+                //update the song info
+                songInfo = sharedPreference.getSongInfo(songNumber);
+                int newNumWordsFound = songInfo.getNumWordsFound();
+                int newNumWordsAvailable = songInfo.getNumWordsAvailable();
+                if (newNumWordsFound > lastNumWordsFound){
+                    lastNumWordsFound = newNumWordsFound;
+                    createWordsFoundNotification();
                 }
-
+                if (newNumWordsAvailable > lastNumWordsAvailable){
+                    lastNumWordsAvailable = newNumWordsAvailable;
+                }
+                int requiredNumForHint = requiredWordsForLine();
+                if (lastNumWordsAvailable > requiredNumForHint){
+                    createHintNotification();
+                }
             }
         };
 
@@ -261,7 +253,7 @@ public class MainGameActivity extends AppCompatActivity {
         return ContextCompat.getColor(this, color);
     }
 
-    private int requiredWords(){
+    private int requiredWordsForLine(){
         String difficulty = sharedPreference.getCurrentDifficultyLevel();
         switch(difficulty){
             case "Insane":

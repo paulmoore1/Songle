@@ -34,11 +34,11 @@ public class WordsFragment extends Fragment {
         Log.v(TAG, "songNumber " + songNumber);
         lyrics = sharedPreference.getLyrics(songNumber);
 
+
         // refresh the lyrics when the shared preferences are updated as lyrics are found
         listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                if (sharedPreference.getSongLocation(songNumber) != -1)
                 refreshLyrics();
             }
         };

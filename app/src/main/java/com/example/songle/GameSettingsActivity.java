@@ -243,20 +243,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         adb.setTitle(R.string.confirm_game_settings);
         String beginQuestion = getString(R.string.msg_begin_question);
-        String beginMessage;
-        //if the lyrics are not already stored and are full, alert the user as this will overwrite a previous game
-        if(!sharedPreference.checkLyricsStored(chosenSongNumber)
-                && sharedPreference.willOverwrite()){
-            String overwrittenSongNumber = sharedPreference.nextSongOverwritten();
-            beginMessage = "Chosen song number: " + chosenSongNumber +
-                    "\nChosen difficulty level: " + chosenDiff +
-                    "\nThis will overwrite your saved game (Song #" + overwrittenSongNumber +
-                    ")\n" + beginQuestion;
-        } else {
-            beginMessage = "Chosen song number: " + chosenSongNumber + "\nChosen difficulty level: " +
+        String beginMessage = "Chosen song number: " + chosenSongNumber + "\nChosen difficulty level: " +
                     chosenDiff + "\n" + beginQuestion;
-        }
-
         adb.setMessage(beginMessage);
         //if user is happy with settings, start the game
         adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
@@ -284,10 +272,21 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             sendNetworkErrorDialog();
             return;
         }
-        //save this song status to shared preferences as it has been definitely chosen.
-        String currentSongNumber = sharedPreference.getCurrentSongNumber();
-        sharedPreference.saveSongStatus(currentSongNumber, "I");
         setContentView(R.layout.loading);
+        //save this song status to shared preferences as it has been definitely chosen.
+        Song currentSong = sharedPreference.getCurrentSong();
+
+        String number = currentSong.getNumber();
+        sharedPreference.saveSongStatus(number, "I");
+        //Override old info only if a new game has been chosen.
+        if (gameType.equals(getString(R.string.txt_new_game))){
+            String title = currentSong.getTitle();
+            String artist = currentSong.getArtist();
+            String link = currentSong.getLink();
+            SongInfo newInfo = new SongInfo(title, artist, link);
+            sharedPreference.saveSongInfo(number, newInfo);
+        }
+
 
         //use this just in case it gets stuck downloading for more than 10s - resets loading screen
         Handler handler = new Handler();
@@ -329,10 +328,6 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         Intent intent = new Intent(GameSettingsActivity.this, MainGameActivity.class);
         //all data loaded, cancel handler
         handler.removeCallbacks(resetSettingsActivity);
-
-        //Reset the incorrect guesses for loading a new or old game
-        sharedPreference.resetIncorrectGuess();
-
 
         //finished downloading, unregister.
        // this.unregisterReceiver(receiver);

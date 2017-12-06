@@ -106,7 +106,7 @@ public class LyricsTextParser {
         Log.v(TAG, "########################################################");
         */
 
-        sharedPreference.saveNewLyrics(lyrics, songNumber);
+        sharedPreference.saveLyrics(songNumber, lyrics);
 
         Log.d(TAG, "Lyrics saved");
 

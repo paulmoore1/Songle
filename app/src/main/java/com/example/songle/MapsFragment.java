@@ -7,7 +7,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.GpsStatus;
 import android.location.Location;
@@ -15,7 +14,6 @@ import com.google.android.gms.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Looper;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -29,17 +27,11 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResolvableApiException;
-import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -52,10 +44,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.maps.android.SphericalUtil;
 
 import java.util.ArrayList;
@@ -77,7 +65,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener{
     private static final String TAG = MapsFragment.class.getSimpleName();
-
+    private SongInfo songInfo;
     private MapView mMapView;
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
@@ -151,6 +139,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         currentDiff = sharedPreference.getCurrentDifficultyLevelNumber();
         songNumber = sharedPreference.getCurrentSongNumber();
         lyrics = sharedPreference.getLyrics(songNumber);
+        songInfo = sharedPreference.getSongInfo(songNumber);
 
 
 
@@ -317,8 +306,9 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                     //update lyrics to show that word is found.
                     ArrayList<String> newLyric = new ArrayList<>(Arrays.asList(word, "True"));
                     lyrics.put(key, newLyric);
-                    sharedPreference.updateLyrics(lyrics, songNumber);
-                    sharedPreference.incrementNumberWordsFound();
+                    sharedPreference.saveLyrics(songNumber, lyrics);
+                    songInfo.incrementNumWordsFound();
+                    sharedPreference.saveSongInfo(songNumber, songInfo);
                     marker.remove();
                     return true;
 

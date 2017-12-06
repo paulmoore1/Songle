@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 
-import com.google.android.gms.games.achievement.Achievements;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -36,6 +35,7 @@ public class SharedPreference {
     private static final String LYRICS_3 = "Lyrics3";
     private static final String LYRICS_4 = "Lyrics4";
     private static final String LYRIC_STATUS = "LyricStatus";
+    private static final String LYRICS = "Lyrics";
     private static final String NEXT_LYRIC_LOCATION = "NextLyricLocation";
     private static final String NUM_WORDS_FOUND = "WordsFound";
     private static final String NUM_WORDS_AVAILABLE = "WordsAvailable";
@@ -57,6 +57,7 @@ public class SharedPreference {
     private static final String INCORRECT_GUESS = "IncorrectGuess";
     private static final String HEIGHT = "Height";
     private static final String ACHIEVEMENTS = "Achievements";
+    private static final String SONG_INFO = "SongInfo";
 
     @SuppressLint("CommitPrefEdits")
     public SharedPreference(Context context){
@@ -470,554 +471,90 @@ public class SharedPreference {
      */
     public boolean checkLyricsStored(String songNumber){
         Log.v(TAG, "checkLyricsStored called");
-        ArrayList<Integer> currentStatuses = getLyricStatuses();
-        int target = Integer.parseInt(songNumber);
-        //check if the song number is already in the statuses
-        return currentStatuses.contains(target);
+        return getLyrics(songNumber) != null;
     }
 
-    /**
-     * Find which lyrics file a song number is stored in.
-     * @param songNumber - number of song being looked for
-     * @return - index where that song is stored.
-     */
-    public int getSongLocation(String songNumber){
-        Log.v(TAG, "getSongLocation called");
-        ArrayList<Integer> currentStatuses = getLyricStatuses();
-        Log.v(TAG, "current Statuses: " + currentStatuses);
-        int target = Integer.parseInt(songNumber);
-        return currentStatuses.indexOf(target);
-    }
 
-    /**
-     * Check if a lyrics file will be overwritten when saved
-     * @return true if the lyrics are full, false if there's space
-     */
-    public boolean willOverwrite(){
-        ArrayList<Integer> currentStatuses = getLyricStatuses();
-        //true if there are no zeros in the statuses
-        return !currentStatuses.contains(0);
-    }
-
-    /**
-     * Returns the song number that will be overwritten if the lyrics are saved
-     * @return String of next songNumber to be overwritten
-     */
-    public String nextSongOverwritten(){
-        int nextLocation = getNextLyricLocation();
-        ArrayList<Integer> currentStatuses = getLyricStatuses();
-        int songNum = currentStatuses.get(nextLocation);
-        //if number is e.g. 1, return "01"
-        if (songNum < 10){
-            return "0" + String.valueOf(songNum);
-        } else {
-            return String.valueOf(songNum);
-        }
-    }
-
-    private ArrayList<Integer> getLyricStatuses(){
-        // if there is no lyric status object already stored, make one
-        if (!settings.contains(LYRIC_STATUS)){
-            ArrayList<Integer> statuses = new ArrayList<>();
-            for (int i = 0; i < 5; i++){
-                statuses.add(0);
-            }
-            Gson gson = new Gson();
-            String jsonStatuses = gson.toJson(statuses);
-            editor.putString(LYRIC_STATUS, jsonStatuses);
-            //return empty list since the statuses must have been empty
-            return statuses;
-        }
+    public void saveLyrics(String songNumber, HashMap<String, ArrayList<String>> lyrics){
+        HashMap<String, HashMap<String, ArrayList<String>>> allLyrics = new HashMap<>();
         Gson gson = new Gson();
-        String jsonCurrentStatus = settings.getString(LYRIC_STATUS, null);
-        Type type = new TypeToken<ArrayList<Integer>>(){}.getType();
-        return gson.fromJson(jsonCurrentStatus, type);
-    }
-
-    private void saveLyricStatuses(ArrayList<Integer> statuses){
-        Gson gson = new Gson();
-        String jsonStatuses = gson.toJson(statuses);
-        editor.putString(LYRIC_STATUS, jsonStatuses);
-        editor.apply();
-    }
-
-    private int getNextLyricLocation(){
-        //if there was no previously stored location, return 0 (and save)
-        if (!settings.contains(NEXT_LYRIC_LOCATION)) {
-            editor.putInt(NEXT_LYRIC_LOCATION, 0);
-            editor.apply();
-            return 0;
-        }
-        else {
-            int prevLocation = settings.getInt(NEXT_LYRIC_LOCATION, 0);
-            ArrayList<Integer> currentStatuses = getLyricStatuses();
-            Log.d(TAG, "Song statuses" + currentStatuses.toString());
-            // Check if there are any empty spaces in the lyrics (marked by 0)
-            int possibleEmptyLocation = currentStatuses.indexOf(0);
-            //no empty spots, return the default next location
-            if (possibleEmptyLocation == -1) return prevLocation;
-            //empty spot, return this
-            else return possibleEmptyLocation;
-        }
-    }
-
-    /**
-     * Get the song stored at a certain location
-     * @param location takes on values from 0-4 inclusive
-     * @return the integer of the song number there.
-     */
-    private int getSongAtLyricLocation(int location){
-        Log.v(TAG, "getSongAtLyricLocation called");
-        ArrayList<Integer> statuses = getLyricStatuses();
-        return statuses.get(location);
-    }
-
-    private void incrementNextLyricLocation(){
-        int prevLocation = settings.getInt(NEXT_LYRIC_LOCATION, 0);
-        if (prevLocation < 4){
-            int newLocation = prevLocation+1;
-            editor.putInt(NEXT_LYRIC_LOCATION, newLocation);
-            editor.apply();
-        } else if (prevLocation == 4){
-            //reset to 1
-            editor.putInt(NEXT_LYRIC_LOCATION, 0);
+        //If there are no lyrics previously saved make a new object and save it
+        if (!settings.contains(LYRICS)) {
+            allLyrics.put(songNumber, lyrics);
+            String jsonAllLyrics = gson.toJson(allLyrics);
+            editor.putString(LYRICS, jsonAllLyrics);
             editor.apply();
         } else {
-            Log.e(TAG, "Unexpected Location found: " + prevLocation);
+            //There are previous lyrics
+            String jsonAllLyrics = settings.getString(LYRICS, null);
+            if (jsonAllLyrics != null){
+                Type type = new TypeToken<HashMap<String, HashMap<String, ArrayList<String>>>>(){}.getType();
+                allLyrics = gson.fromJson(jsonAllLyrics, type);
+                allLyrics.put(songNumber, lyrics);
+                jsonAllLyrics = gson.toJson(allLyrics);
+                editor.putString(LYRICS, jsonAllLyrics);
+                editor.apply();
+            }
         }
     }
 
-    /**
-     * Stores the lyrics file.
-     * If there is already a lyrics file where it needs to store, overrides it.
-     * @param lyrics the lyrics to store
-     * @param songNumber the song number for those lyrics
-     */
-    public void saveNewLyrics(HashMap<String, ArrayList<String>> lyrics, String songNumber){
-        Log.d(TAG, "saveNewLyrics called");
-        // Check that the lyrics are not already stored.
-        if(!checkLyricsStored(songNumber)){
-            Gson gson = new Gson();
-            String jsonLyrics = gson.toJson(lyrics);
-            int nextLyricLocation = getNextLyricLocation();
-            Log.v(TAG, "Will store in " + nextLyricLocation);
-
-            int prevSongNumber = getSongAtLyricLocation(nextLyricLocation);
-            Log.v(TAG, "old song: " + prevSongNumber);
-            //if there was a song already there, erase it
-            if(prevSongNumber != 0) {
-                eraseLyrics(prevSongNumber);
-            }
-
-            //save in the next location indicated
-            switch(nextLyricLocation) {
-                case 0:
-                    editor.putString(LYRICS_0, jsonLyrics);
-                case 1:
-                    editor.putString(LYRICS_1, jsonLyrics);
-                case 2:
-                    editor.putString(LYRICS_2, jsonLyrics);
-                case 3:
-                    editor.putString(LYRICS_3, jsonLyrics);
-                case 4:
-                    editor.putString(LYRICS_4, jsonLyrics);
-            }
-            editor.apply();
-            //update the statuses to reflect the new song added
-            ArrayList<Integer> statuses = getLyricStatuses();
-            statuses.set(nextLyricLocation, Integer.parseInt(songNumber));
-            saveLyricStatuses(statuses);
-            resetNumberWordsFound();
-            //move to the next default location
-            incrementNextLyricLocation();
-        }
-
-    }
-
-    /**
-     * Updates an already-stored lyrics file.
-     * If there is not a lyrics file for that number, does nothing.
-     * @param lyrics the lyrics to store
-     * @param songNumber the song number for those lyrics
-     */
-    public void updateLyrics(HashMap<String, ArrayList<String>> lyrics, String songNumber){
-        Log.d(TAG, "updateLyrics called");
-        Gson gson = new Gson();
-        String jsonLyrics = gson.toJson(lyrics);
-        int lyricLocation = getSongLocation(songNumber);
-        // If the lyrics are stored there
-        if (lyricLocation != -1){
-            //save in the next location indicated
-            switch(lyricLocation) {
-                case 0:
-                    editor.putString(LYRICS_0, jsonLyrics);
-                case 1:
-                    editor.putString(LYRICS_1, jsonLyrics);
-                case 2:
-                    editor.putString(LYRICS_2, jsonLyrics);
-                case 3:
-                    editor.putString(LYRICS_3, jsonLyrics);
-                case 4:
-                    editor.putString(LYRICS_4, jsonLyrics);
-            }
-            editor.apply();
-        }
-    }
-
-    /**
-     * Return the lyrics for a song number
-     * @param songNumber - number of song to get lyrics for
-     * @return - the lyrics, null if they aren't stored.
-     */
     public HashMap<String, ArrayList<String>> getLyrics(String songNumber){
-        Log.d(TAG, "getLyrics called");
-        HashMap<String, ArrayList<String>> lyrics;
-        int lyricLocation = getSongLocation(songNumber);
-        Log.v(TAG, "lyric location is: " + lyricLocation);
-        //return null if the song is not there.
-        if (lyricLocation == -1) {
-            Log.e(TAG, "Song lyrics not found for song #" + songNumber);
+        String jsonAllLyrics = settings.getString(LYRICS, null);
+        if (jsonAllLyrics != null){
+            Gson gson = new Gson();
+            Type type = new TypeToken<HashMap<String, HashMap<String, ArrayList<String>>>>(){}.getType();
+            HashMap<String, HashMap<String, ArrayList<String>>> allLyrics = gson.fromJson(jsonAllLyrics, type);
+            return allLyrics.get(songNumber);
+        } else {
             return null;
         }
-        Gson gson = new Gson();
-        String jsonLyrics;
-        Type type = new TypeToken<HashMap<String, ArrayList<String>>>(){}.getType();
-        //TODO fix switch
-        switch(lyricLocation){
-            case 0:
-                jsonLyrics = settings.getString(LYRICS_0, null);
-                lyrics = gson.fromJson(jsonLyrics, type);
-                return lyrics;
-            case 1:
-                jsonLyrics = settings.getString(LYRICS_1, null);
-                lyrics = gson.fromJson(jsonLyrics, type);
-                return lyrics;
-            case 2:
-                jsonLyrics = settings.getString(LYRICS_2, null);
-                lyrics = gson.fromJson(jsonLyrics, type);
-                return lyrics;
-            case 3:
-                jsonLyrics = settings.getString(LYRICS_3, null);
-                lyrics = gson.fromJson(jsonLyrics, type);
-                return lyrics;
-            case 4:
-                jsonLyrics = settings.getString(LYRICS_4, null);
-                lyrics = gson.fromJson(jsonLyrics, type);
-                return lyrics;
-            default:
-                Log.e(TAG, "Unexpected lyric location: " + lyricLocation);
-                return null;
-        }
     }
 
-    public void eraseLyrics(int songNumber){
-        Log.v(TAG, "eraseLyrics called");
-        //indicate the song as not started (it's erased)
-        String songNumString = String.valueOf(songNumber);
-        if (songNumber < 10){
-            //put a 0 in front of the string so it matches the other song numbers below 10
-            songNumString = "0" + songNumString;
-        }
-
-        saveSongStatus(songNumString, "N");
-
-        resetNumberWordsFound();
-        resetNumberWordsAvailable();
-        resetIncorrectGuess();
-        artistHidden();
-
-        //update statuses
-        ArrayList<Integer> currentStatuses = getLyricStatuses();
-        int lyricLocation = currentStatuses.indexOf(songNumber);
-        //return if the song is already not there.
-        if (lyricLocation == -1) return;
-
-        //song was in statuses, update to 0.
-        currentStatuses.set(lyricLocation, 0);
-        saveLyricStatuses(currentStatuses);
-
-        switch(lyricLocation){
-            case 0:
-                editor.putString(LYRICS_0, null);
-            case 1:
-                editor.putString(LYRICS_1, null);
-            case 2:
-                editor.putString(LYRICS_2, null);
-            case 3:
-                editor.putString(LYRICS_3, null);
-            case 4:
-                editor.putString(LYRICS_4, null);
-            default:
-                Log.e(TAG, "Unexpected location erased: " + lyricLocation);
-
-        }
-        editor.apply();
-    }
 
     public void completeSong(String songNumber){
         Log.v(TAG, "completeSong called");
         //indicate the song as completed
-        int songNumInteger = Integer.parseInt(songNumber);
-
         saveSongStatus(songNumber, "C");
-
-        //update statuses
-        ArrayList<Integer> currentStatuses = getLyricStatuses();
-        int lyricLocation = currentStatuses.indexOf(Integer.parseInt(songNumber));
-        //return if the song is already not there.
-        if (lyricLocation == -1) {
-            Log.e(TAG, "Song not saved in lyrics when it was completed");
-            return;
-        }
-        resetNumberWordsFound();
-        resetNumberWordsAvailable();
-        resetIncorrectGuess();
-        artistHidden();
-
-        //song was in statuses, update to 0.
-        currentStatuses.set(lyricLocation, 0);
-        saveLyricStatuses(currentStatuses);
-
-        switch(lyricLocation){
-            case 0:
-                editor.putString(LYRICS_0, null);
-            case 1:
-                editor.putString(LYRICS_1, null);
-            case 2:
-                editor.putString(LYRICS_2, null);
-            case 3:
-                editor.putString(LYRICS_3, null);
-            case 4:
-                editor.putString(LYRICS_4, null);
-            default:
-                Log.e(TAG, "Unexpected location completed: " + lyricLocation);
-
-        }
-        editor.apply();
+        SongInfo thisSong = getSongInfo(songNumber);
+        thisSong.resetSongInfo();
+        saveSongInfo(songNumber, thisSong);
     }
 
-    public void resetNumberWordsFound(){
-        Log.d(TAG, "resetNumberWordsFound called");
-        String songNumber = getCurrentSongNumber();
-        ArrayList<Integer> wordsList = getWordsFoundList();
-        int loc = getSongLocation(songNumber);
-        if (loc != -1){
-            wordsList.set(loc, 0);
-            saveWordsFoundList(wordsList);
-        } else {
-            Log.e(TAG, "Song not found in storage");
-        }
-    }
-
-    public void incrementNumberWordsFound(){
-        Log.d(TAG, "incrementNumberWordsFound called");
-        String songNumber = getCurrentSongNumber();
-        ArrayList<Integer> wordsList = getWordsFoundList();
-        int loc = getSongLocation(songNumber);
-        if (loc != -1){
-            int prev = wordsList.get(loc);
-            prev++;
-            wordsList.set(loc, prev);
-            saveWordsFoundList(wordsList);
-            incrementNumAvailableWords(loc);
-        } else {
-            Log.e(TAG, "Song not found in storage");
-        }
-
-    }
-
-    public int getNumberWordsFound(){
-        Log.d(TAG, "getNumberWordsFound called");
-        String songNumber = getCurrentSongNumber();
-        ArrayList<Integer> wordsFoundList = getWordsFoundList();
-        int loc = getSongLocation(songNumber);
-        if (loc != -1)
-        return wordsFoundList.get(loc);
-        else {
-            Log.e(TAG, "Song not found in storage");
-            return 0;
-        }
-    }
-
-    private ArrayList<Integer> getWordsFoundList(){
-        // if there is no words list object stored make one.
-        if(!settings.contains(NUM_WORDS_FOUND)){
-            ArrayList<Integer> numWordsList = new ArrayList<>();
-            for (int i = 0; i < 5; i++){
-                numWordsList.add(0);
-            }
-            Gson gson = new Gson();
-            String jsonWordsList = gson.toJson(numWordsList);
-            editor.putString(NUM_WORDS_FOUND, jsonWordsList);
-            return numWordsList;
-        } else {
-            // find and return the array
-            Gson gson = new Gson();
-            String jsonWordsList = settings.getString(NUM_WORDS_FOUND, null);
-            Type type = new TypeToken<ArrayList<Integer>>(){}.getType();
-            return gson.fromJson(jsonWordsList, type);
-        }
-    }
-
-    private void saveWordsFoundList(ArrayList<Integer> wordsList){
+    public void saveSongInfo(String songNumber, SongInfo info){
+        //create a place to save the info if it isn't there already
+        HashMap<String, SongInfo> songInfos = new HashMap<>();
         Gson gson = new Gson();
-        String jsonWordsList = gson.toJson(wordsList);
-        editor.putString(NUM_WORDS_FOUND, jsonWordsList);
-        editor.apply();
-    }
-
-    public void resetNumberWordsAvailable(){
-        Log.d(TAG, "resetNumberWordsAvailable called");
-        String songNumber = getCurrentSongNumber();
-        ArrayList<Integer> wordsList = getWordsAvailableList();
-        int loc = getSongLocation(songNumber);
-        if (loc != -1){
-            wordsList.set(loc, 0);
-            saveWordsAvailableList(wordsList);
+        if (!settings.contains(SONG_INFO)){
+            songInfos.put(songNumber, info);
+            String jsonInfo = gson.toJson(songInfos);
+            editor.putString(SONG_INFO, jsonInfo);
+            editor.apply();
         } else {
-            Log.e(TAG, "Song not found in storage");
-        }
-    }
-
-    public int getNumAvailableWords(){
-        Log.d(TAG, "getNumAvailableWords called");
-        String songNumber = getCurrentSongNumber();
-        Log.v(TAG, "songNumber is: " + songNumber);
-        ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
-        int location = getSongLocation(songNumber);
-        if (location == -1){
-            Log.e(TAG, "Song not found in storage");
-            return 0;
-        }
-        return wordsAvailableList.get(location);
-    }
-
-
-    // Called whenever incrementNumWordsFound is called.
-    // Already checked that it's not -1 in numWordsFound method.
-    private void incrementNumAvailableWords(int loc){
-        Log.d(TAG, "incrementNumAvailableWords called");
-        ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
-        int prev = wordsAvailableList.get(loc);
-        prev++;
-        wordsAvailableList.set(loc, prev);
-        saveWordsAvailableList(wordsAvailableList);
-    }
-
-    /**
-     * Removes a number of words from the words available to spend on hints.
-     * Used to update the shared preferences with this change.
-     * @param numToRemove - number of words spent on hint
-     */
-    public void removeNumAvailableWords(int numToRemove){
-        Log.d(TAG, "removeNumAvailableWords called");
-        String songNumber = getCurrentSongNumber();
-        int loc = getSongLocation(songNumber);
-        if (loc != -1){
-            ArrayList<Integer> wordsAvailableList = getWordsAvailableList();
-            int prev = wordsAvailableList.get(loc);
-            int newVal = prev - numToRemove;
-            wordsAvailableList.set(loc, newVal);
-            saveWordsAvailableList(wordsAvailableList);
-        } else {
-            Log.e(TAG, "Song not found in storage");
-        }
-
-
-    }
-
-    private ArrayList<Integer> getWordsAvailableList(){
-        // if there is no words list object stored make one.
-        if(!settings.contains(NUM_WORDS_AVAILABLE)){
-            ArrayList<Integer> numWordsList = new ArrayList<>();
-            for (int i = 0; i < 5; i++){
-                numWordsList.add(0);
+            String jsonInfo = settings.getString(SONG_INFO, null);
+            if (jsonInfo != null){
+                Type type = new TypeToken<HashMap<String, SongInfo>>(){}.getType();
+                songInfos = gson.fromJson(jsonInfo, type);
+                songInfos.put(songNumber, info);
+                jsonInfo = gson.toJson(songInfos);
+                editor.putString(SONG_INFO, jsonInfo);
+                editor.apply();
+            } else {
+                Log.e(TAG, "Found null string");
             }
+        }
+    }
+
+    public SongInfo getSongInfo(String songNumber){
+        String jsonInfo = settings.getString(SONG_INFO, null);
+        if (jsonInfo != null){
             Gson gson = new Gson();
-            String jsonWordsList = gson.toJson(numWordsList);
-            editor.putString(NUM_WORDS_AVAILABLE, jsonWordsList);
-            return numWordsList;
+            Type type = new TypeToken<HashMap<String, SongInfo>>(){}.getType();
+            HashMap<String, SongInfo> songInfos = gson.fromJson(jsonInfo, type);
+            return songInfos.get(songNumber);
         } else {
-            // find and return the array
-            Gson gson = new Gson();
-            String jsonWordsList = settings.getString(NUM_WORDS_AVAILABLE, null);
-            Type type = new TypeToken<ArrayList<Integer>>(){}.getType();
-            return gson.fromJson(jsonWordsList, type);
+            Log.e(TAG, "Found null string");
+            return null;
         }
-    }
-
-    private void saveWordsAvailableList(ArrayList<Integer> wordsList){
-        Gson gson = new Gson();
-        String jsonWordsList = gson.toJson(wordsList);
-        editor.putString(NUM_WORDS_AVAILABLE, jsonWordsList);
-        editor.apply();
-    }
-
-    public void artistRevealed(){
-        String songNumber = getCurrentSongNumber();
-        int loc = getSongLocation(songNumber);
-        if (loc != -1) {
-            ArrayList<Boolean> currentArtistStatuses = getArtistList();
-            currentArtistStatuses.set(loc, true);
-            saveArtistList(currentArtistStatuses);
-        }
-    }
-
-    public void artistHidden(){
-        String songNumber = getCurrentSongNumber();
-        int loc = getSongLocation(songNumber);
-        if (loc != -1){
-        ArrayList<Boolean> currentArtistStatuses = getArtistList();
-        currentArtistStatuses.set(loc, false);
-        saveArtistList(currentArtistStatuses);
-        }
-    }
-
-    public boolean isArtistRevealed(){
-        String songNumber = getCurrentSongNumber();
-        int loc = getSongLocation(songNumber);
-        if (loc == - 1) return false;
-        return getArtistList().get(loc);
-    }
-
-    private ArrayList<Boolean> getArtistList(){
-        // if there is no artist list object stored make one.
-        if(!settings.contains(ARTIST_REVEALED)){
-            ArrayList<Boolean> artistList = new ArrayList<>();
-            for (int i = 0; i < 5; i++){
-                artistList.add(false);
-            }
-            Gson gson = new Gson();
-            String jsonArtistList = gson.toJson(artistList);
-            editor.putString(ARTIST_REVEALED, jsonArtistList);
-            return artistList;
-        } else {
-            // find and return the array
-            Gson gson = new Gson();
-            String jsonArtistList = settings.getString(ARTIST_REVEALED, null);
-            Type type = new TypeToken<ArrayList<Boolean>>(){}.getType();
-            return gson.fromJson(jsonArtistList, type);
-        }
-    }
-
-    private void saveArtistList(ArrayList<Boolean> artistList){
-        Gson gson = new Gson();
-        String jsonArtistList = gson.toJson(artistList);
-        editor.putString(ARTIST_REVEALED, jsonArtistList);
-        editor.apply();
-    }
-
-    public void saveIncorrectGuess(){
-        editor.putBoolean(INCORRECT_GUESS, true);
-        editor.apply();
-    }
-
-    public void resetIncorrectGuess(){
-        editor.putBoolean(INCORRECT_GUESS, false);
-    }
-
-    public boolean getIncorrectGuess(){
-        return settings.getBoolean(INCORRECT_GUESS, false);
     }
 
     public void saveHeight(int height){

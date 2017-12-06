@@ -102,6 +102,7 @@
     <string name="fab_reveal_artist_txt">Reveal artist</string>
     <string name="fam_get_hint">Get a hint</string>
     <string name="toast_not_enough_words">You don\'t have enough words yet</string>
+    <string name="msg_lines_too_short">Cannot reveal a line if there is only one word</string>
 
     <string name="txt_words_to_line_plural">%1$d more words needed to reveal a line</string>
     <string name="txt_words_to_artist_plural">%1$d more words needed to reveal the artist</string>
