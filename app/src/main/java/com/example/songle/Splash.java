@@ -13,7 +13,7 @@ import android.util.Log;
 
 public class Splash extends Activity {
     private static final String TAG = Splash.class.getSimpleName();
-    private final int SPLASH_DISPLAY_LENGTH = 2000;
+    private final int SPLASH_DISPLAY_LENGTH = 500;
 
     @Override
     public void onCreate(Bundle savedInstanceState){

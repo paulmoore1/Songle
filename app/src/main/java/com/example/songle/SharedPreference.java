@@ -2,6 +2,7 @@ package com.example.songle;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.util.Log;
 
@@ -11,6 +12,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,36 +30,17 @@ public class SharedPreference {
     private static final String TAG = "SharedPreference";
     private static final String PREFS_NAME = "SONGLE_APP";
     private static final String SONGS = "Songs";
-    //lyrics numbered 0-4 instead of 1-5 as that made indexing easier which was often necessary
-    private static final String LYRICS_0 = "Lyrics0";
-    private static final String LYRICS_1 = "Lyrics1";
-    private static final String LYRICS_2 = "Lyrics2";
-    private static final String LYRICS_3 = "Lyrics3";
-    private static final String LYRICS_4 = "Lyrics4";
-    private static final String LYRIC_STATUS = "LyricStatus";
     private static final String LYRICS = "Lyrics";
-    private static final String NEXT_LYRIC_LOCATION = "NextLyricLocation";
-    private static final String NUM_WORDS_FOUND = "WordsFound";
-    private static final String NUM_WORDS_AVAILABLE = "WordsAvailable";
-    private static final String ARTIST_REVEALED = "ArtistRevealed";
-    private static final String MAP_1 = "Map1";
-    private static final String MAP_2 = "Map2";
-    private static final String MAP_3 = "Map3";
-    private static final String MAP_4 = "Map4";
-    private static final String MAP_5 = "Map5";
-    private static final String MAP_1_NUM = "Map1Num";
-    private static final String MAP_2_NUM = "Map2Num";
-    private static final String MAP_3_NUM = "Map3Num";
-    private static final String MAP_4_NUM = "Map4Num";
-    private static final String MAP_5_NUM = "Map5Num";
+    private static final String SONG_INFO = "SongInfo";
+    private static final String MAPS = "Maps";
+    private static final String MAPS_INFO = "MapsInfo";
     private static final String TIMESTAMP = "Timestamp";
     private static final String CURRENT_SONG = "CurrentSong";
     private static final String CURRENT_SONG_NUMBER = "CurrentSongNumber";
     private static final String CURRENT_DIFFICULTY_LEVEL = "CurrentDifficultyLevel";
-    private static final String INCORRECT_GUESS = "IncorrectGuess";
     private static final String HEIGHT = "Height";
     private static final String ACHIEVEMENTS = "Achievements";
-    private static final String SONG_INFO = "SongInfo";
+
 
     @SuppressLint("CommitPrefEdits")
     public SharedPreference(Context context){
@@ -90,9 +73,7 @@ public class SharedPreference {
             for (int i = 0; i < oldLength; i++){
                 newSongs.set(i, oldSongs.get(i));
             }
-
         }
-
         Gson gson = new Gson();
         String jsonSongs = gson.toJson(newSongs);
 
@@ -100,7 +81,6 @@ public class SharedPreference {
         editor.apply();
 
     }
-
 
     /**
      * Update song status accordingly (will be "N" automatically so don't input that)
@@ -242,8 +222,10 @@ public class SharedPreference {
         return songNum;
     }
 
-    //following are methods for saving and getting the current difficulty level
-
+    /**
+     * Save the current difficulty level. Input difficulty must be valid or nothing happens.
+     * @param diffLevel - difficulty level to save as.
+     */
     public void saveCurrentDifficultyLevel(String diffLevel){
         Log.d(TAG, "saveCurrentDifficultyLevelNumber called");
         //check diffLevel is one of the appropriate ones for difficulty level
@@ -259,6 +241,10 @@ public class SharedPreference {
         }
     }
 
+    /**
+     * Get the current difficulty level
+     * @return current difficulty level
+     */
     public String getCurrentDifficultyLevel(){
         Log.d(TAG, "getCurrentDifficultyLevel called");
         String diffLevel = null;
@@ -269,8 +255,12 @@ public class SharedPreference {
         return diffLevel;
     }
 
-    public String getCurrentDifficultyLevelNumber(){
-        Log.d(TAG, "getCurrentDifficultyLevelNumber called");
+    /**
+     * Get the map number based on the current difficulty setting
+     * @return number of the map for that difficulty, 1 by default.
+     */
+    public String getCurrentMapNumber(){
+        Log.d(TAG, "getCurrentMapNumber called");
         if (settings.contains(CURRENT_DIFFICULTY_LEVEL)){
             String text = settings.getString(CURRENT_DIFFICULTY_LEVEL, null);
             if (text != null){
@@ -330,121 +320,86 @@ public class SharedPreference {
      */
     public void saveMap(List<Placemark> placemarks, String mapNumber, String songNumber){
         Log.v(TAG, "saveMap called");
-
+        HashMap<String, List<Placemark>> allMaps = new HashMap<>();
         Gson gson = new Gson();
-        String jsonPlacemarks = gson.toJson(placemarks);
-
-        switch (mapNumber) {
-            case "1":
-                editor.putString(MAP_1, jsonPlacemarks);
-                editor.putString(MAP_1_NUM, songNumber);
-                break;
-            case "2":
-                editor.putString(MAP_2, jsonPlacemarks);
-                editor.putString(MAP_2_NUM, songNumber);
-                break;
-            case "3":
-                editor.putString(MAP_3, jsonPlacemarks);
-                editor.putString(MAP_3_NUM, songNumber);
-                break;
-            case "4":
-                editor.putString(MAP_4, jsonPlacemarks);
-                editor.putString(MAP_4_NUM, songNumber);
-                break;
-            case "5":
-                editor.putString(MAP_5, jsonPlacemarks);
-                editor.putString(MAP_5_NUM, songNumber);
-                break;
-            default:
-                Log.e(TAG, "Unexpected number received in maps");
-                return;
-        }
-        editor.apply();
-
-    }
-
-    public ArrayList<Placemark> getMap(String mapNum){
-        Log.v(TAG, "getMap called for map #" + mapNum);
-        ArrayList<Placemark> placemarks;
-        String targetMap;
-        switch (mapNum) {
-            case "1":
-                targetMap = MAP_1;
-                break;
-            case "2":
-                targetMap = MAP_2;
-                break;
-            case "3":
-                targetMap = MAP_3;
-                break;
-            case "4":
-                targetMap = MAP_4;
-                break;
-            case "5":
-                targetMap = MAP_5;
-                break;
-            default:
-                Log.e(TAG, "Unexpected number requested");
-                return null;
-        }
-        if (settings.contains(targetMap)){
-            String jsonPlacemarks = settings.getString(targetMap, null);
-            Log.e(TAG, "map song number: " + getMapsSongNumber(Integer.parseInt(mapNum)));
-            Gson gson = new Gson();
-            Type type = new TypeToken<ArrayList<Placemark>>(){}.getType();
-            placemarks = gson.fromJson(jsonPlacemarks, type);
-            return placemarks;
-
+        //If there are no previously saved maps then create them
+        if (!settings.contains(MAPS)){
+            allMaps.put(mapNumber, placemarks);
+            String jsonAllMaps = gson.toJson(allMaps);
+            editor.putString(MAPS, jsonAllMaps);
+            editor.apply();
         } else {
-            Log.e(TAG, "Map not found");
-            return  null;
+            //Found old maps, put the new value in
+            String jsonAllMaps = settings.getString(MAPS, null);
+            if (jsonAllMaps != null) {
+                Type type = new TypeToken<HashMap<String, List<Placemark>>>() {
+                }.getType();
+                allMaps = gson.fromJson(jsonAllMaps, type);
+                allMaps.put(mapNumber, placemarks);
+                jsonAllMaps = gson.toJson(allMaps);
+                editor.putString(MAPS, jsonAllMaps);
+                editor.apply();
+                //Save the map information as well
+                try {
+                    int songNum = Integer.parseInt(songNumber);
+                    saveMapsInfo(mapNumber, songNum, placemarks.size());
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Tried to pass invalid song number: " + e);
+                }
+            } else {
+                Log.e(TAG, "Found null jsonAllMaps");
+            }
         }
     }
 
     /**
-     * Get the song number stored in the map at a certain number from 1-5
-     * @param mapNumber takes values 1-5
-     * @return song number stored in that map as an integer.
+     * Get the placemarks for a certain map
+     * @param mapNum - number of the map
+     * @return - placemarks if they exist, null otherwise
      */
-    private int getMapsSongNumber(int mapNumber){
-        String songNumber = "";
-        String targetMapNumber;
-        //TODO check if a switch works too - says variable not initialised
-        /*
-        switch(mapNumber){
-            case 1:
-                targetMapNumber = MAP_1_NUM;
-            case 2:
-                targetMapNumber = MAP_2_NUM;
-            case 3:
-                targetMapNumber = MAP_3_NUM;
-            case 4:
-                targetMapNumber = MAP_4_NUM;
-            case 5:
-                targetMapNumber = MAP_5_NUM;
-        }*/
-        if (mapNumber == 1){
-            targetMapNumber = MAP_1_NUM;
-        } else if (mapNumber == 2){
-            targetMapNumber = MAP_2_NUM;
-        } else if (mapNumber == 3){
-            targetMapNumber = MAP_3_NUM;
-        } else if (mapNumber == 4){
-            targetMapNumber = MAP_4_NUM;
-        } else if (mapNumber == 5){
-            targetMapNumber = MAP_5_NUM;
+    public ArrayList<Placemark> getMap(String mapNum){
+        Log.v(TAG, "getMap called for map #" + mapNum);
+        Gson gson = new Gson();
+        String jsonAllMaps = settings.getString(MAPS, null);
+        if (jsonAllMaps != null) {
+            Type type = new TypeToken<HashMap<String, List<Placemark>>>() {}.getType();
+            HashMap<String, List<Placemark>> allMaps = gson.fromJson(jsonAllMaps, type);
+            return (ArrayList<Placemark>) allMaps.get(mapNum);
         } else {
-            Log.e(TAG, "Unexpected number requested: " + mapNumber);
-            return 0;
+            return null;
         }
-        if (settings.contains(targetMapNumber)){
-            //return 0 as default to indicate no song is there
-            songNumber = settings.getString(targetMapNumber, "0");
-            return Integer.parseInt(songNumber);
-        } else {
-            return 0;
-        }
+    }
 
+    /**
+     * Saves the information associated with a map - number of words and song.
+     * @param mapNumber  - Key to identify which map is being referred to
+     * @param songNumber - Number of song the map is of
+     * @param numWords - Number of words in the map
+     */
+    private void saveMapsInfo(String mapNumber, int songNumber, int numWords){
+        ArrayList<Integer> ints = new ArrayList<>(Arrays.asList(songNumber, numWords));
+        HashMap<String, ArrayList<Integer>> mapInfo = new HashMap<>();
+
+        Gson gson = new Gson();
+        if (!settings.contains(MAPS_INFO)){
+            mapInfo.put(mapNumber, ints);
+            String jsonMapInfo = gson.toJson(mapInfo);
+            editor.putString(MAPS_INFO, jsonMapInfo);
+            editor.apply();
+
+        } else {
+            String jsonMapInfo = settings.getString(MAPS_INFO, null);
+            if (jsonMapInfo != null){
+                Type type = new TypeToken<HashMap<String, ArrayList<Integer>>>(){}.getType();
+                mapInfo = gson.fromJson(jsonMapInfo, type);
+                mapInfo.put(mapNumber, ints);
+                jsonMapInfo = gson.toJson(mapInfo);
+                editor.putString(MAPS_INFO, jsonMapInfo);
+                editor.apply();
+            } else {
+                Log.e(TAG, "No map found");
+            }
+        }
     }
 
     /**
@@ -457,11 +412,47 @@ public class SharedPreference {
         //convert to integer for easy comparison
         int songNum = Integer.parseInt(songNumber);
         boolean result = true;
-        for (int i = 1; i < 6; i++){
-            //result will only remain true if all the maps had the song number
-            result = result && (getMapsSongNumber(i) == songNum);
+        Gson gson = new Gson();
+        String jsonMapInfo = settings.getString(MAPS_INFO, null);
+        if (jsonMapInfo != null){
+            Type type = new TypeToken<HashMap<String, ArrayList<Integer>>>(){}.getType();
+            HashMap<String, ArrayList<Integer>> mapInfo = gson.fromJson(jsonMapInfo, type);
+            //Return false if there are not five entries
+            if (mapInfo.size() != 5){
+                Log.e(TAG, "Found this many entries in the Map Info HashMap: " + mapInfo.size());
+                return false;
+            }
+            for (String mapNumber : mapInfo.keySet()){
+                //Song number is stored at index 0 of the list (in the map)
+                result = result && (songNum == mapInfo.get(mapNumber).get(0));
+            }
+            return result;
+        } else {
+            Log.e(TAG, "No map found");
+            return false;
         }
-        return result;
+    }
+
+    /**
+     * Get the number of words for a map
+     * @param mapNumber - number of the map being queried
+     * @return the number of words if that map is valid, 1 otherwise
+     */
+    public int getMapNumWords(String mapNumber){
+        Log.v(TAG, "getMapNumWords called");
+        Gson gson = new Gson();
+        String jsonMapInfo = settings.getString(MAPS_INFO, null);
+        if (jsonMapInfo != null){
+            Type type = new TypeToken<HashMap<String, ArrayList<Integer>>>(){}.getType();
+            HashMap<String, ArrayList<Integer>> mapInfo = gson.fromJson(jsonMapInfo, type);
+            //Number of words is stored at index 1 of the list (in the map)
+            return mapInfo.get(mapNumber).get(1);
+        } else {
+            Log.e(TAG, "No map found");
+            //Return 1 as we divide by the number of words, so dividing by 0 would not be good!
+            return 1;
+        }
+
     }
 
     /**
@@ -474,7 +465,11 @@ public class SharedPreference {
         return getLyrics(songNumber) != null;
     }
 
-
+    /**
+     * Saves the lyrics for a song in the shared preferences
+     * @param songNumber - number associated with the song
+     * @param lyrics - the lyrics for that song
+     */
     public void saveLyrics(String songNumber, HashMap<String, ArrayList<String>> lyrics){
         HashMap<String, HashMap<String, ArrayList<String>>> allLyrics = new HashMap<>();
         Gson gson = new Gson();
@@ -498,6 +493,11 @@ public class SharedPreference {
         }
     }
 
+    /**
+     * Get the lyrics associated with a certain song
+     * @param songNumber - number of the song the lyrics are being looked for
+     * @return the lyrics if they are there, null otherwise
+     */
     public HashMap<String, ArrayList<String>> getLyrics(String songNumber){
         String jsonAllLyrics = settings.getString(LYRICS, null);
         if (jsonAllLyrics != null){
@@ -510,7 +510,10 @@ public class SharedPreference {
         }
     }
 
-
+    /**
+     * Mark a song as completed. This updates its status and resets its associated information
+     * @param songNumber - song to mark as complete
+     */
     public void completeSong(String songNumber){
         Log.v(TAG, "completeSong called");
         //indicate the song as completed
@@ -520,6 +523,11 @@ public class SharedPreference {
         saveSongInfo(songNumber, thisSong);
     }
 
+    /**
+     * Save the information associated with a song
+     * @param songNumber - number of that song
+     * @param info - all the necessary information about it
+     */
     public void saveSongInfo(String songNumber, SongInfo info){
         //create a place to save the info if it isn't there already
         HashMap<String, SongInfo> songInfos = new HashMap<>();
@@ -544,6 +552,11 @@ public class SharedPreference {
         }
     }
 
+    /**
+     * Get the information associated with a song
+     * @param songNumber - number of that song
+     * @return - the information if it exists, null otherwise
+     */
     public SongInfo getSongInfo(String songNumber){
         String jsonInfo = settings.getString(SONG_INFO, null);
         if (jsonInfo != null){
@@ -598,17 +611,10 @@ public class SharedPreference {
                     Achievement a = i.next();
                     if (a.isHidden() && !a.isAchieved()) i.remove();
                 }
-
             }
             return achievements;
-
-
-
         } else {
             return null;
         }
     }
-
-
-
 }

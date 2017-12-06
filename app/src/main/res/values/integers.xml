@@ -15,7 +15,7 @@
     <integer name="achievement_first_word_goal">1</integer>
     <integer name="achievement_words_wizard_goal">100</integer>
     <integer name="achievement_the_collector_goal">500</integer>
-    <integer name="achievement_gotta_catch_title_goal">1</integer>
+    <integer name="achievement_gotta_catch_goal">1</integer>
     <integer name="achievement_first_of_many_goal">1</integer>
     <integer name="achievement_baby_triple_goal">3</integer>
     <integer name="achievement_maestro_goal">10</integer>

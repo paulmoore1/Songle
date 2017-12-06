@@ -194,6 +194,7 @@ public class GuessFragment extends Fragment {
     @Override
     public void onResume(){
         super.onResume();
+        refreshProgress();
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
     }
 
@@ -225,7 +226,7 @@ public class GuessFragment extends Fragment {
 
     // from https://stackoverflow.com/questions/42024058/how-to-open-youtube-video-link-in-android-app
     private void watchYouTubeVideo(){
-        String link = currentSong.getLink();
+        String link = songInfo.getLink();
         //extract last 11 characters of link as the id
         String id = link.substring(link.length() - 11);
         Intent applicationIntent = new  Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + id));
@@ -268,6 +269,7 @@ public class GuessFragment extends Fragment {
             }
         });
         AlertDialog alertDialog = adb.create();
+        adb.setCancelable(false);
         alertDialog.show();
     }
 
@@ -322,6 +324,7 @@ public class GuessFragment extends Fragment {
             }
         });
         AlertDialog alertDialog = adb.create();
+        alertDialog.setCancelable(false);
         alertDialog.show();
     }
 
@@ -357,6 +360,56 @@ public class GuessFragment extends Fragment {
         ad.show();
 
     }
+/*
+    private int calculateScore(){
+        float init = 1;
+        float percentWords = getPercentWords();
+
+    }
+
+    private float getPercentWords(){
+        int total = songInfo.getTotalWords();
+        if (total > 0){
+            int adjustedTotal = totalForDifficulty(total);
+            int found = songInfo.getNumWordsFound();
+            if (found <= total){
+                return (float) found / (float) total;
+            } else {
+                Log.e(TAG, "Cannot find more words than the total!");
+                return 1;
+            }
+
+
+        } else {
+            Log.e(TAG, "Total was zero, should be larger");
+            return 1;
+        }
+    }*/
+
+    /**
+     * Finds the total required for a certain difficulty level.
+     * It's 25% of the for Insane, 50% for Hard and 75% for Moderate
+     * Easy and Very Easy are 100%
+     * @param
+     * @return
+     *//*
+    private int totalForDifficulty(int total){
+        if (currentDifficulty.equals(getString(R.string.difficulty_very_easy)) ||
+                currentDifficulty.equals(getString(R.string.difficulty_easy)))
+            return total;
+        else if (currentDifficulty.equals(getString(R.string.difficulty_moderate))){
+            return total;
+        }
+        else if (currentDifficulty.equals(getString(R.string.difficulty_hard))){
+
+        }
+        else if (currentDifficulty.equals(getString(R.string.difficulty_insane))){
+
+        } else {
+            Log.e(TAG, "Should have found a valid difficulty" + currentDifficulty);
+            return total;
+        }
+    }*/
 
     private int calculateDifficultiesToRemove(String difficulty){
         if(difficulty.equals(getString(R.string.difficulty_insane))) return 4;
@@ -607,9 +660,9 @@ public class GuessFragment extends Fragment {
         String artistMessage = String.format(artistFormat, artist);
         Log.v(TAG, "message is: " + artistMessage);
         revealArtistText.setText(artistMessage);
-        artistProgress.setVisibility(View.GONE);
-        artistText.setVisibility(View.GONE);
-        fabArtist.setVisibility(View.GONE);
+        if (artistProgress != null) artistProgress.setVisibility(View.GONE);
+        if (artistText != null) artistText.setVisibility(View.GONE);
+        if  (fabArtist != null) fabArtist.setVisibility(View.GONE);
     }
 
 

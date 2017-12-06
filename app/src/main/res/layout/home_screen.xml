@@ -97,6 +97,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_load_game" />
 
+    <FrameLayout
+        android:id="@+id/content_frame_home"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="16dp"></FrameLayout>
+
 
 
 </android.support.constraint.ConstraintLayout>

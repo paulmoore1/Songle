@@ -84,7 +84,7 @@ public class MainGameActivity extends AppCompatActivity {
                     lastNumWordsAvailable = newNumWordsAvailable;
                 }
                 int requiredNumForHint = requiredWordsForLine();
-                if (lastNumWordsAvailable > requiredNumForHint){
+                if (lastNumWordsAvailable >= requiredNumForHint){
                     createHintNotification();
                 }
             }

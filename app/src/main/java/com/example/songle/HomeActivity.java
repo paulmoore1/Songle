@@ -36,7 +36,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class HomeActivity extends FragmentActivity implements DownloadCallback, View.OnClickListener,
@@ -122,6 +121,8 @@ FragmentManager.OnBackStackChangedListener{
                 setFragmentTitle(R.id.btn_achievements);
                 achievementListFragment = new AchievementListFragment();
                 switchContent(achievementListFragment, AchievementListFragment.ARG_ITEM_ID);
+            } else {
+                Toast.makeText(this, "Achievements not loaded yet", Toast.LENGTH_SHORT).show();
             }
         } else if (view.getId() == R.id.btn_new_game){
             Log.e(TAG, "New game button clicked");
@@ -142,20 +143,19 @@ FragmentManager.OnBackStackChangedListener{
     }
 
     public void switchContent(Fragment fragment, String tag){
+        Log.v(TAG, "Switching to Achievements fragment view");
         FragmentManager fragmentManager = getSupportFragmentManager();
         while (fragmentManager.popBackStackImmediate());
 
         if (fragment != null){
-            setTitle(R.string.txt_select_song);
-            getActionBar().setTitle(R.string.txt_select_song);
+            setTitle(R.string.txt_achievements);
+            //getActionBar().setTitle(R.string.txt_achievements);
             FragmentTransaction transaction = fragmentManager.beginTransaction();
-            transaction.replace(R.id.content_frame, fragment, tag);
+            transaction.replace(R.id.content_frame_home, fragment, tag);
             transaction.addToBackStack(tag);
             transaction.commit();
             contentFragment = fragment;
-
         }
-
     }
 
     @Override
@@ -269,6 +269,7 @@ FragmentManager.OnBackStackChangedListener{
     @Override
     protected void onResume(){
         Log.d(TAG, "onResume called");
+        getActionBar().setTitle(R.string.app_name);
  /*       // Register BroadcastReceiver to track connection changes
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkReceiver();
@@ -373,70 +374,6 @@ FragmentManager.OnBackStackChangedListener{
     }
 
 
-
-    private void signInSilently() {
-        Log.d(TAG, "Signing in");
-        GoogleSignInClient signInClient = GoogleSignIn.getClient(this,
-                GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
-        signInClient.silentSignIn().addOnCompleteListener(this,
-                new OnCompleteListener<GoogleSignInAccount>() {
-                    @Override
-                    public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
-                        if (task.isSuccessful()) {
-                            // The signed in account is stored in the task's result.
-                            GoogleSignInAccount signedInAccount = task.getResult();
-                        } else {
-                            startSignInIntent();
-                            // Player will need to sign-in explicitly using via UI
-                        }
-                    }
-                });
-    }
-
-    private void startSignInIntent() {
-        Log.d(TAG, "startSignInIntent called");
-        GoogleSignInClient signInClient = GoogleSignIn.getClient(this,
-                GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
-        Intent intent = signInClient.getSignInIntent();
-        startActivityForResult(intent, RC_SIGN_IN);
-    }
-
-    private boolean isSignedIn() {
-        return GoogleSignIn.getLastSignedInAccount(this) != null;
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN) {
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            if (result.isSuccess()) {
-                // The signed in account is stored in the result.
-                GoogleSignInAccount signedInAccount = result.getSignInAccount();
-            } else {
-                String message = result.getStatus().getStatusMessage();
-                if (message == null || message.isEmpty()) {
-                    message = getString(R.string.signin_other_error);
-                }
-                new AlertDialog.Builder(this).setMessage(message)
-                        .setNeutralButton(android.R.string.ok, null).show();
-            }
-        }
-    }
-
-    private void signOut() {
-        GoogleSignInClient signInClient = GoogleSignIn.getClient(this,
-                GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
-        signInClient.signOut().addOnCompleteListener(this,
-                new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        // at this point, the user is signed out.
-                    }
-                });
-    }
-
-
     //use if a network connection is required for the selected option to work
     private void sendNetworkErrorDialog(){
         //with no internet, send an alert that will take user to settings or close the app.
@@ -528,11 +465,158 @@ FragmentManager.OnBackStackChangedListener{
             Achievement firstWord = new Achievement(getString(R.string.achievement_first_word_title),
                     getString(R.string.achievement_first_word_msg),
                     fetchInteger(R.integer.achievement_first_word_goal),
-                    R.drawable.achievement_first_word_color,
-                    R.drawable.achievement_first_word_grey,
+                    R.drawable.triangle_grey,
+                    R.drawable.triangle_colour,
                     false);
             List<Achievement> achievements = new ArrayList<>();
+
             achievements.add(firstWord);
+
+            Achievement wordWizard = new Achievement(getString(R.string.achievement_words_wizard_title),
+                    getString(R.string.achievement_words_wizard_msg),
+                    fetchInteger(R.integer.achievement_words_wizard_goal),
+                    R.drawable.piano_grey,
+                    R.drawable.piano_colour,
+                     false);
+
+            achievements.add(wordWizard);
+
+            Achievement theCollector = new Achievement(getString(R.string.achievement_the_collector_title),
+                    getString(R.string.achievement_the_collector_msg),
+                    fetchInteger(R.integer.achievement_the_collector_goal),
+                    R.drawable.xylophone_grey,
+                    R.drawable.xylophone_colour,
+                    false);
+            achievements.add(theCollector);
+
+            Achievement gottaCatch = new Achievement(getString(R.string.achievement_gotta_catch_title),
+                    getString(R.string.achievement_gotta_catch_msg),
+                    fetchInteger(R.integer.achievement_gotta_catch_goal),
+                    R.drawable.electric_guitar_grey,
+                    R.drawable.electric_guitar_colour,
+                    false);
+            achievements.add(gottaCatch);
+
+            Achievement firstOfMany = new Achievement(getString(R.string.achievement_first_of_many_title),
+                    getString(R.string.achievement_first_of_many_msg),
+                    fetchInteger(R.integer.achievement_first_of_many_goal),
+                    R.drawable.clarinet_grey,
+                    R.drawable.clarinet_colour,
+                    false);
+            achievements.add(firstOfMany);
+
+            Achievement babyTriple = new Achievement(getString(R.string.achievement_baby_triple_title),
+                    getString(R.string.achievement_baby_triple_msg),
+                    fetchInteger(R.integer.achievement_baby_triple_goal),
+                    R.drawable.drums_grey,
+                    R.drawable.drums_colour,
+                    false);
+            achievements.add(babyTriple);
+
+            Achievement maestro = new Achievement(getString(R.string.achievement_maestro_title),
+                    getString(R.string.achievement_maestro_msg),
+                    fetchInteger(R.integer.achievement_maestro_goal),
+                    R.drawable.accordion_grey,
+                    R.drawable.accordion_colour,
+                    false);
+            achievements.add(maestro);
+
+            Achievement theSongfather = new Achievement(getString(R.string.achievement_the_songfather_title),
+                    getString(R.string.achievement_the_songfather_msg),
+                    fetchInteger(R.integer.achievement_the_songfather_goal),
+                    R.drawable.saxophone_grey,
+                    R.drawable.saxophone_colour,
+                    false);
+            achievements.add(theSongfather);
+
+            Achievement walk500 = new Achievement(getString(R.string.achievement_walk_500_title),
+                    getString(R.string.achievement_walk_500_msg),
+                    fetchInteger(R.integer.achievement_walk_500_goal),
+                    R.drawable.bass_guitar_grey,
+                    R.drawable.bass_guitar_colour,
+                    false);
+            achievements.add(walk500);
+
+            Achievement goingOut = new Achievement(getString(R.string.achievement_going_out_title),
+                    getString(R.string.achievement_going_out_msg),
+                    fetchInteger(R.integer.achievement_going_out_goal),
+                    R.drawable.maracas_grey,
+                    R.drawable.maracas_colour,
+                    false);
+            achievements.add(goingOut);
+
+            Achievement bearGrylls = new Achievement(getString(R.string.achievement_bear_grylls_title),
+                    getString(R.string.achievement_bear_grylls_msg),
+                    fetchInteger(R.integer.achievement_bear_grylls_goal),
+                    R.drawable.trumpet_grey,
+                    R.drawable.trumpet_colour,
+                    false);
+            achievements.add(bearGrylls);
+
+            Achievement forgotLine = new Achievement(getString(R.string.achievement_forgot_line_title),
+                    getString(R.string.achievement_forgot_line_msg),
+                    fetchInteger(R.integer.achievement_forgot_line_goal),
+                    R.drawable.harmonica_grey,
+                    R.drawable.harmonica_colour,
+                    false);
+            achievements.add(forgotLine);
+
+            Achievement lineHelp = new Achievement(getString(R.string.achievement_line_help_title),
+                    getString(R.string.achievement_line_help_msg),
+                    fetchInteger(R.integer.achievement_line_help_goal),
+                    R.drawable.violin_grey,
+                    R.drawable.violin_colour,
+                    false);
+            achievements.add(lineHelp);
+
+            Achievement artistHelp = new Achievement(getString(R.string.achievement_artist_help_title),
+                    getString(R.string.achievement_artist_help_msg),
+                    fetchInteger(R.integer.achievement_artist_help_goal),
+                    R.drawable.microphone_grey,
+                    R.drawable.microphone_colour,
+                    false);
+            achievements.add(artistHelp);
+
+            Achievement procrastinate = new Achievement(getString(R.string.achievement_procrastinate_title),
+                    getString(R.string.achievement_procrastinate_msg),
+                    fetchInteger(R.integer.achievement_procrastinate_goal),
+                    R.drawable.video_player_grey,
+                    R.drawable.video_player_colour,
+                    false);
+            achievements.add(procrastinate);
+
+            Achievement fasterBullet = new Achievement(getString(R.string.achievement_faster_bullet_title),
+                    getString(R.string.achievement_faster_bullet_msg),
+                    fetchInteger(R.integer.achievement_faster_bullet_goal),
+                    R.drawable.stopwatch_grey,
+                    R.drawable.stopwatch_colour,
+                    false);
+            achievements.add(fasterBullet);
+
+            Achievement cannaeDaeIt = new Achievement(getString(R.string.achievement_cannae_dae_it_title),
+                    getString(R.string.achievement_cannae_dae_it_msg),
+                    fetchInteger(R.integer.achievement_cannae_dae_it_goal),
+                    R.drawable.ukelele_grey,
+                    R.drawable.ukelele_colour,
+                    true);
+            achievements.add(cannaeDaeIt);
+
+            Achievement readInstructions = new Achievement(getString(R.string.achievement_read_instructions_title),
+                    getString(R.string.achievement_read_instructions_msg),
+                    fetchInteger(R.integer.achievement_read_instructions_goal),
+                    R.drawable.headphones_grey,
+                    R.drawable.headphones_colour,
+                    true);
+            achievements.add(readInstructions);
+
+            Achievement rickrolled = new Achievement(getString(R.string.achievement_rickrolled_title),
+                    getString(R.string.achievement_rickrolled_msg),
+                    fetchInteger(R.integer.achievement_rickrolled_goal),
+                    R.drawable.jukebox_grey,
+                    R.drawable.jukebox_colour,
+                    true);
+            achievements.add(rickrolled);
+
             sharedPreference.saveAchievements(achievements);
             return null;
         }

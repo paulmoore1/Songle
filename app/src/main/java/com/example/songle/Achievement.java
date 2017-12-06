@@ -67,18 +67,22 @@ public class Achievement {
 
     public void incrementSteps(){
         steps++;
+        if (steps >= stepsGoal) achieved = true;
     }
 
-    public void markAsAchieved(){
+    public void setAchieved(){
         achieved = true;
     }
 
-    public float percentProgress(){
-        return ((float) steps / (float) stepsGoal)*100;
+    public String getPercentProgress(){
+        float percent = ((float) steps / (float) stepsGoal)*100;
+        if (percent < 100) return String.valueOf(Math.round(percent)) + "% complete";
+        else return "Completed!";
     }
 
     public void addSteps(int numToAdd){
         steps = steps + numToAdd;
+        if (steps >= stepsGoal) achieved = true;
     }
 
 

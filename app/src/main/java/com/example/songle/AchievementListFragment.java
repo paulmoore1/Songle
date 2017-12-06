@@ -1,6 +1,7 @@
 package com.example.songle;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -16,7 +17,7 @@ import java.util.List;
  * Created by Paul on 06/12/2017.
  */
 
-public class AchievementListFragment extends Fragment{ //implements AdapterView.OnItemClickListener {
+public class AchievementListFragment extends Fragment implements AdapterView.OnItemClickListener {
     public static final String TAG = AchievementListFragment.class.getSimpleName();
     public static final String ARG_ITEM_ID = "achievement_list";
 
@@ -44,33 +45,35 @@ public class AchievementListFragment extends Fragment{ //implements AdapterView.
 
         achievementListAdapter = new AchievementListAdapter(activity, achievements);
         achievementListView.setAdapter(achievementListAdapter);
-        //achievementListView.setOnItemClickListener(this);
+        achievementListView.setOnItemClickListener(this);
         return view;
     }
 
     private void findViewsById(View view){
         achievementListView = view.findViewById(R.id.list_achievement);
     }
-/*
+
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Song song = (Song) parent.getItemAtPosition(position);
-        String songNum = song.getNumber();
-        //save these values to shared preferences.
-        sharedPreference.saveCurrentSong(song);
-        sharedPreference.saveCurrentSongNumber(songNum);
-
-        //close the fragment.
-        getFragmentManager().popBackStackImmediate();
-
+        Achievement achievement = (Achievement) parent.getItemAtPosition(position);
+        String description = achievement.getDescription();
+        sendDescriptionDialog(description);
     }
-    */
+
 
     @Override
     public void onResume(){
         getActivity().setTitle(R.string.txt_achievements);
         getActivity().getActionBar().setTitle(R.string.txt_achievements);
         super.onResume();
+    }
+
+    public void sendDescriptionDialog(String description){
+        AlertDialog.Builder adb = new AlertDialog.Builder(getActivity());
+        adb.setTitle(R.string.title_achievement_info);
+        adb.setMessage(description);
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
     }
 
 

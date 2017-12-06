@@ -3,6 +3,7 @@ package com.example.songle;
 import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,13 +27,13 @@ public class AchievementListAdapter extends ArrayAdapter<Achievement> {
     public AchievementListAdapter(Context context, List<Achievement> achievements){
         super(context, R.layout.achievement_list_item, achievements);
         this.context = context;
-        this.achievements = this.achievements;
+        this.achievements = achievements;
         sharedPreference = new SharedPreference(context);
     }
 
     private class ViewHolder {
         TextView achievementTitle;
-        TextView achievementMessage;
+        TextView achievementProgress;
         ImageView achievementImage;
     }
 
@@ -56,9 +57,9 @@ public class AchievementListAdapter extends ArrayAdapter<Achievement> {
                     .getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.achievement_list_item, null);
             holder = new ViewHolder();
-            holder.achievementTitle = (TextView) convertView.findViewById(R.id.txt_song_number);
-            holder.achievementMessage = (TextView) convertView.findViewById(R.id.txt_song_status);
-            holder.achievementImage = (ImageView) convertView.findViewById(R.id.imgbtn_music);
+            holder.achievementTitle = (TextView) convertView.findViewById(R.id.achievement_title);
+            holder.achievementProgress = (TextView) convertView.findViewById(R.id.achievement_progress);
+            holder.achievementImage = (ImageView) convertView.findViewById(R.id.imgbtn_achievement);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
@@ -66,7 +67,7 @@ public class AchievementListAdapter extends ArrayAdapter<Achievement> {
         }
         Achievement achievement = getItem(position);
         holder.achievementTitle.setText(achievement.getTitle());
-        holder.achievementMessage.setText(achievement.getDescription());
+        holder.achievementProgress.setText(achievement.getPercentProgress());
 
         //make the icon colored if the achievement is achieved, grey otherwise
         if (achievement.isAchieved()){
@@ -79,7 +80,7 @@ public class AchievementListAdapter extends ArrayAdapter<Achievement> {
         if (currentSongNumber != -1){
             if (currentSongNumber == position) {
                 holder.achievementTitle.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
-                holder.achievementMessage.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+                holder.achievementProgress.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
             }
 
         }

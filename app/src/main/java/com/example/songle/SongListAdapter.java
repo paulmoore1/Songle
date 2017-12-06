@@ -91,7 +91,7 @@ public class SongListAdapter extends ArrayAdapter<Song> {
         if (currentSongNumber != -1){
             if (currentSongNumber == position) {
                 holder.achievementTitle.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
-                holder.achievementMessage.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+                holder.achievementProgress.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
             }
 
         }

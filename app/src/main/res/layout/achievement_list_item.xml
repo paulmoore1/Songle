@@ -8,37 +8,46 @@
     <RelativeLayout
         android:id="@+id/achievement_layout_item"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:padding="8dp">
 
         <TextView
             android:id="@+id/achievement_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="6dp"/>
+            android:padding="12dp"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/achievement_message"
+            android:id="@+id/achievement_progress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/achievement_title"
-            android:padding="6dp"/>
+            android:padding="18dp"/>
 
         <ImageView
             android:id="@+id/imgbtn_achievement"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignBottom="@+id/achievement_message"
+            android:layout_alignBottom="@+id/achievement_progress"
+            android:adjustViewBounds="true"
+            android:maxHeight="90dp"
+            android:maxWidth="90dp"
+            android:scaleType="fitCenter"
             android:layout_alignParentRight="true"
             android:layout_marginRight="3dp"
             android:background="@null"
-            android:contentDescription="@string/song"/>
+            android:contentDescription="@string/song" />
 
     </RelativeLayout>
 
     <View
+        android:id="@+id/view_divider_achievement"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_below="@+id/achievement_layout_item"
-        android:background="@color/view_divider_color"/>
+        android:background="@color/view_divider_color" />
 
 </RelativeLayout>

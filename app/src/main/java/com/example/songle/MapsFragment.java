@@ -82,7 +82,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
     private HashMap<String, ArrayList<String>> lyrics;
     private ArrayList<Placemark> placemarks;
-    private String currentDiff;
+    private String mapNumber;
     private String songNumber;
     //BitmapDescriptors for the icons
     private BitmapDescriptor IC_UNCLASSIFIED;
@@ -136,19 +136,16 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         MapsInitializer.initialize(getActivity().getApplicationContext());
         activity = getActivity();
         sharedPreference = new SharedPreference(getActivity().getApplicationContext());
-        currentDiff = sharedPreference.getCurrentDifficultyLevelNumber();
+        mapNumber = sharedPreference.getCurrentMapNumber();
         songNumber = sharedPreference.getCurrentSongNumber();
         lyrics = sharedPreference.getLyrics(songNumber);
         songInfo = sharedPreference.getSongInfo(songNumber);
 
-
-
-        placemarks = sharedPreference.getMap(currentDiff);
+        placemarks = sharedPreference.getMap(mapNumber);
 
         mRequestingLocationUpdates = false;
 
         updateValuesFromBundle(savedInstanceState);
-
 
         mSettingsClient = LocationServices.getSettingsClient(getContext());
 
@@ -165,8 +162,6 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
             requestPermissions();
         }
 
-
-
         IC_BORING = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_boring);
         IC_UNCLASSIFIED = BitmapDescriptorFactory.fromResource(
@@ -177,9 +172,6 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                 R.drawable.marker_interesting);
         IC_VERYINTERESTING = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_veryinteresting);
-
-
-
     }
 
 
@@ -271,7 +263,6 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                 marker = mMap.addMarker(new MarkerOptions().position(location).icon(bitmap));
                 ArrayList<String> tag = new ArrayList<>(Arrays.asList(word, key));
                 marker.setTag(tag);
-
             }
         }
         //set a listener for marker clicks.
@@ -287,7 +278,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
             double requiredDistance = 500;
             //find distance between last location and location of marker
             LatLng mLastLatLong = getLatLngFromLastLocation();
-            Log.e(TAG, "current location: " + mLastLatLong.toString());
+            Log.e(TAG, "current location: " + mLastLatLong);
             if (mLastLatLong != null){
                 double distance = SphericalUtil.computeDistanceBetween(mLastLatLong, marker.getPosition());
                 //if you are close enough to the marker
