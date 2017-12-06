@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 
+import com.google.android.gms.games.achievement.Achievements;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -55,6 +56,7 @@ public class SharedPreference {
     private static final String CURRENT_DIFFICULTY_LEVEL = "CurrentDifficultyLevel";
     private static final String INCORRECT_GUESS = "IncorrectGuess";
     private static final String HEIGHT = "Height";
+    private static final String ACHIEVEMENTS = "Achievements";
 
     @SuppressLint("CommitPrefEdits")
     public SharedPreference(Context context){
@@ -109,15 +111,15 @@ public class SharedPreference {
         ArrayList<Song> songs = getAllSongs();
 
         Log.d(TAG, songs.toString());
-        //Check there is a list of songs
+        //Check there is a list of achievements
         if (songs == null){
-            Log.e(TAG, "No songs found when trying to update status");
+            Log.e(TAG, "No achievements found when trying to update status");
             return;
         }
         Song song = getSong(songNumber, songs);
         //Check the song is actually there
         if (song == null){
-            Log.e(TAG, "Song number not found in songs list");
+            Log.e(TAG, "Song number not found in achievements list");
             return;
         }
         //update the current song status in the shared preferences if it's the one being updated.
@@ -134,10 +136,10 @@ public class SharedPreference {
         song.setStatus(status);
         //find where in the array list the song belongs. Subtract 1 since the first song is 01
         int targetNum = Integer.parseInt(songNumber) - 1;
-        //update the songs list
+        //update the achievements list
         songs.set(targetNum, song);
 
-        //save the updated songs
+        //save the updated achievements
         Gson gson = new Gson();
         String jsonSongs = gson.toJson(songs);
 
@@ -166,7 +168,7 @@ public class SharedPreference {
             Gson gson = new Gson();
             Type type = new TypeToken<List<Song>>(){}.getType();
             songs = gson.fromJson(jsonSongs, type);
-            Log.d(TAG, "getAllSongs returned songs");
+            Log.d(TAG, "getAllSongs returned achievements");
             return (ArrayList<Song>) songs;
 
         } else {
@@ -185,19 +187,19 @@ public class SharedPreference {
             Type type = new TypeToken<List<Song>>(){}.getType();
             songs = gson.fromJson(jsonSongs, type);
             if (songs == null) {
-                Log.e(TAG, "No songs found");
+                Log.e(TAG, "No achievements found");
                 return null;
             }
-            Log.d(TAG, "Full list of songs: " + songs.toString());
-            //remove all songs which have not been started, so only complete or incomplete ones are returned.
+            Log.d(TAG, "Full list of achievements: " + songs.toString());
+            //remove all achievements which have not been started, so only complete or incomplete ones are returned.
             Iterator<Song> iter = songs.iterator();
             while (iter.hasNext()){
                 Song song = iter.next();
                 if (song.isSongNotStarted()) iter.remove();
             }
 
-            Log.d(TAG, "New list of songs: " + songs.toString());
-            Log.d(TAG, "getOldSongs returned songs");
+            Log.d(TAG, "New list of achievements: " + songs.toString());
+            Log.d(TAG, "getOldSongs returned achievements");
             return (ArrayList<Song>) songs;
 
         } else {
@@ -1026,6 +1028,48 @@ public class SharedPreference {
     public int getHeight(){
         if (settings.contains(HEIGHT))return settings.getInt(HEIGHT, 180);
         else return -1;
+    }
+
+    public void saveAchievements(List<Achievement> achievements){
+        Gson gson = new Gson();
+        String jsonAchievements = gson.toJson(achievements);
+        editor.putString(ACHIEVEMENTS, jsonAchievements);
+        editor.apply();
+    }
+/*
+    public HashMap<String, Achievement> getAchievements(){
+        if (settings.contains(ACHIEVEMENTS)){
+            Gson gson = new Gson();
+            String jsonAchievements = settings.getString(ACHIEVEMENTS, null);
+            Type type = new TypeToken<HashMap<String, Achievement>>(){}.getType();
+            return gson.fromJson(jsonAchievements, type);
+        } else {
+            return null;
+        }
+    }
+  */
+    public List<Achievement> getAchievements(){
+        if (settings.contains(ACHIEVEMENTS)){
+            Gson gson = new Gson();
+            String jsonAchievements = settings.getString(ACHIEVEMENTS, null);
+            Type type = new TypeToken<List<Achievement>>(){}.getType();
+            List<Achievement> achievements = gson.fromJson(jsonAchievements, type);
+            //only return achievements which aren't hidden
+            if (achievements != null){
+                Iterator<Achievement> i = achievements.iterator();
+                while (i.hasNext()){
+                    Achievement a = i.next();
+                    if (a.isHidden() && !a.isAchieved()) i.remove();
+                }
+
+            }
+            return achievements;
+
+
+
+        } else {
+            return null;
+        }
     }
 
 

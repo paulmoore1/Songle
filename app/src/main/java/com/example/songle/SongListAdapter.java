@@ -90,8 +90,8 @@ public class SongListAdapter extends ArrayAdapter<Song> {
        //show last chosen song as the primary color
         if (currentSongNumber != -1){
             if (currentSongNumber == position) {
-                holder.songNumberTxt.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
-                holder.songStatusTxt.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+                holder.achievementTitle.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+                holder.achievementMessage.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
             }
 
         }

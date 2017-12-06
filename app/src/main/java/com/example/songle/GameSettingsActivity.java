@@ -46,7 +46,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
             String songNumber2 = sharedPreference.getCurrentSongNumber();
-            //if songs are now different (implying the user has selected one)
+            //if achievements are now different (implying the user has selected one)
             if(songNumber2 == null) {
                 selectedSongNumber.setText(R.string.msg_no_song_selected);
             } else {

@@ -6,11 +6,6 @@
         android:minSdkVersion="25"
         android:targetSdkVersion="26" />
 
-    <!--
-         The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
-         Google Maps Android API v2, but you must specify either coarse or fine
-         location permissions for the 'MyLocation' functionality. 
-    -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -25,15 +20,23 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity
-            android:name=".HomeActivity"
-            android:label="@string/msg_welcome_songle"
-            android:theme="@style/AppTheme.NoActionBar">
+
+        <!-- Splash screen -->
+        <activity android:name=".Splash"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/splashScreenTheme">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <!-- Home activity -->
+        <activity
+            android:name=".HomeActivity">
         </activity>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -48,30 +51,22 @@
             android:value="AIzaSyDxdj9m4tadoZalHo2get5nvX2y_UWQTK4" />
 
         <activity
-            android:name=".MapsActivity"
-            android:label="@string/title_activity_maps"
-            android:parentActivityName=".HomeActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.songle.HomeActivity" />
-        </activity>
-        <activity
-            android:name=".MainSettingsActivity"
-            android:label="@string/title_activity_main_settings"
-            android:parentActivityName=".HomeActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.songle.HomeActivity" />
-        </activity>
-        <activity
             android:name=".GameSettingsActivity"
             android:label="@string/title_activity_new_game_settings"
-            android:parentActivityName=".HomeActivity"></activity>
+            android:parentActivityName=".HomeActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.songle.HomeActivity" />
+        </activity>
         <activity
             android:name=".MainGameActivity"
             android:label="@string/title_activity_main_game"
             android:parentActivityName=".HomeActivity"
-            android:theme="@style/MyTheme.TranslucentNavigation"></activity>
+            android:theme="@style/MyTheme.TranslucentNavigation">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.songle.HomeActivity" />
+        </activity>
     </application>
 
 </manifest>

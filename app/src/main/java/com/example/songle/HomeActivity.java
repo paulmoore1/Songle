@@ -1,20 +1,30 @@
 package com.example.songle;
 
 import android.app.AlertDialog;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -22,19 +32,21 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.games.Games;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class HomeActivity extends FragmentActivity implements DownloadCallback, View.OnClickListener{
+public class HomeActivity extends FragmentActivity implements DownloadCallback, View.OnClickListener,
+FragmentManager.OnBackStackChangedListener{
     private static final String TAG = "HomeActivity";
     private static final int RC_SIGN_IN = 66;
     private SharedPreference sharedPreference;
+    private MediaPlayer buttonSound;
+    AchievementListFragment achievementListFragment;
+    private Fragment contentFragment;
     //Broadcast receiver that tracks network connectivity changes
     //private NetworkReceiver receiver = new NetworkReceiver();
 
@@ -53,6 +65,20 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback, 
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super.onCreate() called");
 
+        //check for internet access first
+        boolean networkOn = isNetworkAvailable(this);
+        //if there is internet, load as normal
+        if (!networkOn) {
+            sendNetworkWarningDialog();
+        }
+
+        SharedPreferences defaultPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (!defaultPrefs.getBoolean("firstTime", false)){
+            mNetworkFragment  = NetworkFragment.getInstance(getSupportFragmentManager(),
+                    getString(R.string.url_songs_xml));
+        }
+
+
         // Used to quit the app from other fragments (otherwise can result in loading errors)
         if (getIntent().getBooleanExtra("LOGOUT", false))
         {
@@ -63,55 +89,81 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback, 
 
         sharedPreference = new SharedPreference(getApplicationContext());
 
-        //check for internet access first
-        boolean networkOn = isNetworkAvailable(this);
-        Log.d(TAG,"Checked network on");
-        //if there is internet, load as normal
-        if (!networkOn) {
-            sendNetworkWarningDialog();
-        }
-
-
-
-        mNetworkFragment  = NetworkFragment.getInstance(getSupportFragmentManager(),
-                getString(R.string.url_songs_xml));
-
-        findViewById(R.id.btn_sign_in).setOnClickListener(this);
-        findViewById(R.id.btn_sign_out).setOnClickListener(this);
         findViewById(R.id.btn_new_game).setOnClickListener(this);
         findViewById(R.id.btn_continue_game).setOnClickListener(this);
         findViewById(R.id.btn_load_game).setOnClickListener(this);
+        findViewById(R.id.btn_achievements).setOnClickListener(this);
+        //Toolbar toolbar = findViewById(R.id.toolbar);
+        Drawable helpIcon = ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_help);
+        //toolbar.setOverflowIcon(helpIcon);
         //signInSilently();
 
-
+        buttonSound = MediaPlayer.create(getApplicationContext(),
+                R.raw.button_click);
 /*
         // Register BroadcastReceiver to track connection changes
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);
 */
+        AsyncCreateAchievementsTask task = new AsyncCreateAchievementsTask();
+        task.execute();
 
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.addOnBackStackChangedListener(this);
 
     }
+
+
     @Override
     public void onClick(View view) {
-        if (view.getId() == R.id.btn_sign_in) {
-            // start the asynchronous sign in flow
-            startSignInIntent();
-        } else if (view.getId() == R.id.btn_sign_out) {
-            // sign out.
-            signOut();
-            // show sign-in button, hide the sign-out button
-            findViewById(R.id.btn_sign_in).setVisibility(View.VISIBLE);
-            findViewById(R.id.btn_sign_out).setVisibility(View.GONE);
+        if (view.getId() == R.id.btn_achievements){
+            if (sharedPreference.getAchievements() != null){
+                setFragmentTitle(R.id.btn_achievements);
+                achievementListFragment = new AchievementListFragment();
+                switchContent(achievementListFragment, AchievementListFragment.ARG_ITEM_ID);
+            }
         } else if (view.getId() == R.id.btn_new_game){
             Log.e(TAG, "New game button clicked");
+            buttonSound.start();
             newGame();
         } else if (view.getId() == R.id.btn_continue_game){
+            buttonSound.start();
             continueGame();
         } else if (view.getId() == R.id.btn_load_game){
+            buttonSound.start();
             loadGame();
         }
+    }
+
+    protected void setFragmentTitle(int resourceID){
+        setTitle(resourceID);
+        getActionBar().setTitle(resourceID);
+    }
+
+    public void switchContent(Fragment fragment, String tag){
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        while (fragmentManager.popBackStackImmediate());
+
+        if (fragment != null){
+            setTitle(R.string.txt_select_song);
+            getActionBar().setTitle(R.string.txt_select_song);
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.replace(R.id.content_frame, fragment, tag);
+            transaction.addToBackStack(tag);
+            transaction.commit();
+            contentFragment = fragment;
+
+        }
+
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState){
+        if (contentFragment instanceof AchievementListFragment){
+            outState.putString("content", AchievementListFragment.ARG_ITEM_ID);
+        }
+        super.onSaveInstanceState(outState);
     }
 
 
@@ -125,7 +177,7 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback, 
             sendNetworkErrorDialog();
             return;
         }
-        //start downloading the songs xml, which will store the songs in XML in Shared Prefs
+        //start downloading the achievements xml, which will store the achievements in XML in Shared Prefs
         startXmlDownload();
         setContentView(R.layout.loading);
         //do nothing until downloading is false.
@@ -299,12 +351,28 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback, 
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_help) {
+            showHelp();
+            return true;
+        }
+
+        if (id == R.id.action_credits){
+            showCredits();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
+
+    private void showHelp(){
+        sendGameNotFoundDialog();
+    }
+
+    private void showCredits(){
+        sendGameCompletedAlreadyDialog();
+    }
+
+
 
     private void signInSilently() {
         Log.d(TAG, "Signing in");
@@ -440,5 +508,42 @@ public class HomeActivity extends FragmentActivity implements DownloadCallback, 
         });
         AlertDialog alertDialog = adb.create();
         alertDialog.show();
+    }
+
+    @Override
+    public void onBackStackChanged() {
+
+    }
+
+    /**
+     * For setting up the achievements list if they aren't already
+     * Done as an Async Task so that it doesn't hinder user experience
+     * If it's the first time they're loading the game, they shouldn't be able to
+     * unlock any achievements by then
+     */
+    private class AsyncCreateAchievementsTask extends AsyncTask<Void, Void, String>{
+
+        @Override
+        protected String doInBackground(Void... voids) {
+            Achievement firstWord = new Achievement(getString(R.string.achievement_first_word_title),
+                    getString(R.string.achievement_first_word_msg),
+                    fetchInteger(R.integer.achievement_first_word_goal),
+                    R.drawable.achievement_first_word_color,
+                    R.drawable.achievement_first_word_grey,
+                    false);
+            List<Achievement> achievements = new ArrayList<>();
+            achievements.add(firstWord);
+            sharedPreference.saveAchievements(achievements);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String result){
+            Toast.makeText(getApplicationContext(), "Got achievements!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private int fetchInteger(int id){
+        return getResources().getInteger(id);
     }
 }

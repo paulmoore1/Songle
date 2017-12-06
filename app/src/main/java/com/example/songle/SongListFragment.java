@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Created by Paul Moore on 25-Oct-17.
  *
- * This class displays a list of songs.
+ * This class displays a list of achievements.
  * On item click it starts the download of that song's map and lyrics, and starts a game Activity with
  * that song. It changes that song's status to incomplete.
  */

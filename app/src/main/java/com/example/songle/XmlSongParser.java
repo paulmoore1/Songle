@@ -81,7 +81,7 @@ public class XmlSongParser {
                     skip(parser);
                 }
             }
-            Log.d(TAG, "Finished parsing songs");
+            Log.d(TAG, "Finished parsing achievements");
             //update timestamp
             sharedPreference.saveMostRecentTimestamp(timestamp);
             return songs;

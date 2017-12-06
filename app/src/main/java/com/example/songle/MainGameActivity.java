@@ -57,11 +57,6 @@ public class MainGameActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super onCreate called");
         setContentView(R.layout.main_game_screen);
-
-        //if location permissions not available request them.
-        if(!checkPermission()){
-            requestPermission();
-        }
 /*
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -264,57 +259,6 @@ public class MainGameActivity extends AppCompatActivity {
      */
     private int fetchColor(@ColorRes int color) {
         return ContextCompat.getColor(this, color);
-    }
-
-    private boolean checkPermission(){
-        int result = ContextCompat.checkSelfPermission(getApplicationContext(),
-                ACCESS_FINE_LOCATION);
-        return result == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void requestPermission(){
-        //should we show an explanation?
-        if(ActivityCompat.shouldShowRequestPermissionRationale(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)){
-            showLocationDialog();
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    MY_PERMISSIONS_REQUEST_FINE_LOCATION);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults){
-        switch (requestCode){
-            case MY_PERMISSIONS_REQUEST_FINE_LOCATION:
-                if (grantResults.length > 0){
-                    boolean locationAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                    if (locationAccepted){
-                        break;
-                    } else {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                            if (shouldShowRequestPermissionRationale(ACCESS_FINE_LOCATION)){
-                                showLocationDialog();
-                            }
-                        }
-                    }
-                }
-        }
-    }
-
-    private void showLocationDialog() {
-        new AlertDialog.Builder(this)
-                .setMessage(R.string.msg_location_rationale)
-                .setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        requestPermission();
-                    }
-                })
-                .setNegativeButton(R.string.txt_cancel, null)
-                .create()
-                .show();
     }
 
     private int requiredWords(){

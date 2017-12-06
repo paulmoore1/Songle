@@ -7,6 +7,10 @@
     <string name="txt_load_old_game">Load Previous Game</string>
     <string name="txt_okay">Okay</string>
     <string name="settings">Settings</string>
+    <string name="txt_help">Help</string>
+    <string name="txt_credits">Credits</string>
+    <string name="txt_scores">Scores</string>
+    <string name="txt_achievements">Achievements</string>
     <string name="title_activity_main_settings">Main Settings</string>
     <string name="url_songs_xml">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/songs.xml</string>
     <string name="url_general">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/</string>
@@ -53,7 +57,9 @@
     <!--String for requesting permission -->
     <string name="msg_location_rationale">Access to your location is required so you can collect the words of the song. Please allow access for the app to work.</string>
     <string name="msg_location_permission_denied">Permission was denied, but is needed to collect words.</string>
-
+    <string name="txt_gps_disabled">GPS disabled</string>
+    <string name="msg_need_gps">Your GPS needs to be switched on to collect words.</string>
+    <string name="txt_location_error">Location error</string>
     <!-- Strings for setting difficulty -->
     <string name="difficulty_insane">Insane</string>
     <string name="difficulty_hard">Hard</string>
@@ -122,73 +128,6 @@
 
     <!-- Strings related to Settings -->
 
-    <!-- Example General settings -->
-    <string name="pref_header_general">General</string>
-    <string name="pref_description_social_recommendations">Select social recommendations</string>
-    <string name="pref_title_social_recommendations">Social recommendations</string>
-
-
-    <string name="pref_title_display_name">Display name</string>
-    <string name="pref_default_display_name">John Smith</string>
-
-    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
-    <string-array name="pref_example_list_titles">
-        <item>Always</item>
-        <item>When possible</item>
-        <item>Never</item>
-    </string-array>
-    <string-array name="pref_example_list_values">
-        <item>1</item>
-        <item>0</item>
-        <item>-1</item>
-    </string-array>
-
-    <!-- Example settings for Data & Sync -->
-    <string name="pref_header_data_sync">Data &amp; sync</string>
-
-    <string name="pref_title_sync_frequency">Sync frequency</string>
-    <string-array name="pref_sync_frequency_titles">
-        <item>15 minutes</item>
-        <item>30 minutes</item>
-        <item>1 hour</item>
-        <item>3 hours</item>
-        <item>6 hours</item>
-        <item>Never</item>
-    </string-array>
-    <string-array name="pref_sync_frequency_values">
-        <item>15</item>
-        <item>30</item>
-        <item>60</item>
-        <item>180</item>
-        <item>360</item>
-        <item>-1</item>
-    </string-array>
-
-    <string-array name="list_preference_entries">
-        <item>Entry 1</item>
-        <item>Entry 2</item>
-        <item>Entry 3</item>
-    </string-array>
-
-    <string-array name="list_preference_entry_values">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-    </string-array>
-
-    <string-array name="multi_select_list_preference_default_value" />
-
-    <string name="pref_title_system_sync_settings">System sync settings</string>
-
-    <!-- Example settings for Notifications -->
-    <string name="pref_header_notifications">Notifications</string>
-
-    <string name="pref_title_new_message_notifications">New message notifications</string>
-
-    <string name="pref_title_ringtone">Ringtone</string>
-    <string name="pref_ringtone_silent">Silent</string>
-
-    <string name="pref_title_vibrate">Vibrate</string>
 
 
     <!-- Strings for saving values -->
@@ -199,4 +138,51 @@
     <string name="title_activity_main_game">Let\'s Play!</string>
     <string name="section_format">Hello World from section: %1$d</string>
     <string name="title_activity_maps2">Map</string>
+
+    <!-- Strings for achievements -->
+    <string name="achievement_first_word_title">First Word!</string>
+    <string name="achievement_first_word_msg">Collect your first word from a map</string>
+    <string name="achievement_words_wizard_title">Words Wizard</string>
+    <string name="achievement_words_wizard_msg">Collect 100 words</string>
+    <string name="achievement_the_collector_title">The Collector</string>
+    <string name="achievement_the_collector_msg">Collect 500 words</string>
+    <string name="achievement_gotta_catch_title">Gotta Catch \'Em All!</string>
+    <string name="achievement_gotta_catch_msg">Collect all the words for a song without using any hints</string>
+    <string name="achievement_first_of_many_title">The First of Many</string>
+    <string name="achievement_first_of_many_msg">Correctly guess a song</string>
+    <string name="achievement_baby_triple_title">Oh Baby a Triple!</string>
+    <string name="achievement_baby_triple_msg">Correctly guess 3 songs</string>
+    <string name="achievement_maestro_title">Maestro</string>
+    <string name="achievement_maestro_msg">Correctly guess 10 songs</string>
+    <string name="achievement_the_songfather_title">The Songfather</string>
+    <string name="achievement_the_songfather_msg">Correctly guess 20 songs</string>
+    <string name="achievement_walk_500_title">And I Would Walk 500 Metres</string>
+    <string name="achievement_walk_500_msg">Walk 500 metres</string>
+    <string name="achievement_going_out_title">I\'m Going Out…And I May Be Gone For Some Time</string>
+    <string name="achievement_going_out_msg">Walk 5 kilometres</string>
+    <string name="achievement_bear_grylls_title">Practically Bear Grylls</string>
+    <string name="achievement_bear_grylls_msg">Improvise. Adapt. Overcome. And walk 10 kilometres</string>
+    <string name="achievement_forgot_line_title">I\'ve Forgotten My Line!</string>
+    <string name="achievement_forgot_line_msg">Use a hint to reveal a line</string>
+    <string name="achievement_line_help_title">A Little Help Here?</string>
+    <string name="achievement_line_help_msg">Reveal 10 lines</string>
+    <string name="achievement_artist_help_title">Arrgh…What Was Their Name?!</string>
+    <string name="achievement_artist_help_msg">Use a hint to reveal the artist</string>
+    <string name="achievement_procrastinate_title">Don\'t Procrastinate Now</string>
+    <string name="achievement_procrastinate_msg">Watch the video of a song after finding it</string>
+    <string name="achievement_faster_bullet_title">Faster Than a Speeding Bullet</string>
+    <string name="achievement_faster_bullet_msg">Complete a song in under 30 minutes</string>
+    <string name="achievement_cannae_dae_it_title">Ah Cannae Dae It Cap\'n</string>
+    <string name="achievement_cannae_dae_it_msg">Give up on a song</string>
+    <string name="achievement_read_instructions_title">Nobody Reads the Instructions…Do They?</string>
+    <string name="achievement_read_instructions_msg">Read the help in the tutorial</string>
+    <string name="achievement_rickrolled_title">Get Rickrolled</string>
+    <string name="achievement_rickrolled_msg">Watch the video for Never Gonna Give You Up</string>
+
+
+
+
+
+
+
 </resources>

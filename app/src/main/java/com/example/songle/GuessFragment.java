@@ -3,9 +3,11 @@ package com.example.songle;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -51,6 +53,13 @@ public class GuessFragment extends Fragment {
     private int lineMax;
     private int artistMax;
 
+    private Context context;
+
+    private MediaPlayer winGame;
+    private MediaPlayer loseGame;
+    private MediaPlayer showMenu;
+    private MediaPlayer hideMenu;
+
     private TextView lineText;
     private TextView artistText;
 
@@ -65,7 +74,8 @@ public class GuessFragment extends Fragment {
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
         mainActivity = getActivity();
-        sharedPreference = new SharedPreference(getActivity().getApplicationContext());
+        context = getActivity().getApplicationContext();
+        sharedPreference = new SharedPreference(context);
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
 
         currentSong = sharedPreference.getCurrentSong();
@@ -77,6 +87,12 @@ public class GuessFragment extends Fragment {
                 if (sharedPreference.getSongLocation(currentSongNumber) != -1) refreshProgress();
             }
         };
+
+
+        winGame = MediaPlayer.create(context, R.raw.win_game);
+        loseGame = MediaPlayer.create(context, R.raw.lose_game);
+        showMenu = MediaPlayer.create(context, R.raw.select_menu);
+        hideMenu = MediaPlayer.create(context, R.raw.close_menu);
     }
 
     @Override
@@ -145,7 +161,10 @@ public class GuessFragment extends Fragment {
             @Override
             public void onClick(View view){
                 if (fam.isOpened()){
+                    hideMenu.start();
                     fam.close(true);
+                } else {
+                    showMenu.start();
                 }
             }
         });
@@ -197,7 +216,7 @@ public class GuessFragment extends Fragment {
 
         String songNumber = currentSong.getNumber();
         sharedPreference.completeSong(songNumber);
-
+        winGame.start();
         showWinDialog();
     }
 
@@ -256,6 +275,7 @@ public class GuessFragment extends Fragment {
         adb.setPositiveButton(R.string.txt_give_up, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                loseGame.start();
                 showGiveUpDialog();
             }
         });

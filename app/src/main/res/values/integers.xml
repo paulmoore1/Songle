@@ -11,4 +11,25 @@
     <integer name="hint_artist_hard">30</integer>
     <integer name="hint_artist_insane">35</integer>
 
+    <!-- Integers for Achievements -->
+    <integer name="achievement_first_word_goal">1</integer>
+    <integer name="achievement_words_wizard_goal">100</integer>
+    <integer name="achievement_the_collector_goal">500</integer>
+    <integer name="achievement_gotta_catch_title_goal">1</integer>
+    <integer name="achievement_first_of_many_goal">1</integer>
+    <integer name="achievement_baby_triple_goal">3</integer>
+    <integer name="achievement_maestro_goal">10</integer>
+    <integer name="achievement_the_songfather_goal">20</integer>
+    <integer name="achievement_walk_500_goal">500</integer>
+    <integer name="achievement_going_out_goal">5000</integer>
+    <integer name="achievement_bear_grylls_goal">10000</integer>
+    <integer name="achievement_forgot_line_goal">1</integer>
+    <integer name="achievement_line_help_goal">10</integer>
+    <integer name="achievement_artist_help_goal">1</integer>
+    <integer name="achievement_procrastinate_goal">1</integer>
+    <integer name="achievement_faster_bullet_goal">1</integer>
+    <integer name="achievement_cannae_dae_it_goal">1</integer>
+    <integer name="achievement_read_instructions_goal">1</integer>
+    <integer name="achievement_rickrolled_goal">1</integer>
+
 </resources>

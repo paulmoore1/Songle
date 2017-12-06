@@ -13,6 +13,7 @@
         <item name="android:colorAccent">@color/colorAccent</item>
         <item name="android:textColorPrimary">@color/textColorPrimary</item>
         <item name="android:actionBarStyle">@style/AppTheme.ActionBarStyle</item>
+        <item name="android:actionOverflowButtonStyle">@style/MyActionButtonOverflow</item>
     </style>
 
     <style name="AppTheme.ActionBarStyle" parent="@android:style/Widget.Material.ActionBar">
@@ -52,6 +53,14 @@
 
     <style name="MyTheme.TranslucentNavigation" parent="MyTheme">
         <item name="android:windowTranslucentNavigation">true</item>
+    </style>
+
+    <style name="splashScreenTheme" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+    </style>
+
+    <style name="MyActionButtonOverflow" parent="android:style/Widget.Holo.Light.ActionButton.Overflow">
+        <item name="android:src">@drawable/ic_help</item>
+        <item name="android:background">?android:attr/actionBarItemBackground</item>
     </style>
 
 

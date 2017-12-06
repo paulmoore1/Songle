@@ -64,7 +64,7 @@ public class Song {
         }
     }
 
-    //may use to display list of songs to choose from
+    //may use to display list of achievements to choose from
     public String showSong(){
         return "Song #" + number + " Status: " + showStatus();
     }
