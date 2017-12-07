@@ -70,6 +70,11 @@ public class Achievement {
         if (steps >= stepsGoal) achieved = true;
     }
 
+    public void addSteps(int numToAdd){
+        steps = steps + numToAdd;
+        if (steps >= stepsGoal) achieved = true;
+    }
+
     public void setAchieved(){
         achieved = true;
     }
@@ -80,9 +85,13 @@ public class Achievement {
         else return "Completed!";
     }
 
-    public void addSteps(int numToAdd){
-        steps = steps + numToAdd;
-        if (steps >= stepsGoal) achieved = true;
+    public String toString(){
+        return getTitle()
+                + "\n" + getDescription()
+                + "\nSteps so far: " + String.valueOf(steps)
+                + "\nSteps required: " + String.valueOf(stepsGoal)
+                + "\nHidden: " + String.valueOf(hidden)
+                + "\nAchieved: " + String.valueOf(achieved);
     }
 
 

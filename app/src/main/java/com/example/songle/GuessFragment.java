@@ -53,12 +53,28 @@ public class GuessFragment extends Fragment {
     private int artistMax;
     private SongInfo songInfo;
 
+    //Possible achievements attainable while in this fragment.
+    private Achievement achWatchVideo;
+    private Achievement achRickrolled;
+    private Achievement achTime;
+    private Achievement achRevealArtist;
+    private Achievement achSingleLine;
+    private Achievement achMultiLine;
+    private Achievement achFirstSong;
+    private Achievement achTripleSong;
+    private Achievement ach10Songs;
+    private Achievement ach20Songs;
+    private Achievement achGiveup;
+
     private Context context;
 
     private MediaPlayer winGame;
     private MediaPlayer loseGame;
     private MediaPlayer showMenu;
     private MediaPlayer hideMenu;
+    private MediaPlayer achievementComplete;
+    private MediaPlayer buttonClick;
+    private MediaPlayer buttonClick2;
 
     private TextView lineText;
     private TextView artistText;
@@ -76,24 +92,26 @@ public class GuessFragment extends Fragment {
         mainActivity = getActivity();
         context = getActivity().getApplicationContext();
         sharedPreference = new SharedPreference(context);
-        sharedPreference.registerOnSharedPreferenceChangedListener(listener);
-
         currentSong = sharedPreference.getCurrentSong();
         songNumber = sharedPreference.getCurrentSongNumber();
         songInfo = sharedPreference.getSongInfo(songNumber);
 
+        updateAchievements();
         listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
                 refreshProgress();
             }
         };
-
+        sharedPreference.registerOnSharedPreferenceChangedListener(listener);
 
         winGame = MediaPlayer.create(context, R.raw.win_game);
         loseGame = MediaPlayer.create(context, R.raw.lose_game);
         showMenu = MediaPlayer.create(context, R.raw.select_menu);
         hideMenu = MediaPlayer.create(context, R.raw.close_menu);
+        achievementComplete = MediaPlayer.create(context, R.raw.happy_jingle);
+        buttonClick = MediaPlayer.create(context, R.raw.button_click);
+        buttonClick2 = MediaPlayer.create(context, R.raw.button_click_2);
     }
 
     @Override
@@ -119,6 +137,7 @@ public class GuessFragment extends Fragment {
         guess.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                buttonClick.start();
                 String str = enterGuess.getText().toString();
                 if (checkGuess(str)){
                     winGame();
@@ -136,6 +155,7 @@ public class GuessFragment extends Fragment {
         giveUp.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
+                buttonClick.start();
                 showCheckGiveUpDialog();
             }
         });
@@ -155,6 +175,7 @@ public class GuessFragment extends Fragment {
         fam.setOnMenuToggleListener(new FloatingActionMenu.OnMenuToggleListener() {
             @Override
             public void onMenuToggle(boolean opened) {
+                if (opened) showMenu.start();
 
             }
         });
@@ -163,10 +184,9 @@ public class GuessFragment extends Fragment {
             @Override
             public void onClick(View view){
                 if (fam.isOpened()){
-                    hideMenu.start();
                     fam.close(true);
                 } else {
-                    showMenu.start();
+
                 }
             }
         });
@@ -174,6 +194,7 @@ public class GuessFragment extends Fragment {
         fabLine.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
+                buttonClick.start();
                 hintRevealLine();
                 fam.close(true);
             }
@@ -182,6 +203,7 @@ public class GuessFragment extends Fragment {
         fabArtist.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
+                buttonClick.start();
                 hintRevealArtist();
                 fam.close(true);
             }
@@ -195,6 +217,7 @@ public class GuessFragment extends Fragment {
     public void onResume(){
         super.onResume();
         refreshProgress();
+        updateAchievements();
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
     }
 
@@ -217,16 +240,23 @@ public class GuessFragment extends Fragment {
     }
 
     private void winGame(){
-
+        checkGameWinAchievements();
         String songNumber = currentSong.getNumber();
         sharedPreference.completeSong(songNumber);
         winGame.start();
         showWinDialog();
     }
 
-    // from https://stackoverflow.com/questions/42024058/how-to-open-youtube-video-link-in-android-app
+    // Based on https://stackoverflow.com/questions/42024058/how-to-open-youtube-video-link-in-android-app
     private void watchYouTubeVideo(){
+        if (updateAchievement(achWatchVideo)) achWatchVideo = null;
+
         String link = songInfo.getLink();
+
+        //If they done got rickrolled, show this.
+        if (link.equals("https://youtu.be/dQw4w9WgXcQ")){
+            if (updateAchievement(achRickrolled)) achRickrolled = null;
+        }
         //extract last 11 characters of link as the id
         String id = link.substring(link.length() - 11);
         Intent applicationIntent = new  Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + id));
@@ -252,20 +282,24 @@ public class GuessFragment extends Fragment {
         adb.setPositiveButton(R.string.watch_video, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                buttonClick.start();
                 watchYouTubeVideo();
             }
         });
         adb.setNeutralButton(R.string.txt_new_game, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                buttonClick.start();
                 startNewGame();
             }
         });
-        adb.setNegativeButton(R.string.quit, new DialogInterface.OnClickListener() {
+        adb.setNegativeButton(R.string.txt_home, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                buttonClick.start();
                 dialog.dismiss();
-                quitAppSafe();
+                Intent intent = new Intent(context, HomeActivity.class);
+                startActivity(intent);
             }
         });
         AlertDialog alertDialog = adb.create();
@@ -281,6 +315,7 @@ public class GuessFragment extends Fragment {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 loseGame.start();
+                if (updateAchievement(achGiveup)) achGiveup = null;
                 showGiveUpDialog();
             }
         });
@@ -289,12 +324,14 @@ public class GuessFragment extends Fragment {
         adb.setNeutralButton(R.string.txt_change_difficulty, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                buttonClick.start();
                 sendSelectEasierDifficultyDialog();
             }
         });
         adb.setNegativeButton(R.string.txt_keep_playing, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                buttonClick.start();
                 dialog.dismiss();
             }
         });
@@ -313,12 +350,22 @@ public class GuessFragment extends Fragment {
         adb.setPositiveButton(R.string.txt_new_game, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                buttonClick.start();
                 startNewGame();
+            }
+        });
+        adb.setNeutralButton(R.string.txt_home, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                buttonClick.start();
+                Intent intent = new Intent(context, HomeActivity.class);
+                startActivity(intent);
             }
         });
         adb.setNegativeButton(R.string.quit, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                buttonClick.start();
                 dialog.dismiss();
                 quitAppSafe();
             }
@@ -341,6 +388,7 @@ public class GuessFragment extends Fragment {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+                        buttonClick2.start();
                         String chosenDiff = diffListShort[i].toString();
                         mChosenDifficulty.add(0, chosenDiff);
 
@@ -348,6 +396,7 @@ public class GuessFragment extends Fragment {
                 }).setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
+                buttonClick.start();
                 String chosenDiff = mChosenDifficulty.get(0);
                 //save value in private string
                 currentDifficulty = chosenDiff;
@@ -360,56 +409,58 @@ public class GuessFragment extends Fragment {
         ad.show();
 
     }
-/*
+
     private int calculateScore(){
         float init = 1;
         float percentWords = getPercentWords();
-
+        int difficultyMultiplier = getDifficultyMultiplier();
+        int timeMultiplier = getTimeMultiplier();
+        int usedLineHint = 3;
+        if (songInfo.isLineRevealed()) usedLineHint = 1;
+        int usedArtistHint = 6;
+        if (songInfo.isArtistRevealed()) usedArtistHint = 1;
+        //Calculate the score, then cast it to integer form.
+        init = init * percentWords * difficultyMultiplier * timeMultiplier * usedLineHint * usedArtistHint;
+        return (int) init;
     }
 
     private float getPercentWords(){
-        int total = songInfo.getTotalWords();
+        String mapNumber = sharedPreference.getCurrentMapNumber();
+        int total = sharedPreference.getMapNumWords(mapNumber);
+        int found = songInfo.getNumWordsFound();
         if (total > 0){
-            int adjustedTotal = totalForDifficulty(total);
-            int found = songInfo.getNumWordsFound();
-            if (found <= total){
-                return (float) found / (float) total;
-            } else {
-                Log.e(TAG, "Cannot find more words than the total!");
-                return 1;
-            }
-
-
+            return (float) found / (float) total;
         } else {
             Log.e(TAG, "Total was zero, should be larger");
             return 1;
         }
-    }*/
+    }
 
-    /**
-     * Finds the total required for a certain difficulty level.
-     * It's 25% of the for Insane, 50% for Hard and 75% for Moderate
-     * Easy and Very Easy are 100%
-     * @param
-     * @return
-     *//*
-    private int totalForDifficulty(int total){
-        if (currentDifficulty.equals(getString(R.string.difficulty_very_easy)) ||
-                currentDifficulty.equals(getString(R.string.difficulty_easy)))
-            return total;
-        else if (currentDifficulty.equals(getString(R.string.difficulty_moderate))){
-            return total;
+    private int getDifficultyMultiplier(){
+        switch(currentDifficulty){
+            case "Insane":
+                return 16;
+            case "Hard":
+                return 8;
+            case "Moderate":
+                return 4;
+            case "Easy":
+                return 2;
+            case "Very Easy":
+                return 1;
+            default:
+                Log.e(TAG, "Unexpected difficulty: " + currentDifficulty);
+                return 1;
         }
-        else if (currentDifficulty.equals(getString(R.string.difficulty_hard))){
+    }
 
-        }
-        else if (currentDifficulty.equals(getString(R.string.difficulty_insane))){
-
-        } else {
-            Log.e(TAG, "Should have found a valid difficulty" + currentDifficulty);
-            return total;
-        }
-    }*/
+    private int getTimeMultiplier(){
+        //Subtract time taken from max time allowed in minutes
+        int timeTaken =  fetchInteger(R.integer.max_time_taken) - songInfo.minutesTaken();
+        //Return the time in minutes, or at least 1
+        if (timeTaken >= 1) return timeTaken;
+        else return 1;
+    }
 
     private int calculateDifficultiesToRemove(String difficulty){
         if(difficulty.equals(getString(R.string.difficulty_insane))) return 4;
@@ -428,6 +479,21 @@ public class GuessFragment extends Fragment {
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("LOGOUT", true);
         startActivity(intent);
+    }
+
+    private void updateAchievements(){
+        //Load achievements
+        achWatchVideo = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_procrastinate_title));
+        achRickrolled = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_rickrolled_title));
+        achTime = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_faster_bullet_title));
+        achRevealArtist = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_artist_help_title));
+        achSingleLine = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_forgot_line_title));
+        achMultiLine = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_line_help_title));
+        achFirstSong = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_first_of_many_title));
+        achTripleSong = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_baby_triple_title));
+        ach10Songs = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_maestro_title));
+        ach20Songs = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_the_songfather_title));
+        achGiveup = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_cannae_dae_it_title));
     }
 
     private void createProgressBars(View view){
@@ -596,6 +662,9 @@ public class GuessFragment extends Fragment {
                 songInfo.setLineRevealed();
                 sharedPreference.saveSongInfo(songNumber, songInfo);
                 sharedPreference.saveLyrics(songNumber, lyrics);
+                //Show achievements if they're unlocked.
+                if (updateAchievement(achSingleLine)) achSingleLine = null;
+                if (updateAchievement(achMultiLine)) achMultiLine = null;
             } else {
                 String msg = getString(R.string.msg_lines_too_short);
                 Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
@@ -640,10 +709,11 @@ public class GuessFragment extends Fragment {
     }
 
 
-    public void hintRevealArtist(){
+    private void hintRevealArtist(){
         int wordsAvailable = songInfo.getNumWordsAvailable();
         if (wordsAvailable >= artistMax){
             showArtist();
+            if (updateAchievement(achRevealArtist)) achRevealArtist = null;
             songInfo.removeNumWordsAvailable(artistMax);
             songInfo.setArtistRevealed();
             sharedPreference.saveSongInfo(songNumber, songInfo);
@@ -654,7 +724,7 @@ public class GuessFragment extends Fragment {
 
     }
 
-    public void showArtist(){
+    private void showArtist(){
         String artist = songInfo.getArtist();
         String artistFormat = getString(R.string.artist_revealed);
         String artistMessage = String.format(artistFormat, artist);
@@ -663,6 +733,42 @@ public class GuessFragment extends Fragment {
         if (artistProgress != null) artistProgress.setVisibility(View.GONE);
         if (artistText != null) artistText.setVisibility(View.GONE);
         if  (fabArtist != null) fabArtist.setVisibility(View.GONE);
+    }
+
+    private void showAchievement(String title){
+        Toast.makeText(context, "Achievement unlocked" + title, Toast.LENGTH_SHORT).show();
+    }
+
+    private void checkGameWinAchievements(){
+        if (updateAchievement(achFirstSong)) achFirstSong = null;
+        if (updateAchievement(achTripleSong)) achTripleSong = null;
+        if (updateAchievement(ach10Songs)) ach10Songs = null;
+        if (updateAchievement(ach20Songs)) ach20Songs = null;
+        //If they took less than 30 mins, mark the time achievement as complete.
+        int maxTime = fetchInteger(R.integer.max_time_taken);
+        if ((maxTime - songInfo.minutesTaken()) >= maxTime - 30){
+            if (updateAchievement(achTime)) achTime = null;
+        }
+    }
+
+    /**
+     * Shows the achievement if it is achieved, saves it regardless of progress
+     * @param achievement - achievement to update.
+     * @return true if the achievement is achieved, false otherwise;
+     */
+    private boolean updateAchievement(Achievement achievement){
+        if (achievement != null){
+            achievement.incrementSteps();
+            if (achievement.isAchieved()){
+                achievementComplete.start();
+                showAchievement(achievement.getTitle());
+                sharedPreference.saveAchievement(achievement);
+                return true;
+            } else{
+                sharedPreference.saveAchievement(achievement);
+            }
+        }
+        return false;
     }
 
 

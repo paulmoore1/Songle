@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -120,10 +121,10 @@ public class NetworkFragment extends Fragment {
     /**
      * Start non-blocking execution of DownloadXmlTask.
      */
-    public void startXmlDownload() {
-        Log.d(TAG, "startXmlDownload called");
+    public void startXmlDownload(Context context) {
+        Log.d(TAG, "startXmlDownload called on URL " + mUrlString);
         cancelDownload();
-        mDownloadXmlTask = new DownloadXmlTask();
+        mDownloadXmlTask = new DownloadXmlTask(context);
         downloadType = "Xml";
         mDownloadXmlTask.execute(mUrlString);
     }
@@ -144,7 +145,7 @@ public class NetworkFragment extends Fragment {
                 startLyricsDownload();
                 break;
             case "Xml":
-                startXmlDownload();
+                startXmlDownload(getContext());
                 break;
             case "Kml":
                 startKmlDownload();
@@ -309,10 +310,11 @@ public class NetworkFragment extends Fragment {
 
     private class DownloadXmlTask extends AsyncTask<String, Void, String> {
         private String TAG = DownloadXmlTask.class.getSimpleName();
+        private Context context;
         //separate Shared Preference object needed.
-        private SharedPreference sharedPreferenceXml =
-                new SharedPreference(getActivity().getApplicationContext());
-
+        DownloadXmlTask(Context context){
+            this.context = context;
+        }
         /**
          * Cancel background network operation if we do not have network connectivity.
          */
@@ -349,10 +351,7 @@ public class NetworkFragment extends Fragment {
 
         private void loadXmlFromNetwork(String urlString) throws
                 XmlPullParserException, IOException{
-            Log.d(TAG, "loadXmlFromNetwork called");
-            InputStream stream = null;
-            //Instantiate the parser.
-            XmlSongParser parser = new XmlSongParser(getActivity().getApplicationContext());
+            Log.d(TAG, "loadXmlFromNetwork called on string: " + urlString);
             try {
                 downloadUrl(urlString);
             } catch(Exception e){
@@ -365,7 +364,7 @@ public class NetworkFragment extends Fragment {
         // The parsing is done here because otherwise strange errors occurred.
         private void downloadUrl(String urlString) throws IOException {
             Log.v(TAG, "downloadUrl called");
-            XmlSongParser parser = new XmlSongParser(getActivity().getApplicationContext());
+            XmlSongParser parser = new XmlSongParser(context);
             InputStream stream;
             URL url = new URL(urlString);
 

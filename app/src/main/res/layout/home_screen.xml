@@ -84,13 +84,9 @@
 
     <Button
         android:id="@+id/btn_achievements"
-        android:layout_width="335dp"
-        android:layout_height="304dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:drawableTop="@drawable/ic_trophy"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+
         android:text="@string/txt_achievements"
         app:layout_constraintBottom_toBottomOf="@+id/include"
         app:layout_constraintEnd_toEndOf="parent"

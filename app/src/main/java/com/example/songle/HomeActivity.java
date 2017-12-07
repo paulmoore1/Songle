@@ -1,13 +1,15 @@
 package com.example.songle;
 
+import android.Manifest;
 import android.app.AlertDialog;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -19,21 +21,12 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.content.ContextCompat;
+import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
-
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,11 +34,17 @@ import java.util.List;
 public class HomeActivity extends FragmentActivity implements DownloadCallback, View.OnClickListener,
 FragmentManager.OnBackStackChangedListener{
     private static final String TAG = "HomeActivity";
-    private static final int RC_SIGN_IN = 66;
+
+    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
+    private int numSongs = 0;
+    private boolean locationGranted;
+    private boolean stopPermissionRequests;
     private SharedPreference sharedPreference;
     private MediaPlayer buttonSound;
+    private MediaPlayer achievementUnlocked;
     AchievementListFragment achievementListFragment;
     private Fragment contentFragment;
+    private FragmentManager fragmentManager = getSupportFragmentManager();
     //Broadcast receiver that tracks network connectivity changes
     //private NetworkReceiver receiver = new NetworkReceiver();
 
@@ -53,16 +52,14 @@ FragmentManager.OnBackStackChangedListener{
     // that is used to execute network ops.
     private NetworkFragment mNetworkFragment;
 
-
-    // boolean telling us whether a download is in progress so we don't trigger overlapping
-    // downloads with consecutive button clicks
-    private boolean mDownloading = false;
+    private final Object syncObject = new Object();
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super.onCreate() called");
+        setContentView(R.layout.home_screen);
 
         //check for internet access first
         boolean networkOn = isNetworkAvailable(this);
@@ -71,11 +68,7 @@ FragmentManager.OnBackStackChangedListener{
             sendNetworkWarningDialog();
         }
 
-        SharedPreferences defaultPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (!defaultPrefs.getBoolean("firstTime", false)){
-            mNetworkFragment  = NetworkFragment.getInstance(getSupportFragmentManager(),
-                    getString(R.string.url_songs_xml));
-        }
+
 
 
         // Used to quit the app from other fragments (otherwise can result in loading errors)
@@ -83,8 +76,8 @@ FragmentManager.OnBackStackChangedListener{
         {
             finish();
         }
-        setContentView(R.layout.home_screen);
-        Log.d(TAG, "Layout loaded");
+        locationGranted = checkPermissions();
+
 
         sharedPreference = new SharedPreference(getApplicationContext());
 
@@ -93,48 +86,67 @@ FragmentManager.OnBackStackChangedListener{
         findViewById(R.id.btn_load_game).setOnClickListener(this);
         findViewById(R.id.btn_achievements).setOnClickListener(this);
         //Toolbar toolbar = findViewById(R.id.toolbar);
-        Drawable helpIcon = ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_help);
         //toolbar.setOverflowIcon(helpIcon);
         //signInSilently();
 
         buttonSound = MediaPlayer.create(getApplicationContext(),
                 R.raw.button_click);
+        achievementUnlocked = MediaPlayer.create(getApplicationContext(), R.raw.happy_jingle);
 /*
         // Register BroadcastReceiver to track connection changes
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);
 */
-        AsyncCreateAchievementsTask task = new AsyncCreateAchievementsTask();
-        task.execute();
+        //Load achievements if it is the first time the game has been started, or permission wasn't granted.
+        if (sharedPreference.isFirstTimeAppUsed() || !checkPermissions()){
+            AsyncCreateAchievementsTask task = new AsyncCreateAchievementsTask();
+            task.execute();
+            sharedPreference.saveFirstTimeAppUsed();
+        }
 
-        FragmentManager fragmentManager = getSupportFragmentManager();
+        if (sharedPreference.getAllSongs() != null){
+            numSongs = sharedPreference.getAllSongs().size();
+        }
+        Log.e(TAG, "numSongs before = " + numSongs);
+
+        fragmentManager = getSupportFragmentManager();
         fragmentManager.addOnBackStackChangedListener(this);
+
+        mNetworkFragment  = NetworkFragment.getInstance(getSupportFragmentManager(),
+                getString(R.string.url_songs_xml));
 
     }
 
 
     @Override
     public void onClick(View view) {
-        if (view.getId() == R.id.btn_achievements){
-            if (sharedPreference.getAchievements() != null){
-                setFragmentTitle(R.id.btn_achievements);
-                achievementListFragment = new AchievementListFragment();
-                switchContent(achievementListFragment, AchievementListFragment.ARG_ITEM_ID);
-            } else {
-                Toast.makeText(this, "Achievements not loaded yet", Toast.LENGTH_SHORT).show();
+        //Only let the user continue if they grant permission to the location
+        if (locationGranted){
+            if (view.getId() == R.id.btn_achievements){
+                buttonSound.start();
+                if (sharedPreference.getAchievements() != null){
+                    setFragmentTitle(R.id.btn_achievements);
+                    achievementListFragment = new AchievementListFragment();
+                    switchContent(achievementListFragment, AchievementListFragment.ARG_ITEM_ID);
+                } else {
+                    Toast.makeText(this, "Achievements not loaded yet", Toast.LENGTH_SHORT).show();
+                }
+            } else if (view.getId() == R.id.btn_new_game){
+                Log.e(TAG, "New game button clicked");
+                buttonSound.start();
+                newGame();
+            } else if (view.getId() == R.id.btn_continue_game){
+                buttonSound.start();
+                continueGame();
+            } else if (view.getId() == R.id.btn_load_game){
+                buttonSound.start();
+                loadGame();
             }
-        } else if (view.getId() == R.id.btn_new_game){
-            Log.e(TAG, "New game button clicked");
-            buttonSound.start();
-            newGame();
-        } else if (view.getId() == R.id.btn_continue_game){
-            buttonSound.start();
-            continueGame();
-        } else if (view.getId() == R.id.btn_load_game){
-            buttonSound.start();
-            loadGame();
+        } else {
+            showLocationDeniedDialog(true);
         }
+
     }
 
     protected void setFragmentTitle(int resourceID){
@@ -143,12 +155,11 @@ FragmentManager.OnBackStackChangedListener{
     }
 
     public void switchContent(Fragment fragment, String tag){
-        Log.v(TAG, "Switching to Achievements fragment view");
-        FragmentManager fragmentManager = getSupportFragmentManager();
         while (fragmentManager.popBackStackImmediate());
-
         if (fragment != null){
             setTitle(R.string.txt_achievements);
+            getActionBar().setLogo(R.drawable.ic_trophy);
+            getActionBar().setDisplayShowHomeEnabled(false);
             //getActionBar().setTitle(R.string.txt_achievements);
             FragmentTransaction transaction = fragmentManager.beginTransaction();
             transaction.replace(R.id.content_frame_home, fragment, tag);
@@ -177,24 +188,17 @@ FragmentManager.OnBackStackChangedListener{
             sendNetworkErrorDialog();
             return;
         }
-        //start downloading the achievements xml, which will store the achievements in XML in Shared Prefs
-        startXmlDownload();
-        setContentView(R.layout.loading);
-        //do nothing until downloading is false.
-        while (mDownloading){
-            //Log.d(TAG, "Waiting for download");
+        if (sharedPreference.getAllSongs() != null){
+            //now ready to start game settings
+            Intent intent = new Intent(this, GameSettingsActivity.class);
+            //send the game type with the intent so the settings activity loads correctly.
+            intent.putExtra("GAME_TYPE", getString(R.string.txt_new_game));
+            startActivity(intent);
         }
-
-        //now ready to start game settings
-        Intent intent = new Intent(this, GameSettingsActivity.class);
-        //send the game type with the intent so the settings activity loads correctly.
-        intent.putExtra("GAME_TYPE", getString(R.string.txt_new_game));
-        startActivity(intent);
-
     }
 
     public void continueGame(){
-        Log.d(TAG, "Continue Game button clicked");
+        Log.v(TAG, "Continue Game button clicked");
         Song song = sharedPreference.getCurrentSong();
         String diffLevel = sharedPreference.getCurrentDifficultyLevel();
         //check there is actually a song in the current song list and a difficulty chosen
@@ -269,25 +273,60 @@ FragmentManager.OnBackStackChangedListener{
     @Override
     protected void onResume(){
         Log.d(TAG, "onResume called");
-        getActionBar().setTitle(R.string.app_name);
+        setContentView(R.layout.home_screen);
+        findViewById(R.id.btn_new_game).setOnClickListener(this);
+        findViewById(R.id.btn_continue_game).setOnClickListener(this);
+        findViewById(R.id.btn_load_game).setOnClickListener(this);
+        findViewById(R.id.btn_achievements).setOnClickListener(this);
+        //getActionBar().setTitle(R.string.app_name);
  /*       // Register BroadcastReceiver to track connection changes
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);*/
-        super.onResume();
 
+        if (!sharedPreference.isAppLaunched()){
+            Log.e(TAG, "before: " + sharedPreference.isAppLaunched());
+            startXmlDownload();
+            Log.e(TAG, "Downloading songs");
+            sharedPreference.setAppLaunched();
+            Log.e(TAG, "after: " + sharedPreference.isAppLaunched());
+        }
+
+
+        if (!checkPermissions() && !stopPermissionRequests){
+            requestPermissions();
+        }
+        super.onResume();
     }
+
+    @Override
+    public void onDestroy(){
+        //sharedPreference.setAppNotLaunched();
+        super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed(){
+        int count = getSupportFragmentManager().getBackStackEntryCount();
+        if (count == 0){
+            super.onBackPressed();
+        } else {
+            fragmentManager.popBackStack();
+            //Reset the title if it
+            if (count == 1){
+                getActionBar().setTitle(R.string.app_name);
+            }
+        }
+    }
+
     public void startXmlDownload(){
-        mNetworkFragment.startXmlDownload();
-        mDownloading = true;
+        mNetworkFragment.startXmlDownload(getApplicationContext());
     }
 
     @Override
     public void updateFromDownload(Object result) {
 
     }
-
-
 
     @Override
     public void onProgressUpdate(int progressCode, int percentComplete) {
@@ -312,11 +351,14 @@ FragmentManager.OnBackStackChangedListener{
     @Override
     public void finishDownloading() {
         Log.d(TAG, "finishDownloading called");
-        mDownloading = false;
         if (mNetworkFragment != null) {
             mNetworkFragment.cancelDownload();
         }
-
+        int newNumSongs = sharedPreference.getAllSongs().size();
+        if (newNumSongs > numSongs){
+            numSongs = newNumSongs;
+            sendSongsDownloadedDialog();
+        }
     }
 
     // checks if a network connection is available
@@ -349,28 +391,121 @@ FragmentManager.OnBackStackChangedListener{
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        switch(item.getItemId()){
+            case R.id.action_help:
+                showHelp();
+                return true;
+            case R.id.action_credits:
+                showCredits();
+                return true;
+            case android.R.id.home:
+                int count = getSupportFragmentManager().getBackStackEntryCount();
+                if (count == 0) {
+                    NavUtils.navigateUpFromSameTask(this);
+                    return true;
+                } else {
+                    Log.e(TAG, "Pressed back");
+                    return onSupportNavigateUp();
+                }
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_help) {
-            showHelp();
-            return true;
         }
-
-        if (id == R.id.action_credits){
-            showCredits();
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
     private void showHelp(){
-        sendGameNotFoundDialog();
+        //sendAchievementDialog(test);
     }
 
     private void showCredits(){
         sendGameCompletedAlreadyDialog();
+    }
+
+    private boolean checkPermissions(){
+        int permissionState = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestPermissions() {
+        boolean shouldProvideRationale =
+                ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION);
+
+        // Provide an additional rationale to the user. This would happen if the user denied the
+        // request previously, but didn't check the "Don't ask again" checkbox.
+        if (shouldProvideRationale) {
+            Log.i(TAG, "Displaying permission rationale to provide additional context.");
+            showLocationRationaleDialog();
+        } else {
+            Log.i(TAG, "Requesting permission");
+            // Request permission. It's possible this can be auto answered if device policy
+            // sets the permission in a given state or the user denied the permission
+            // previously and checked "Never ask again".
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_PERMISSIONS_REQUEST_CODE);
+        }
+    }
+
+    /**
+     * Callback received when a permissions request has been completed.
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        Log.i(TAG, "onRequestPermissionResult");
+        if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
+            if (grantResults.length <= 0) {
+                // If user interaction was interrupted, the permission request is cancelled and you
+                // receive empty arrays.
+                Log.i(TAG, "User interaction was cancelled.");
+            } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                locationGranted = true;
+            } else {
+                Log.d(TAG, "Permission was denied");
+                // Permission denied.
+                // Notify the user that they have denied a core permission
+                showLocationDeniedDialog(false);
+                stopPermissionRequests = true;
+            }
+        }
+    }
+
+    private void showLocationRationaleDialog(){
+        Log.d(TAG, "show location rationale dialog called");
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.txt_location_error);
+        adb.setMessage(R.string.msg_location_rationale);
+        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                ActivityCompat.requestPermissions(HomeActivity.this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        REQUEST_PERMISSIONS_REQUEST_CODE);
+                dialog.dismiss();
+            }
+        });
+        AlertDialog ad = adb.create();
+        ad.setCancelable(false);
+        ad.show();
+    }
+
+    private void showLocationDeniedDialog(Boolean override){
+        Log.d(TAG, "Show location denied dialog called");
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.txt_location_error);
+        adb.setMessage(R.string.msg_location_permission_denied);
+        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                ActivityCompat.requestPermissions(HomeActivity.this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        REQUEST_PERMISSIONS_REQUEST_CODE);
+            }
+        });
+        AlertDialog ad = adb.create();
+        if (!stopPermissionRequests || override)ad.show();
+
     }
 
 
@@ -433,6 +568,21 @@ FragmentManager.OnBackStackChangedListener{
         alertDialog.show();
     }
 
+    private void sendSongsDownloadedDialog(){
+        Log.e(TAG, "Dialog builder started");
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.txt_new_songs);
+        adb.setMessage(R.string.msg_new_songs);
+       /* adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int i) {
+
+            }
+        });*/
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
+    }
+
     private void sendGameCompletedAlreadyDialog(){
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         adb.setTitle(R.string.loading_error);
@@ -448,8 +598,21 @@ FragmentManager.OnBackStackChangedListener{
     }
 
     @Override
-    public void onBackStackChanged() {
+    public void onBackStackChanged(){
+        shouldDisplayHomeUp();
+    }
 
+    public void shouldDisplayHomeUp(){
+        //Enable Up button only if there are entries in the back stack
+        boolean canback = getSupportFragmentManager().getBackStackEntryCount() > 0;
+        getActionBar().setDisplayHomeAsUpEnabled(canback);
+    }
+
+    public boolean onSupportNavigateUp(){
+        fragmentManager.popBackStack();
+        getActionBar().setTitle(R.string.app_name);
+        getActionBar().setDisplayShowHomeEnabled(true);
+        return true;
     }
 
     /**

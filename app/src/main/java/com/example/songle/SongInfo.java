@@ -102,6 +102,13 @@ public class SongInfo {
                 TimeUnit.MILLISECONDS.toSeconds(timeStarted));
     }
 
+    public int minutesTaken(){
+        long timeFinished = System.currentTimeMillis();
+        long timeTaken = timeFinished - timeStarted;
+        //safe to cast to int - don't expect it to take 65,000 minutes!
+        return (int) TimeUnit.MILLISECONDS.toMinutes(timeTaken);
+    }
+
 
 
 }

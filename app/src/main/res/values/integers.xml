@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <integer name="max_time_taken">300</integer>
+
     <integer name="hint_line_very_easy">5</integer>
     <integer name="hint_line_easy">8</integer>
     <integer name="hint_line_moderate">10</integer>
