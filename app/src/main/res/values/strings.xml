@@ -22,12 +22,15 @@
     <string name="txt_exit">Exit</string>
     <string name="txt_new_songs">New Songs!</string>
     <string name="msg_new_songs">New songs have been downloaded!</string>
+    <string name="txt_still_loading">Still loading…</string>
+    <string name="txt_close_achievements">Close the achievements first</string>
 
     <!-- Strings for game settings -->
     <string name="txt_select_song">Select Song</string>
     <string name="txt_select_difficulty">Select Difficulty</string>
     <string name="txt_start_game">Start Game</string>
     <string name="msg_new_game">Please choose a song and a difficulty level</string>
+    <string name="msg_diff_error">Difficulty not saved. Please try again.</string>
     <string name="msg_song_number_general">Song #</string>
 
     <string name="txt_enter_height">Enter your height</string>
@@ -36,6 +39,8 @@
         If it isn't entered, walking achievements will not be possible.</string>
     <string name="msg_enter_height_try_again">An error occurred while entering the height.
     Please enter your height in centimetres.</string>
+    <string name="confirm_game_settings">Confirm settings</string>
+    <string name="msg_begin_question">Start?</string>
 
 
     <!-- Strings for Network error dialogs -->
@@ -54,9 +59,7 @@
     <string name="msg_lyrics_not_found">Lyrics file not found! Please connect to the internet.</string>
     <string name="msg_game_already_completed">Game already completed! If you want to play it again, please connect to the internet.</string>
 
-    <!--Strings for game confirmation dialogs-->
-    <string name="confirm_game_settings">Confirm settings</string>
-    <string name="msg_begin_question">Do you want to begin?</string>
+
 
     <!--String for requesting permission -->
     <string name="msg_location_rationale">Access to your location is required so you can collect the words of the song. Please allow access for the app to work.</string>
@@ -146,50 +149,239 @@
     <string name="title_activity_maps2">Map</string>
 
     <!-- Strings for achievements -->
-    <string name="achievement_first_word_title">First Word!</string>
-    <string name="achievement_first_word_msg">Collect your first word from a map</string>
-    <string name="achievement_words_wizard_title">Words Wizard</string>
-    <string name="achievement_words_wizard_msg">Collect 100 words</string>
-    <string name="achievement_the_collector_title">The Collector</string>
-    <string name="achievement_the_collector_msg">Collect 500 words</string>
-    <string name="achievement_gotta_catch_title">Gotta Catch \'Em All!</string>
-    <string name="achievement_gotta_catch_msg">Collect all the words for a song without using any hints</string>
-    <string name="achievement_first_of_many_title">The First of Many</string>
-    <string name="achievement_first_of_many_msg">Correctly guess a song</string>
-    <string name="achievement_baby_triple_title">Oh Baby a Triple!</string>
-    <string name="achievement_baby_triple_msg">Correctly guess 3 songs</string>
-    <string name="achievement_maestro_title">Maestro</string>
-    <string name="achievement_maestro_msg">Correctly guess 10 songs</string>
-    <string name="achievement_the_songfather_title">The Songfather</string>
-    <string name="achievement_the_songfather_msg">Correctly guess 20 songs</string>
-    <string name="achievement_walk_500_title">And I Would Walk 500 Metres</string>
-    <string name="achievement_walk_500_msg">Walk 500 metres</string>
-    <string name="achievement_going_out_title">I\'m Going Out…And I May Be Gone For Some Time</string>
-    <string name="achievement_going_out_msg">Walk 5 kilometres</string>
-    <string name="achievement_bear_grylls_title">Practically Bear Grylls</string>
-    <string name="achievement_bear_grylls_msg">Improvise. Adapt. Overcome. And walk 10 kilometres</string>
-    <string name="achievement_forgot_line_title">I\'ve Forgotten My Line!</string>
-    <string name="achievement_forgot_line_msg">Use a hint to reveal a line</string>
-    <string name="achievement_line_help_title">A Little Help Here?</string>
-    <string name="achievement_line_help_msg">Reveal 10 lines</string>
-    <string name="achievement_artist_help_title">Arrgh…What Was Their Name?!</string>
-    <string name="achievement_artist_help_msg">Use a hint to reveal the artist</string>
-    <string name="achievement_procrastinate_title">Don\'t Procrastinate Now</string>
-    <string name="achievement_procrastinate_msg">Watch the video of a song after finding it</string>
-    <string name="achievement_faster_bullet_title">Faster Than a Speeding Bullet</string>
-    <string name="achievement_faster_bullet_msg">Complete a song in under 30 minutes</string>
-    <string name="achievement_cannae_dae_it_title">Ah Cannae Dae It Cap\'n</string>
-    <string name="achievement_cannae_dae_it_msg">Give up on a song</string>
-    <string name="achievement_read_instructions_title">Nobody Reads the Instructions…Do They?</string>
-    <string name="achievement_read_instructions_msg">Read the help in the tutorial</string>
-    <string name="achievement_rickrolled_title">Get Rickrolled</string>
-    <string name="achievement_rickrolled_msg">Watch the video for Never Gonna Give You Up</string>
+    <string name="ach_words_1_title">First Word!</string>
+    <string name="ach_words_1_msg">Collect your first word from a map</string>
+    <string name="ach_words_100_title">Words Wizard</string>
+    <string name="ach_words_100_msg">Collect 100 words</string>
+    <string name="ach_words_500_title">The Collector</string>
+    <string name="ach_words_500_msg">Collect 500 words</string>
+    <string name="ach_words_all_title">Gotta Catch \'Em All!</string>
+    <string name="ach_words_all_msg">Collect all the words for a song without using any hints</string>
+    <string name="ach_song_1_title">The First of Many</string>
+    <string name="ach_song_1_msg">Correctly guess a song</string>
+    <string name="ach_song_3_title">Oh Baby a Triple!</string>
+    <string name="ach_song_3_msg">Correctly guess 3 songs</string>
+    <string name="ach_song_10_title">Maestro</string>
+    <string name="ach_song_10_msg">Correctly guess 10 songs</string>
+    <string name="ach_song_20_title">The Songfather</string>
+    <string name="ach_song_20_msg">Correctly guess 20 songs</string>
+    <string name="ach_walk_500_title">And I Would Walk 500 Metres</string>
+    <string name="ach_walk_500_msg">Walk 500 metres</string>
+    <string name="ach_walk_5k_title">I\'m Going Out…And I May Be Gone For Some Time</string>
+    <string name="ach_walk_5k_msg">Walk 5 kilometres</string>
+    <string name="ach_walk_10k_title">Practically Bear Grylls</string>
+    <string name="ach_walk_10k_msg">Improvise. Adapt. Overcome. And walk 10 kilometres</string>
+    <string name="ach_line_help_1_title">I\'ve Forgotten My Line!</string>
+    <string name="ach_line_help_1_msg">Use a hint to reveal a line</string>
+    <string name="ach_line_help_10_title">A Little Help Here?</string>
+    <string name="ach_line_help_10_msg">Reveal 10 lines</string>
+    <string name="ach_artist_help_title">Arrgh…What Was Their Name?!</string>
+    <string name="ach_artist_help_msg">Use a hint to reveal the artist</string>
+    <string name="ach_watch_video_title">Don\'t Procrastinate Now</string>
+    <string name="ach_watch_video_msg">Watch the video of a song after finding it</string>
+    <string name="ach_time_title">Faster Than a Speeding Bullet</string>
+    <string name="ach_time_msg">Complete a song in under 30 minutes</string>
+    <string name="ach_give_up_title">Ah Cannae Dae It Cap\'n</string>
+    <string name="ach_give_up_msg">Give up on a song</string>
+    <string name="ach_read_help_title">Pls help</string>
+    <string name="ach_read_help_msg">Read the help in the tutorial</string>
+    <string name="ach_rickrolled_title">Get Rickrolled</string>
+    <string name="ach_rickrolled_msg">Watch the video for Never Gonna Give You Up</string>
     <string name="title_achievement_info">Requirements</string>
 
 
 
+    <string name="msg_help">\n
+        Need some help?\n
+        \n
+        In this game you will collect words belonging to a song, and need to guess what the song is.\n
+        To collect a word you simply walk up to it on the map and tap the marker.\n
+        It\'s simple as that, so feel free to get stuck in and figure it out (it\'s not complicated)!\n
+        \n
+        Tap this message to close it and get started.\n
+        \n
+        If you want more information though, keep reading.\n
+        \n
+        \n
+        ****************\n
+        Getting started\n
+        ****************\n
+        \n
+        There are five options on the home screen:\n
+        \n
+        1. New Game\n
+        Select to begin a new game of Songle.\n
+        \n
+        2. Continue Game\n
+        Select to continue your most recent game.\n
+        \n
+        3. Load Previous Game\n
+        Select to load an old game\n
+        \n
+        4. Achievements\n
+        Select to view your achievements and see which ones you still need to get.\n
+        \n
+        5. Scores\n
+        Select to view your high scores for each song.\n
+        \n
+        It\'s worth mentioning that if you try to start a new game for a song that you began earlier, or had completed, this will reset any progress.\n
+        Loading a previously completed game will similarly reset progress.\n
+        Also, to view how to get an achievement, simply tap it on the list.\n
+        \n
+        \n
+        \n
+        ****************\n
+        Starting a game\n
+        ****************\n
+        \n
+        When you begin a new game, or load an old one you\'ll be invited to select a song and a difficulty.\n
+        If new songs were downloaded (the game checks for new songs each time you begin a new game) you\'ll be notified of this.\n
+        \n
+        To select a song, simply press the button and pick a song from the list.\n
+        They are marked as "Not Started", "Incomplete" and "Complete" so you can easily tell your progress for each.\n
+        \n
+        To select a difficulty, press the button and pick your difficulty.\n
+        There are five difficulty levels you can select. Each shows a slightly different version of the map, and makes getting hints more or less difficult.\n
+        But don\'t worry too much! If you\'re finding it too tough, you can turn the difficulty level down before giving up. But there are higher scores for harder difficulties!\n
+        These are the five:\n
+        \n
+        1. Very Easy\n
+        Good for beginners.\n
+        All the words are on the map, and you can also see how useful each word is.\n
+        They range from boring words (not that helpful) to the very interesting ones (which will be most useful).\n
+        Hints cost words, and at this difficulty the number of words you\'ll need will be lowest.\n
+        \n
+        2. Easy\n
+        Casual play.\n
+        You still get all the words, but you\'ll only be able to see interesting words at best (the very interesting ones have gone incognito!).\n
+        Hints are still quite cheap.\n
+        \n
+        3. Moderate\n
+        A decent challenge.\n
+        75% of the words are on the map (can\'t be too easy), but you can still see interesting words.\n
+        Hints are (you guesed it) moderately expensive in this mode.\n
+        \n
+        4. Hard\n
+        Tough.\n
+        You only get 50% of the words now, and best they\'re only classified as \'not boring\'\n
+        By the way, don\'t get confused - there may still be interesting or very interesting words there, but you just won\'t be able to tell from the map.\n
+        Hints are getting costly now.\n
+        \n
+        5. Insane\n
+        For the pros!\n
+        A mere 25% of the words are visible and to make matters worse they\'re all unclassified!\n
+        It\'ll cost you heavily to get a hint, so use them sparingly!\n
+        It\'s the best way to get a high score though!\n
+        \n
+        \n
+        \n
+        ****************\n
+        Playing the game\n
+        ****************\n
+        \n
+        There are three tabs on your screen. We\'ll go through each of them in turn\n
+        \n
+        1. Find\n
+        This is where you hunt down those words and collect them! To collect a word, you\'ll need to have your GPS switched on, and be close to the marker on the map.\n
+        There can be inaccuracies in the GPS (not my fault, I\'m just the developer, blame NASA or whatever)\n
+        So if it says you\'re not close enough, try moving closer or walking around a bit to get a better signal.\n
+        The markers have different icons indicating how interesting the words are - you\'ll be able to work it out quickly\n
+        Hint: it\'s the rarer ones which are better).\n
+        Oh, and when you collect a word you\'ll get a little notification in the words tab to remind you to check there.\n
+        There will also be one in the guess tab if you have enough words to use a hint!\n
+        \n
+        2. Words\n
+        Here you can review the words you\'ve collected so far, and where it fits in the song.\n
+        If you\'ve not found a word yet, there\'ll be a blank. That\'s about it really.\n
+        \n
+        3. Guess\n
+        This is where you enter your guess and use hints.\n
+        Hints cost words, depending on your difficulty level.\n
+        To get a hint just tap the light bulb button and select your desired hint.\n
+        Be careful though - using more hints will lower your final score!\n
+        To enter a guess simply tap the text and put your guess in (you don\'t even need to get the uppercase letters right!). \n
+        If you\'re wrong, then keep trying! If you get it right, you can watch the music video of the song!\n
+        If you\'ve had enough of that particular song and just can\'t figure out, then just tap \"Give Up\" which appears after an incorrect guess.\n
+        You\'ll be asked to confirm, as you may be able to make the game easier if you\'re doing a tough difficulty level.\n
+        \n
+        \n
+        \n
+        ****************\n
+        Achievements\n
+        ****************\n
+        \n
+        These are special rewards for reaching milestones, like finding your first word, or guessing your first song.\n
+        To see the full list, tap the icon in the home screen.\n
+        If you don\'t know how to get an achievement, just tap it in the list to see how.\n
+        Ooh, and there\'s also a few hidden achievements that you can only find out about when you get them! What could they be…?\n
+        Well actually you\'ve already found one by reading this!\n
+        There\'s also one for those who never give up…but that\'s as much as I\'ll hint at regarding it.\n
+        \n
+        \n
+        \n
+        ****************\n
+        Scores\n
+        ****************\n
+        \n
+        To see your scores, just tap the icon in the home screen and you\'ll see a list of them.\n
+        The exact calculation of the score for each game is a secret I\'m afraid, but I can tell you that it\'s based on these factors:\n
+        Difficulty level (harder difficulty = higher score)\n
+        Time taken (quicker is better)\n
+        Hints used (there will be a slight penalty for this)\n
+        Number of words you found (more points for finding more words)\n
+        \n
+        \n
+        \n
+        ****************\n
+        That\'s it!\n
+        ****************\n
+        \n
+        Go out now and have fun! Any questions or bugs you discover, please let me know at john_smith@gmail.com\n
+        \n
+        \n</string>
+
+    <string name="msg_credits">
+        \n
+        Where to begin? I am indebted to so many people for this to be possible\n
+        Some of them may not even know it!\n
+        \n
+        Legally speaking there are some ones that I need to give credit to, so let\'s get that out the way first\n
+        These include:\n
+        Icons designed by Smashicons, Freepik from flaticon.com\n
+        Sound effects obtained from https://www.zapsplat.com and https://freesound.org\n
+        Google - for using the maps API? I\'m not certain I have to do that but it wouldn\'t hurt.\n
+        \n
+        Then there are so, so many people on stackoverflow.com who have provided exactly the solution I needed to fix a bug or add a feature.\n
+        I have attributed some of the specific instances that I used a solution from there in the code itself\n
+        There may be some I\'ve forgotten - my apologies if this is the case but when I\'ve used so much it does get hard to keep track of what is attributable to where!\n
+        In some cases it might just have been a couple of lines that I adapted, but in any case, my thanks to you if it was from you!\n
+        \n
+        There were a few projects/tutorials online that I did borrow heavily from and adapt, so I want to give them special credit:\n
+        \n
+        http://androidopentutorials.com/android-how-to-store-list-of-values-in-sharedpreferences/\n
+        This gave me a great base to work off from for storing the songs.\n
+        \n
+        https://github.com/googlesamples/android-play-location/\n
+        This provided me with some help regarding location permissions (didn\'t end up using it for the location itself)\n
+        \n
+        https://developer.android.com/training/\n
+        I used quite a lot of their training examples and projects they linked to get basic functionality.\n
+        \n
+        http://blog.iamsuleiman.com/bottom-navigation-bar-android-tutorial/\n
+        and the associated GitHub project:\n
+        https://github.com/Suleiman19/Bottom-Navigation-Demo/\n
+        This was used to get the bottom navigation bar in the main game screen\n
+        \n
+        https://github.com/Clans/FloatingActionButton/\n
+        Here is where I got the code for the floating action button on the guessing tab in the game\n
+        \n
+        That\'s all that I can think of as far as I know.\n
+        Thanks again to everyone!\n
+        \n
+        Paul\n
 
 
+    </string>
 
 
 </resources>

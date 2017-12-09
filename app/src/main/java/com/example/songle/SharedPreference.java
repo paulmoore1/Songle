@@ -43,7 +43,7 @@ public class SharedPreference {
     private static final String ACHIEVEMENTS = "Achievements";
     private static final String SCORES = "Scores";
     private static final String FIRST_TIME = "FirstTime";
-    private static final String APP_LAUNCHED = "AppLaunched";
+    private static final String HELP_TEXT = "HelpText";
 
 
     @SuppressLint("CommitPrefEdits")
@@ -699,26 +699,12 @@ public class SharedPreference {
     }
 
     public void saveFirstTimeAppUsed(){
-        editor.putBoolean(FIRST_TIME, true);
+        editor.putBoolean(FIRST_TIME, false);
     }
 
     public boolean isFirstTimeAppUsed(){
-        return settings.getBoolean(FIRST_TIME, false);
+        return settings.getBoolean(FIRST_TIME, true);
     }
 
-    public void setAppLaunched(){
-        Log.v(TAG, "App set to launched");
-        editor.putBoolean(APP_LAUNCHED, true);
-        editor.apply();
-    }
 
-    public void setAppNotLaunched(){
-        Log.v(TAG, "App set to not launched");
-        editor.putBoolean(APP_LAUNCHED, false);
-        editor.apply();
-    }
-
-    public boolean isAppLaunched(){
-        return settings.getBoolean(APP_LAUNCHED, false);
-    }
 }

@@ -28,6 +28,8 @@ public class Splash extends Activity {
             @Override
             public void run() {
                 Intent mainIntent = new Intent(Splash.this, HomeActivity.class);
+                //Indicates to the home activity that this the app has just launched.
+                mainIntent.putExtra("JUST_STARTED", true);
                 startActivity(mainIntent);
                 finish();
             }

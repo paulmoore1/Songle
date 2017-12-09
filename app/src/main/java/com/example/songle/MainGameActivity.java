@@ -48,7 +48,7 @@ public class MainGameActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super onCreate called");
-        setContentView(R.layout.main_game_screen);
+        setContentView(R.layout.main_game_layout);
 /*
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

@@ -68,13 +68,13 @@ public class GuessFragment extends Fragment {
 
     private Context context;
 
-    private MediaPlayer winGame;
-    private MediaPlayer loseGame;
-    private MediaPlayer showMenu;
-    private MediaPlayer hideMenu;
-    private MediaPlayer achievementComplete;
-    private MediaPlayer buttonClick;
-    private MediaPlayer buttonClick2;
+    private static MediaPlayer winGame;
+    private static MediaPlayer loseGame;
+    private static MediaPlayer showMenu;
+    private static MediaPlayer hideMenu;
+    private static MediaPlayer achievementComplete;
+    private static MediaPlayer buttonClick;
+    private static MediaPlayer radioButtonClick;
 
     private TextView lineText;
     private TextView artistText;
@@ -111,13 +111,13 @@ public class GuessFragment extends Fragment {
         hideMenu = MediaPlayer.create(context, R.raw.close_menu);
         achievementComplete = MediaPlayer.create(context, R.raw.happy_jingle);
         buttonClick = MediaPlayer.create(context, R.raw.button_click);
-        buttonClick2 = MediaPlayer.create(context, R.raw.button_click_2);
+        radioButtonClick = MediaPlayer.create(context, R.raw.radio_button);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState){
-        View view = inflater.inflate(R.layout.fragment_guess_tab, container, false);
+        View view = inflater.inflate(R.layout.guess_tab_fragment, container, false);
         guess = view.findViewById(R.id.btn_guess);
         giveUp = view.findViewById(R.id.btn_give_up);
         //If there wasn't an incorrect guess before, make giving up invisible
@@ -388,7 +388,7 @@ public class GuessFragment extends Fragment {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        buttonClick2.start();
+                        radioButtonClick.start();
                         String chosenDiff = diffListShort[i].toString();
                         mChosenDifficulty.add(0, chosenDiff);
 
@@ -483,17 +483,17 @@ public class GuessFragment extends Fragment {
 
     private void updateAchievements(){
         //Load achievements
-        achWatchVideo = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_procrastinate_title));
-        achRickrolled = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_rickrolled_title));
-        achTime = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_faster_bullet_title));
-        achRevealArtist = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_artist_help_title));
-        achSingleLine = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_forgot_line_title));
-        achMultiLine = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_line_help_title));
-        achFirstSong = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_first_of_many_title));
-        achTripleSong = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_baby_triple_title));
-        ach10Songs = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_maestro_title));
-        ach20Songs = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_the_songfather_title));
-        achGiveup = sharedPreference.getIncompleteAchievement(getString(R.string.achievement_cannae_dae_it_title));
+        achWatchVideo = sharedPreference.getIncompleteAchievement(getString(R.string.ach_watch_video_title));
+        achRickrolled = sharedPreference.getIncompleteAchievement(getString(R.string.ach_rickrolled_title));
+        achTime = sharedPreference.getIncompleteAchievement(getString(R.string.ach_time_title));
+        achRevealArtist = sharedPreference.getIncompleteAchievement(getString(R.string.ach_artist_help_title));
+        achSingleLine = sharedPreference.getIncompleteAchievement(getString(R.string.ach_line_help_1_title));
+        achMultiLine = sharedPreference.getIncompleteAchievement(getString(R.string.ach_line_help_10_title));
+        achFirstSong = sharedPreference.getIncompleteAchievement(getString(R.string.ach_song_1_title));
+        achTripleSong = sharedPreference.getIncompleteAchievement(getString(R.string.ach_song_3_title));
+        ach10Songs = sharedPreference.getIncompleteAchievement(getString(R.string.ach_song_10_title));
+        ach20Songs = sharedPreference.getIncompleteAchievement(getString(R.string.ach_song_20_title));
+        achGiveup = sharedPreference.getIncompleteAchievement(getString(R.string.ach_give_up_title));
     }
 
     private void createProgressBars(View view){
@@ -736,7 +736,7 @@ public class GuessFragment extends Fragment {
     }
 
     private void showAchievement(String title){
-        Toast.makeText(context, "Achievement unlocked" + title, Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Achievement unlocked: " + title, Toast.LENGTH_SHORT).show();
     }
 
     private void checkGameWinAchievements(){

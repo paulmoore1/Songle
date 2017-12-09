@@ -75,18 +75,15 @@ public class NetworkFragment extends Fragment {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate() invoked");
         super.onCreate(savedInstanceState);
         // Retain this Fragment across configuration changes in the host Activity.
         setRetainInstance(true);
         numRetries = 5;
         mUrlString = getArguments().getString(URL_KEY);
-        Log.d(TAG, "URL String:" + mUrlString);
     }
 
     @Override
     public void onAttach(Context context) {
-        Log.d(TAG, "onAttach called");
         super.onAttach(context);
         // Host Activity will handle callbacks from task.
         mCallback = (DownloadCallback)context;
@@ -111,7 +108,7 @@ public class NetworkFragment extends Fragment {
      * Start non-blocking execution of DownloadLyricsTask.
      */
     public void startLyricsDownload() {
-        Log.d(TAG, "startLyricsDownload called");
+        Log.v(TAG, "startLyricsDownload called");
         cancelDownload();
         mDownloadLyricsTask = new DownloadLyricsTask();
         downloadType = "Lyrics";
@@ -121,16 +118,16 @@ public class NetworkFragment extends Fragment {
     /**
      * Start non-blocking execution of DownloadXmlTask.
      */
-    public void startXmlDownload(Context context) {
-        Log.d(TAG, "startXmlDownload called on URL " + mUrlString);
+    public void startXmlDownload() {
+        Log.v(TAG, "startDownloadingSongs called");
         cancelDownload();
-        mDownloadXmlTask = new DownloadXmlTask(context);
+        mDownloadXmlTask = new DownloadXmlTask();
         downloadType = "Xml";
         mDownloadXmlTask.execute(mUrlString);
     }
 
     public void startKmlDownload(){
-        Log.d(TAG, "startKmlDownload called");
+        Log.v(TAG, "startKmlDownload called");
         cancelDownload();
         mDownloadKmlTask = new DownloadKmlTask();
         downloadType = "Kml";
@@ -145,7 +142,7 @@ public class NetworkFragment extends Fragment {
                 startLyricsDownload();
                 break;
             case "Xml":
-                startXmlDownload(getContext());
+                startXmlDownload();
                 break;
             case "Kml":
                 startKmlDownload();
@@ -159,7 +156,7 @@ public class NetworkFragment extends Fragment {
      * Cancel (and interrupt if necessary) any ongoing DownloadTask execution.
      */
     public void cancelDownload() {
-        Log.d(TAG, "cancelDownload called");
+        Log.v(TAG, "cancelDownload called");
         if (mDownloadLyricsTask != null) {
             mDownloadLyricsTask.cancel(true);
             mDownloadLyricsTask = null;
@@ -170,7 +167,6 @@ public class NetworkFragment extends Fragment {
             mDownloadKmlTask.cancel(true);
             mDownloadKmlTask = null;
         }
-        Log.d(TAG, "completed cancelling download");
     }
 
 
@@ -204,7 +200,7 @@ public class NetworkFragment extends Fragment {
          */
         @Override
         protected String doInBackground(String... urls) {
-            Log.v(TAG, "Started loading lyrics in the background");
+            Log.v(TAG, "Started loading_layout lyrics in the background");
             String result = null;
             try {
                 result = loadLyricsFromNetwork();
@@ -277,7 +273,7 @@ public class NetworkFragment extends Fragment {
          * Downloads and parses the entire stream.
          */
         private void downloadUrl(String urlString) throws IOException {
-            Log.d(TAG, "downloadUrl called");
+            Log.v(TAG, "downloadUrl called");
             String songNumber = sharedPreferenceLyrics.getCurrentSongNumber();
             LyricsTextParser ltp = new LyricsTextParser(getActivity().getApplicationContext(), songNumber);
 
@@ -310,11 +306,6 @@ public class NetworkFragment extends Fragment {
 
     private class DownloadXmlTask extends AsyncTask<String, Void, String> {
         private String TAG = DownloadXmlTask.class.getSimpleName();
-        private Context context;
-        //separate Shared Preference object needed.
-        DownloadXmlTask(Context context){
-            this.context = context;
-        }
         /**
          * Cancel background network operation if we do not have network connectivity.
          */
@@ -334,7 +325,7 @@ public class NetworkFragment extends Fragment {
 
         @Override
         protected String doInBackground(String... urls){
-            Log.d(TAG, "doInBackground called");
+            Log.v(TAG, "doInBackground called");
             try {
                 loadXmlFromNetwork(urls[0]);
             }catch (XmlPullParserException e){
@@ -351,7 +342,7 @@ public class NetworkFragment extends Fragment {
 
         private void loadXmlFromNetwork(String urlString) throws
                 XmlPullParserException, IOException{
-            Log.d(TAG, "loadXmlFromNetwork called on string: " + urlString);
+            Log.v(TAG, "loadXmlFromNetwork called on string: " + urlString);
             try {
                 downloadUrl(urlString);
             } catch(Exception e){
@@ -360,11 +351,21 @@ public class NetworkFragment extends Fragment {
 
         }
 
-        //Given a string representation of a URL, sets up a connection, downloads and parses it
-        // The parsing is done here because otherwise strange errors occurred.
+
+        /**
+         * Given a string representation of a URL, sets up a connection, downloads and parses it
+         * The parsing is done here because when the connection disconnected, it seemed that
+         * the input stream was sometimes closed too early.
+         * Simply leaving the connection open (as in some tutorials) resulted in a leak that caused
+         * crashes later on.
+         * The simplest solution was to download and parse in the same function, so that the stream
+         * could be fully parsed, and the connection fully disconnected at the end.
+         * @param urlString - URL to download
+         * @throws IOException
+         */
         private void downloadUrl(String urlString) throws IOException {
             Log.v(TAG, "downloadUrl called");
-            XmlSongParser parser = new XmlSongParser(context);
+            XmlSongParser parser = new XmlSongParser(getActivity().getApplicationContext());
             InputStream stream;
             URL url = new URL(urlString);
 
@@ -379,6 +380,7 @@ public class NetworkFragment extends Fragment {
             try {
                 parser.parse(stream);
             } catch (XmlPullParserException e) {
+                Log.e(TAG, "Error in parsing: " + e);
                 e.printStackTrace();
             }
             conn.disconnect();
@@ -424,7 +426,7 @@ public class NetworkFragment extends Fragment {
 
         @Override
         protected String doInBackground(String... urls){
-            Log.v(TAG, "Started loading KML in the background");
+            Log.v(TAG, "Started loading_layout KML in the background");
             Boolean allDownloadedCorrectly = true;
             String baseUrl = urls[0];
             String songNumber = sharedPreferenceKml.getCurrentSongNumber();

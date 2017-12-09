@@ -27,39 +27,38 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 public class GameSettingsActivity extends FragmentActivity implements DownloadCallback,
-        FragmentManager.OnBackStackChangedListener{
-    public static final String TAG = "GameSettingsActivity";
+        FragmentManager.OnBackStackChangedListener,
+        View.OnClickListener{
+    private static final String TAG = "GameSettingsActivity";
     //String is NewGame or OldGame, depending on what was selected.
     private String gameType;
     private Fragment contentFragment;
     private FragmentManager fragmentManager = getSupportFragmentManager();
-    SongListFragment songListFragment;
-    SharedPreference sharedPreference;
-    Button buttonSelectSong, buttonSelectDifficulty, buttonStartGame;
-    TextView selectedSongNumber, selectedDifficultyLevel;
+    private SongListFragment songListFragment;
+    private SharedPreference sharedPreference;
+    private TextView txtViewSong, txtViewDiff;
     private NetworkFragment mNetworkFragmentLyrics;
     private NetworkFragment mNetworkFragmentMaps;
-    private boolean mDownloading = false;
     private String songNumber;
     private String diffLevel;
     private final Object syncObject = new Object();
-    private MediaPlayer buttonClick;
-    private MediaPlayer buttonClick2;
+    private static MediaPlayer buttonClick;
+    private static MediaPlayer radioButton;
 
 
-    SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+    private final SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
             String songNumber2 = sharedPreference.getCurrentSongNumber();
             //if achievements are now different (implying the user has selected one)
             if(songNumber2 == null) {
-                selectedSongNumber.setText(R.string.msg_no_song_selected);
+                txtViewSong.setText(R.string.msg_no_song_selected);
             } else {
                 //update songNumber in this activity.
                 songNumber = songNumber2;
-                //update textview object with selected song
+                //update textView object with selected song
                 String songText = getString(R.string.msg_song_number_general) + songNumber;
-                selectedSongNumber.setText(songText);
+                txtViewSong.setText(songText);
 
             }
 
@@ -71,7 +70,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.select_game_settings);
+        setContentView(R.layout.select_game_layout);
         sharedPreference = new SharedPreference(getApplicationContext());
         //check if there was an error when downloading previously so the activity had to be reset
         boolean error = getIntent().getBooleanExtra("DOWNLOAD_ERROR", false);
@@ -79,15 +78,12 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             sendDownloadErrorDialog();
         }
 
-        buttonSelectSong = findViewById(R.id.btn_select_song);
-        buttonSelectDifficulty = findViewById(R.id.btn_select_difficulty);
-        buttonStartGame = findViewById(R.id.btn_start_game);
-        selectedSongNumber = findViewById(R.id.txt_selected_song);
-        selectedDifficultyLevel = findViewById(R.id.txt_current_difficulty);
+        txtViewSong = findViewById(R.id.txt_selected_song);
+        txtViewDiff = findViewById(R.id.txt_current_difficulty);
 
         buttonClick = MediaPlayer.create(this, R.raw.button_click);
-        buttonClick2 = MediaPlayer.create(this, R.raw.button_click_2);
-        //get the game type to pass on to the songlist fragment, so it loads the correct games.
+        radioButton = MediaPlayer.create(this, R.raw.radio_button);
+        //get the game type to pass on to the songList fragment, so it loads the correct games.
         gameType = getIntent().getStringExtra("GAME_TYPE");
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
 
@@ -104,57 +100,17 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         songNumber = sharedPreference.getCurrentSongNumber();
         if (songNumber != null){
             String songText = "Previously chose: Song #" + songNumber;
-            selectedSongNumber.setText(songText);
+            txtViewSong.setText(songText);
         }
 
-        //if select song is selected, load a fragment to display it.
-        buttonSelectSong.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                buttonClick.start();
-                //show the song selection fragment
-                setFragmentTitle(R.id.btn_select_song);
-                songListFragment = new SongListFragment();
-                Bundle bundle = new Bundle();
-                bundle.putString("GAME_TYPE", gameType);
-                Log.d(TAG, "Select song button clicked");
-                songListFragment.setArguments(bundle);
-                switchContent(songListFragment, SongListFragment.ARG_ITEM_ID);
-            }
-        });
-        //set a dialog if select difficulty is clicked.
-        buttonSelectDifficulty.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                buttonClick.start();
-                sendSelectDifficultyDialog();
-            }
-        });
-        //send a dialog if start game is clicked
-        buttonStartGame.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                buttonClick.start();
-                if (songNumber == null){
-                    Toast.makeText(getApplicationContext(),
-                            getString(R.string.msg_no_song_selected), Toast.LENGTH_SHORT).show();
-                } else if (diffLevel == null){
-                    Toast.makeText(getApplicationContext(),
-                            getString(R.string.msg_no_difficulty_selected), Toast.LENGTH_SHORT).show();
-                } else {
-                    sendConfirmGameDialog(songNumber, diffLevel);
-                }
-            }
-        });
-
-        /**
-         * This is called when the orientation is changed.
-         * If the song fragment is on the screen, it is retained.
+        /*
+          This is called when the orientation is changed.
+          If the song fragment is on the screen, it is retained.
          */
         if (savedInstanceState != null){
             if (savedInstanceState.containsKey("content")){
                 String content = savedInstanceState.getString("content");
-                if (content.equals(SongListFragment.ARG_ITEM_ID)){
+                if (content != null && content.equals(SongListFragment.ARG_ITEM_ID)){
                     if (fragmentManager.findFragmentByTag(SongListFragment.ARG_ITEM_ID) != null){
                         setFragmentTitle(R.string.txt_select_song);
                         contentFragment = fragmentManager.findFragmentByTag(SongListFragment.ARG_ITEM_ID);
@@ -168,12 +124,41 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
     }
 
-    protected void setFragmentTitle(int resourceID){
+    @Override
+    public void onClick(View view) {
+        if (view.getId() == R.id.btn_select_song){
+            //buttonClick.start();
+            //show the song selection fragment
+            setFragmentTitle(R.id.btn_select_song);
+            songListFragment = new SongListFragment();
+            Bundle bundle = new Bundle();
+            bundle.putString("GAME_TYPE", gameType);
+            Log.d(TAG, "Select song button clicked");
+            songListFragment.setArguments(bundle);
+            switchContent(songListFragment, SongListFragment.ARG_ITEM_ID);
+        } else if (view.getId() == R.id.btn_select_difficulty){
+            //buttonClick.start();
+            sendSelectDifficultyDialog();
+        } else if (view.getId() == R.id.btn_start_game){
+            //buttonClick.start();
+            if (songNumber == null){
+                Toast.makeText(getApplicationContext(),
+                        getString(R.string.msg_no_song_selected), Toast.LENGTH_SHORT).show();
+            } else if (diffLevel == null){
+                Toast.makeText(getApplicationContext(),
+                        getString(R.string.msg_no_difficulty_selected), Toast.LENGTH_SHORT).show();
+            } else {
+                sendConfirmGameDialog(songNumber, diffLevel);
+            }
+        }
+    }
+
+    private void setFragmentTitle(int resourceID){
         setTitle(resourceID);
         getActionBar().setTitle(resourceID);
     }
 
-    public void switchContent(Fragment fragment, String tag){
+    private void switchContent(Fragment fragment, String tag){
         while (fragmentManager.popBackStackImmediate());
 
         if (fragment != null){
@@ -192,6 +177,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     @Override
     protected void onResume(){
         super.onResume();
+        //If new songs were downloaded, notify the user.
+        if (getIntent().getBooleanExtra("NEW_SONGS", false)) sendSongsDownloadedDialog();
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
 
     }
@@ -210,80 +197,16 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         super.onSaveInstanceState(outState);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data){
-        super.onActivityResult(requestCode, resultCode, data);
-
-    }
-
-    public void sendSelectDifficultyDialog(){
-        Log.d(TAG, "sendSelectDifficultyDialog called");
-        mChosenDifficulty = new ArrayList<>(2);
-        final CharSequence[] diffList = getResources().getStringArray(R.array.difficulty_levels);
-        AlertDialog.Builder adb = new AlertDialog.Builder(this);
-        adb.setTitle(R.string.txt_select_difficulty);
-        adb.setSingleChoiceItems(diffList, -1,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        buttonClick2.start();
-                        String chosenDiff = diffList[i].toString();
-                        mChosenDifficulty.add(0, chosenDiff);
-
-                    }
-                }).setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                buttonClick.start();
-                String chosenDiff = mChosenDifficulty.get(0);
-                //save value in private string
-                diffLevel = chosenDiff;
-                //save value in shared preferences
-                sharedPreference.saveCurrentDifficultyLevel(chosenDiff);
-                //update text displayed
-                selectedDifficultyLevel.setText(chosenDiff);
-            }
-        });
-        AlertDialog ad = adb.create();
-        ad.show();
-
-    }
-
-    public void sendConfirmGameDialog(final String chosenSongNumber, final String chosenDiff){
-        AlertDialog.Builder adb = new AlertDialog.Builder(this);
-        adb.setTitle(R.string.confirm_game_settings);
-        String beginQuestion = getString(R.string.msg_begin_question);
-        String beginMessage = "Chosen song number: " + chosenSongNumber + "\nChosen difficulty level: " +
-                    chosenDiff + "\n" + beginQuestion;
-        adb.setMessage(beginMessage);
-        //if user is happy with settings, start the game
-        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                buttonClick.start();
-                startGame();
-
-            }
-        }).setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                buttonClick.start();
-            }
-        });
-        AlertDialog ad = adb.create();
-        ad.show();
 
 
-    }
-
-    public void startGame(){
+    private void startGame(){
         //check for internet connection again
         boolean networkOn = isNetworkAvailable(this);
         if (!networkOn){
             sendNetworkErrorDialog();
             return;
         }
-        setContentView(R.layout.loading);
+        setContentView(R.layout.loading_layout);
         //save this song status to shared preferences as it has been definitely chosen.
         Song currentSong = sharedPreference.getCurrentSong();
 
@@ -299,7 +222,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         }
 
 
-        //use this just in case it gets stuck downloading for more than 10s - resets loading screen
+        //use this just in case it gets stuck downloading for more than 10s - resets loading_layout screen
         Handler handler = new Handler();
         handler.postDelayed(resetSettingsActivity, 10000);
 
@@ -310,7 +233,6 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         NetworkReceiver receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);
 */
-            int i = 0;
             startLyricsDownload();
             //do nothing further until download is finished
             synchronized (syncObject){
@@ -330,10 +252,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
         //check maps are stored - if not then download them.
         if (!sharedPreference.checkMaps(songNumber)){
-            Log.d(TAG, "Started downloading Kml");
-            Log.v(TAG, "mDownloading before startMapsDownload" + mDownloading);
+            Log.d(TAG, "Started downloading Maps");
             startMapsDownload();
-            Log.v(TAG, "mDownloading after startMapsDownload" + mDownloading);
             //do nothing further until download is finished
             synchronized (syncObject){
                 try {
@@ -359,7 +279,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         startActivity(intent);
     }
 
-    private Runnable resetSettingsActivity = new Runnable() {
+    private final Runnable resetSettingsActivity = new Runnable() {
         @Override
         public void run() {
             Log.e(TAG, "Download error - reset activity");
@@ -394,13 +314,13 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         shouldDisplayHomeUp();
     }
 
-    public void shouldDisplayHomeUp(){
+    private void shouldDisplayHomeUp(){
         //Enable Up button only if there are entries in the back stack
-        boolean canback = getSupportFragmentManager().getBackStackEntryCount() > 0;
-        getActionBar().setDisplayHomeAsUpEnabled(canback);
+        boolean fragmentPresent = getSupportFragmentManager().getBackStackEntryCount() > 0;
+        getActionBar().setDisplayHomeAsUpEnabled(fragmentPresent);
     }
 
-    public boolean onSupportNavigateUp(){
+    private boolean onSupportNavigateUp(){
         getSupportFragmentManager().popBackStack();
         return true;
     }
@@ -419,11 +339,66 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
     // checks if a network connection is available
     // Code from https://stackoverflow.com/questions/19240627/how-to-check-internet-connection-available-or-not-when-application-start/19240810#19240810
-    public boolean isNetworkAvailable(Context context)
+    private boolean isNetworkAvailable(Context context)
     {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+    }
+
+
+    private void startLyricsDownload(){
+        Log.d(TAG, "startLyricsDownload called");
+        mNetworkFragmentLyrics.startLyricsDownload();
+    }
+
+    private void startMapsDownload(){
+        mNetworkFragmentMaps.startKmlDownload();
+    }
+
+    @Override
+    public void updateFromDownload(Object result) {
+
+    }
+
+    @Override
+    public void onProgressUpdate(int progressCode, int percentComplete) {
+        switch(progressCode) {
+            // You can add UI behavior for progress updates here.
+            case Progress.ERROR:
+                break;
+            case Progress.CONNECT_SUCCESS:
+                break;
+            case Progress.GET_INPUT_STREAM_SUCCESS:
+                break;
+            case Progress.PROCESS_INPUT_STREAM_IN_PROGRESS:
+                //could add something like this
+                //mDataText.setText("" + percentComplete + "%");
+                break;
+            case Progress.PROCESS_INPUT_STREAM_SUCCESS:
+                break;
+        }
+    }
+
+    @Override
+    public void finishDownloading() {
+        Log.d(TAG, "finishDownloading called");
+        if (mNetworkFragmentLyrics != null) {
+            mNetworkFragmentLyrics.cancelDownload();
+        } else if (mNetworkFragmentMaps != null){
+            mNetworkFragmentMaps.cancelDownload();
+        }
+        //Notify the main thread that the download is complete
+        synchronized (syncObject){
+            syncObject.notify();
+        }
+    }
+
+    @Override
+    public NetworkInfo getActiveNetworkInfo() {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connectivityManager.getActiveNetworkInfo();
     }
 
     //use if a network connection is required for the selected option to work
@@ -464,66 +439,81 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         alertDialog.show();
     }
 
-    public void startLyricsDownload(){
-        Log.d(TAG, "startLyricsDownload called");
-        mNetworkFragmentLyrics.startLyricsDownload();
-        mDownloading = true;
+    private void sendSelectDifficultyDialog(){
+        Log.d(TAG, "sendSelectDifficultyDialog called");
+        mChosenDifficulty = new ArrayList<>(2);
+        final CharSequence[] diffList = getResources().getStringArray(R.array.difficulty_levels);
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.txt_select_difficulty);
+        adb.setSingleChoiceItems(diffList, -1,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        radioButton.start();
+                        String chosenDiff = diffList[i].toString();
+                        mChosenDifficulty.add(0, chosenDiff);
+
+                    }
+                }).setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                buttonClick.start();
+                if (mChosenDifficulty.size() > 0){
+                    String chosenDiff = mChosenDifficulty.get(0);
+                    //save value in private string
+                    diffLevel = chosenDiff;
+                    //save value in shared preferences
+                    sharedPreference.saveCurrentDifficultyLevel(chosenDiff);
+                    //update text displayed
+                    txtViewDiff.setText(chosenDiff);
+                } else {
+                    Toast.makeText(getApplicationContext(), R.string.msg_diff_error, Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        });
+        AlertDialog ad = adb.create();
+        ad.show();
     }
 
-    public void startMapsDownload(){
-        mNetworkFragmentMaps.startKmlDownload();
-        mDownloading = true;
+    private void sendConfirmGameDialog(final String chosenSongNumber, final String chosenDiff){
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.confirm_game_settings);
+        String beginQuestion = getString(R.string.msg_begin_question);
+        String beginMessage = "Song number: " + chosenSongNumber + "\nDifficulty level: " +
+                chosenDiff + "\n" + beginQuestion;
+        adb.setMessage(beginMessage);
+        //if user is happy with settings, start the game
+        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                buttonClick.start();
+                startGame();
+            }
+        }).setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                buttonClick.start();
+            }
+        });
+        AlertDialog ad = adb.create();
+        ad.show();
     }
 
-    @Override
-    public void updateFromDownload(Object result) {
+    private void sendSongsDownloadedDialog(){
+        Log.e(TAG, "Dialog builder started");
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.txt_new_songs);
+        adb.setMessage(R.string.msg_new_songs);
+        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int i) {
 
+            }
+        });
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
     }
-
-
-
-    @Override
-    public void onProgressUpdate(int progressCode, int percentComplete) {
-        switch(progressCode) {
-            // You can add UI behavior for progress updates here.
-            case Progress.ERROR:
-                break;
-            case Progress.CONNECT_SUCCESS:
-                break;
-            case Progress.GET_INPUT_STREAM_SUCCESS:
-                break;
-            case Progress.PROCESS_INPUT_STREAM_IN_PROGRESS:
-                //could add something like this
-                //mDataText.setText("" + percentComplete + "%");
-                break;
-            case Progress.PROCESS_INPUT_STREAM_SUCCESS:
-                break;
-        }
-    }
-
-
-    @Override
-    public void finishDownloading() {
-        Log.d(TAG, "finishDownloading called");
-        if (mNetworkFragmentLyrics != null) {
-            mNetworkFragmentLyrics.cancelDownload();
-        } else if (mNetworkFragmentMaps != null){
-            mNetworkFragmentMaps.cancelDownload();
-        }
-        //Notify the main thread that the download is complete
-        synchronized (syncObject){
-            syncObject.notify();
-        }
-    }
-
-    @Override
-    public NetworkInfo getActiveNetworkInfo() {
-        ConnectivityManager connectivityManager =
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        return networkInfo;
-    }
-
 
 
 

@@ -40,7 +40,7 @@ public class AchievementListFragment extends Fragment implements AdapterView.OnI
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState){
 
-        View view = inflater.inflate(R.layout.achievements_layout, container, false);
+        View view = inflater.inflate(R.layout.achievements_fragment, container, false);
         findViewsById(view);
 
         achievementListAdapter = new AchievementListAdapter(activity, achievements);
