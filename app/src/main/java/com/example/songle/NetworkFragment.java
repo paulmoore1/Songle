@@ -335,7 +335,6 @@ public class NetworkFragment extends Fragment {
                 Log.e(TAG,"IO exception thrown: " + e);
                 return null;
             }
-            onPostExecute("Updated");
             return "Updated";
 
         }

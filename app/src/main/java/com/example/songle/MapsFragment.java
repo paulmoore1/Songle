@@ -3,24 +3,31 @@ package com.example.songle;
 import android.Manifest;
 import android.app.Activity;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.GnssStatus.Callback;
 import android.location.GpsStatus;
 import android.location.Location;
 import com.google.android.gms.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -87,9 +94,11 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     private BitmapDescriptor IC_NOTBORING;
     private BitmapDescriptor IC_INTERESTING;
     private BitmapDescriptor IC_VERYINTERESTING;
+    private static MediaPlayer markerPop;
 
     private LocationManager lm;
     private GpsStatus.Listener listener;
+    private Callback gnssCallback;
 
 
 
@@ -140,10 +149,6 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
         placemarks = sharedPreference.getMap(mapNumber);
 
-        mRequestingLocationUpdates = false;
-
-        updateValuesFromBundle(savedInstanceState);
-
         mSettingsClient = LocationServices.getSettingsClient(getContext());
 
         //createLocationCallback();
@@ -169,6 +174,8 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                 R.drawable.marker_interesting);
         IC_VERYINTERESTING = BitmapDescriptorFactory.fromResource(
                 R.drawable.marker_veryinteresting);
+
+        markerPop = MediaPlayer.create(getContext(), R.raw.marker_pop);
     }
 
 
@@ -269,20 +276,22 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
     @Override
     public boolean onMarkerClick(Marker marker) {
+        markerPop.start();
         // Only allow click if location is on and permissions are granted
         if (gpsOn && checkPermissions()) {
             //may change this if necessary
-            double requiredDistance = 500;
+            double requiredDistance = 50;
             //find distance between last location and location of marker
             LatLng mLastLatLong = getLatLngFromLastLocation();
             Log.e(TAG, "current location: " + mLastLatLong);
             if (mLastLatLong != null){
                 double distance = SphericalUtil.computeDistanceBetween(mLastLatLong, marker.getPosition());
+                Log.e(TAG, "Distance is " + distance);
                 //if you are close enough to the marker
                 if (distance < requiredDistance) {
 
                     Object obj = marker.getTag();
-                    if (obj == null) {
+                    if (obj == null || ! (obj instanceof ArrayList<?>)) {
                         Log.e(TAG, "Clicked on null marker");
                         return false;
                     }
@@ -309,11 +318,13 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                     return false;
                 }
             } else {
+                Log.e(TAG, "Last location is null");
                 return false;
             }
 
         } else {
-            Toast.makeText(getContext(), "Gps/Location permissions not enabled", Toast.LENGTH_SHORT).show();
+            if (!gpsOn) makeShortToast("GPS not enabled");
+            if (!checkPermissions())  makeShortToast("Location permission not granted");
             return false;
         }
 
@@ -352,17 +363,20 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         Log.v(TAG, "Setting up GPS listener");
         try {
             lm.addGpsStatusListener(listener);
+
+            if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+                sendNoGPSAlertDialog();
+            }
         }catch (SecurityException e){
             Log.e(TAG, "Encountered security exception: " + e);
             gpsOn = false;
         }
     }
 
-
-
     private void removeGpsLocationMangerListener(){
         Log.v(TAG, "Removing GPS listener");
         lm.removeGpsStatusListener(listener);
+        gpsOn = false;
     }
 
     private void createGpsStatusListener(){
@@ -377,44 +391,12 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                     case GPS_EVENT_STOPPED:
                         Log.e(TAG, "GPS is switched off");
                         gpsOn = false;
-                        showSnackbar(R.string.txt_gps_disabled,
-                                R.string.msg_need_gps, new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        startActivity(new Intent(Settings.ACTION_LOCALE_SETTINGS));
-                                    }
-                                });
+                        sendNoGPSAlertDialog();
                         break;
                 }
             }
         };
     }
-
-
-    /**
-     * Updates fields based on data stored in the bundle.
-     *
-     * @param savedInstanceState The activity state saved in the Bundle.
-     */
-    private void updateValuesFromBundle(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            // Update the value of mRequestingLocationUpdates from the Bundle, and make sure that
-            // the Start Updates and Stop Updates buttons are correctly enabled or disabled.
-            if (savedInstanceState.keySet().contains(KEY_REQUESTING_LOCATION_UPDATES)) {
-                mRequestingLocationUpdates = savedInstanceState.getBoolean(
-                        KEY_REQUESTING_LOCATION_UPDATES);
-            }
-
-            // Update the value of mCurrentLocation from the Bundle and update the UI to show the
-            // correct latitude and longitude.
-            if (savedInstanceState.keySet().contains(KEY_LOCATION)) {
-                // Since KEY_LOCATION was found in the Bundle, we can be sure that mCurrentLocation
-                // is not null.
-                mLastLocation = savedInstanceState.getParcelable(KEY_LOCATION);
-            }
-        }
-    }
-
 
     /**
      * Sets up the location request.
@@ -435,64 +417,14 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
-    /**
-     * Creates a callback for receiving location events.
-     */
-    /*
-    private void createLocationCallback() {
-        mLocationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                super.onLocationResult(locationResult);
-                mLastLocation = locationResult.getLastLocation();
-            }
-        };
-    }*/
-
-    /**
-     * Uses a {@link com.google.android.gms.location.LocationSettingsRequest.Builder} to build
-     * a {@link com.google.android.gms.location.LocationSettingsRequest} that is used for checking
-     * if a device has the needed location settings.
-     */
-    private void buildLocationSettingsRequest() {
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-        builder.addLocationRequest(mLocationRequest);
-        mLocationSettingsRequest = builder.build();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch (requestCode) {
-            // Check for the integer request code originally supplied to startResolutionForResult().
-            case REQUEST_CHECK_SETTINGS:
-                switch (resultCode) {
-                    case Activity.RESULT_OK:
-                        Log.i(TAG, "User agreed to make required location settings changes.");
-                        // Nothing to do. startLocationupdates() gets called in onResume again.
-                        break;
-                    case Activity.RESULT_CANCELED:
-                        Log.i(TAG, "User chose not to make required location settings changes.");
-                        mRequestingLocationUpdates = false;
-                        break;
-                }
-                break;
-        }
-    }
-
 
     @Override
     public void onResume(){
         super.onResume();
         mMapView.onResume();
-        // Within {@code onPause()}, we remove location updates. Here, we resume receiving
-        // location updates if the user has requested them.
-        /*if (mRequestingLocationUpdates && checkPermissions()) {
-            startLocationUpdates();
-        } else if (!checkPermissions()) {
-            requestPermissions();
-        }*/
         mGoogleApiClient.connect();
         mMapView.getMapAsync(this);
+        //avoid any security exceptions
         if(checkPermissions()){
             setupGpsLocationManagerListener();
         }
@@ -504,22 +436,10 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         super.onPause();
         mMapView.onPause();
         mGoogleApiClient.disconnect();
-        // Remove location updates to save battery.
-        //stopLocationUpdates();
+        //avoid any security exceptions
         if (checkPermissions()){
             removeGpsLocationMangerListener();
         }
-
-    }
-
-    @Override
-    public void onStart(){
-        super.onStart();
-    }
-
-    @Override
-    public void onStop(){
-        super.onStop();
     }
 
     @Override
@@ -534,33 +454,26 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         mMapView.onLowMemory();
     }
 
-    /**
-     * Stores activity data in the Bundle.
-     */
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putBoolean(KEY_REQUESTING_LOCATION_UPDATES, mRequestingLocationUpdates);
-        savedInstanceState.putParcelable(KEY_LOCATION, mLastLocation);
-        super.onSaveInstanceState(savedInstanceState);
-    }
 
-    /**
-     * Shows a {@link Snackbar}.
-     *
-     * @param mainTextStringId The id for the string resource for the Snackbar text.
-     * @param actionStringId   The text of the action item.
-     * @param listener         The listener associated with the Snackbar action.
-     */
-    private void showSnackbar(final int mainTextStringId, final int actionStringId,
-                              View.OnClickListener listener) {
-        if (getView() != null){
-            Snackbar.make(getView(),
-                    getString(mainTextStringId),
-                    Snackbar.LENGTH_INDEFINITE)
-                    .setAction(getString(actionStringId), listener).show();
-        } else {
-            Log.e(TAG, "Could not show snackbar");
-        }
-
+    private void sendNoGPSAlertDialog(){
+        AlertDialog.Builder adb = new AlertDialog.Builder(getContext());
+        adb.setTitle(R.string.txt_gps_disabled);
+        adb.setMessage(R.string.txt_switch_on_gps);
+        adb.setCancelable(false);
+        adb.setPositiveButton(R.string.txt_switch_on_gps, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+            }
+        });
+        adb.setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        AlertDialog alertDialog = adb.create();
+        alertDialog.show();
     }
 
     private boolean checkPermissions(){
@@ -585,10 +498,10 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     public void onConnectionSuspended(int i) {
         switch(i){
             case CAUSE_NETWORK_LOST:
-                mRequestingLocationUpdates = false;
+
                 Log.e(TAG, "Network connection lost");
             case CAUSE_SERVICE_DISCONNECTED:
-                mRequestingLocationUpdates = false;
+
 
         }
     }
@@ -600,6 +513,11 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
     @Override
     public void onLocationChanged(Location location) {
+        Log.e(TAG, "New location: " + location);
         if (location != null) mLastLocation = location;
+    }
+
+    private void makeShortToast(String text){
+        Toast.makeText(getContext(), text, Toast.LENGTH_SHORT).show();
     }
 }

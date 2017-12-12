@@ -12,11 +12,13 @@ import java.util.Locale;
 
 public class Score {
     private int score;
+    private float distance;
     private String title;
     private String date;
 
-    public Score(int score, String title){
+    public Score(int score, float distance, String title){
         this.score = score;
+        this.distance = distance;
         this.title = title;
         DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm", Locale.getDefault());
         Calendar calendar = Calendar.getInstance();
@@ -25,6 +27,10 @@ public class Score {
 
     public int getScore(){
         return score;
+    }
+
+    public float getDistance(){
+        return  distance;
     }
 
     public String getTitle(){

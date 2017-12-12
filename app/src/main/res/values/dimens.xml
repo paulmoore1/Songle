@@ -8,5 +8,7 @@
     <dimen name="fab_menu_width">96dp</dimen>
     <dimen name="fab_menu_height_2_items">96dp</dimen>
     <dimen name="scrollViewMaxHeight">300dp</dimen>
+    <dimen name="nav_header_vertical_spacing">16dp</dimen>
+    <dimen name="nav_header_height">160dp</dimen>
 
 </resources>

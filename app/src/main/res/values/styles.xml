@@ -47,6 +47,14 @@
         <item name="windowNoTitle">true</item>
     </style>
 
+    <style name="MyThemeNoActionBar" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:colorPrimary">@color/colorPrimary</item>
+        <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="android:colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/bg_light</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
     <style name="MyTheme.Detail" parent="MyTheme">
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
@@ -59,7 +67,6 @@
     </style>
 
     <style name="MyActionButtonOverflow" parent="android:style/Widget.Holo.Light.ActionButton.Overflow">
-        <item name="android:src">@drawable/ic_help</item>
         <item name="android:background">?android:attr/actionBarItemBackground</item>
     </style>
 

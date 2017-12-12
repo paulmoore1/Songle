@@ -73,6 +73,13 @@ public class Achievement {
     public void addSteps(int numToAdd){
         steps = steps + numToAdd;
         if (steps >= stepsGoal) achieved = true;
+        else achieved = false;
+    }
+
+    public void setSteps(int steps){
+        this.steps = steps;
+        if (steps >= stepsGoal) achieved = true;
+        else achieved = false;
     }
 
     public void setAchieved(){

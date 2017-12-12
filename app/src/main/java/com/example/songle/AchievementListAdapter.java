@@ -39,7 +39,8 @@ public class AchievementListAdapter extends ArrayAdapter<Achievement> {
 
     @Override
     public int getCount(){
-        return achievements.size();
+        if (achievements != null) return achievements.size();
+        else return 0;
     }
 
     @Override
@@ -75,16 +76,6 @@ public class AchievementListAdapter extends ArrayAdapter<Achievement> {
         } else {
             holder.achievementImage.setImageResource(achievement.getGreyPictureID());
         }
-       /* //TODO fix weird coloring bug here
-       //show last chosen song as the primary color
-        if (currentSongNumber != -1){
-            if (currentSongNumber == position) {
-                holder.achievementTitle.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
-                holder.achievementProgress.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
-            }
-
-        }
-        */
         return convertView;
 
     }

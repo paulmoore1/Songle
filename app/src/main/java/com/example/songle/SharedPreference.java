@@ -39,11 +39,12 @@ public class SharedPreference {
     private static final String CURRENT_SONG = "CurrentSong";
     private static final String CURRENT_SONG_NUMBER = "CurrentSongNumber";
     private static final String CURRENT_DIFFICULTY_LEVEL = "CurrentDifficultyLevel";
-    private static final String HEIGHT = "Height";
+    private static final String STEP_SIZE = "StepSize";
     private static final String ACHIEVEMENTS = "Achievements";
     private static final String SCORES = "Scores";
     private static final String FIRST_TIME = "FirstTime";
     private static final String HELP_TEXT = "HelpText";
+    private static final String TOTAL_DISTANCE = "TotalDistance";
 
 
     @SuppressLint("CommitPrefEdits")
@@ -67,7 +68,7 @@ public class SharedPreference {
     }
 
     public void saveSongs(List<Song> newSongs){
-        Log.d(TAG, "saveSongs called");
+        Log.v(TAG, "saveSongs called");
         // this part sets the new song list so that any old ones remain in place
         // important so that progress like completing a song is not overwritten when a new list is downloaded
         // IMPORTANT: Assumes song numbers don't change!
@@ -109,13 +110,10 @@ public class SharedPreference {
         }
         //update the current song status in the shared preferences if it's the one being updated.
         Song currentSong = getCurrentSong();
-        Log.v(TAG, "currentSong before " + currentSong.toString());
         if (currentSong.getNumber().equals(songNumber)){
             currentSong.setStatus(status);
-            Log.v(TAG, "currentSong after " + currentSong.toString());
             saveCurrentSong(currentSong);
         }
-
 
         //update the song's status
         song.setStatus(status);
@@ -130,9 +128,6 @@ public class SharedPreference {
 
         editor.putString(SONGS, jsonSongs);
         editor.apply();
-
-        Log.d(TAG, "saveSongStatus finished");
-
     }
 
     private Song getSong(String songNumber, ArrayList<Song> songs){
@@ -153,17 +148,16 @@ public class SharedPreference {
             Gson gson = new Gson();
             Type type = new TypeToken<List<Song>>(){}.getType();
             songs = gson.fromJson(jsonSongs, type);
-            Log.d(TAG, "getAllSongs returned songs");
             return (ArrayList<Song>) songs;
 
         } else {
-            Log.d(TAG, "getAllSongs returned null");
+            Log.e(TAG, "getAllSongs returned null");
             return  null;
         }
     }
 
     public ArrayList<Song> getOldSongs(){
-        Log.d(TAG, "getOldSongs called");
+        Log.v(TAG, "getOldSongs called");
         List<Song> songs;
 
         if (settings.contains(SONGS)){
@@ -175,15 +169,12 @@ public class SharedPreference {
                 Log.e(TAG, "No songs found");
                 return null;
             }
-            Log.d(TAG, "Full list of songs: " + songs.toString());
             //remove all achievements which have not been started, so only complete or incomplete ones are returned.
             Iterator<Song> iter = songs.iterator();
             while (iter.hasNext()){
                 Song song = iter.next();
                 if (song.isSongNotStarted()) iter.remove();
             }
-
-            Log.d(TAG, "New list of songs: " + songs.toString());
             return (ArrayList<Song>) songs;
         } else {
             Log.e(TAG, "getOldSongs returned null");
@@ -210,13 +201,11 @@ public class SharedPreference {
     //following are methods for saving and getting the current song number
     //needed to check if maps or lyrics need to be redownloaded.
     public void saveCurrentSongNumber(String songNum){
-        Log.d(TAG, "saveCurrentSongNumber called");
         editor.putString(CURRENT_SONG_NUMBER, songNum);
         editor.apply();
     }
 
     public String getCurrentSongNumber(){
-        Log.v(TAG, "getCurrentSongNumber called");
         String songNum = null;
         if (settings.contains(CURRENT_SONG_NUMBER)){
             songNum = settings.getString(CURRENT_SONG_NUMBER, null);
@@ -229,7 +218,6 @@ public class SharedPreference {
      * @param diffLevel - difficulty level to save as.
      */
     public void saveCurrentDifficultyLevel(String diffLevel){
-        Log.d(TAG, "saveCurrentDifficultyLevelNumber called");
         //check diffLevel is one of the appropriate ones for difficulty level
         if (diffLevel.equals(context.getString(R.string.difficulty_insane))
                 || diffLevel.equals(context.getString(R.string.difficulty_hard))
@@ -248,7 +236,6 @@ public class SharedPreference {
      * @return current difficulty level
      */
     public String getCurrentDifficultyLevel(){
-        Log.d(TAG, "getCurrentDifficultyLevel called");
         String diffLevel = null;
         if (settings.contains(CURRENT_DIFFICULTY_LEVEL)){
             diffLevel = settings.getString(CURRENT_DIFFICULTY_LEVEL, null);
@@ -262,7 +249,7 @@ public class SharedPreference {
      * @return number of the map for that difficulty, 1 by default.
      */
     public String getCurrentMapNumber(){
-        Log.d(TAG, "getCurrentMapNumber called");
+        Log.v(TAG, "getCurrentMapNumber called");
         if (settings.contains(CURRENT_DIFFICULTY_LEVEL)){
             String text = settings.getString(CURRENT_DIFFICULTY_LEVEL, null);
             if (text != null){
@@ -291,7 +278,7 @@ public class SharedPreference {
     }
 
     public void saveCurrentSong(Song song){
-        Log.d(TAG, "saveCurrentSong called");
+        Log.v(TAG, "saveCurrentSong called");
         Gson gson = new Gson();
         String jsonSong = gson.toJson(song);
 
@@ -300,7 +287,7 @@ public class SharedPreference {
     }
 
     public Song getCurrentSong(){
-        Log.d(TAG, "getCurrentSong called");
+        Log.v(TAG, "getCurrentSong called");
         Song song;
 
         if (settings.contains(CURRENT_SONG)){
@@ -572,14 +559,61 @@ public class SharedPreference {
         }
     }
 
-    public void saveHeight(int height){
-        editor.putInt(HEIGHT, height);
+    /**
+     * Calculate and save step size based on height and gender
+     * Assumes height is positive and within acceptable range of 50 to 272
+     * @param height - height of user
+     * @param gender - gender of user
+     */
+    public void saveStepSize(int height, int gender){
+        Log.v(TAG, "saveStepSize called. Height:" + height + " Gender: " + gender);
+        //Multiplier estimates step size based on height. Different for male/female.
+        float multiplier;
+        float stepSize;
+        //If the height input is valid.
+        if (height >= 50 && height < 272){
+            switch(gender){
+                case 0:
+                    //If male
+                    multiplier = 0.415f;
+                    stepSize = multiplier*height;
+                    editor.putFloat(STEP_SIZE, stepSize);
+                    break;
+                case 1:
+                    //If female
+                    multiplier = 0.413f;
+                    stepSize = multiplier*height;
+                    editor.putFloat(STEP_SIZE, stepSize);
+                    break;
+                case 2:
+                    //If preferred not to say
+                    //Use average
+                    multiplier = 0.414f;
+                    stepSize = multiplier*height;
+                    editor.putFloat(STEP_SIZE, stepSize);
+                    break;
+                default:
+                    Log.e(TAG,"Unexpected input: " + gender);
+                    break;
+            }
+            editor.apply();
+        }
+        //Else do nothing
+    }
+
+    public float getStepSize(){
+        return settings.getFloat(STEP_SIZE, 74f);
+    }
+
+    public void addDistanceWalked(float addedDistance){
+        float oldDistance = settings.getFloat(TOTAL_DISTANCE, 0);
+        oldDistance += addedDistance;
+        editor.putFloat(TOTAL_DISTANCE, oldDistance);
         editor.apply();
     }
 
-    public int getHeight(){
-        if (settings.contains(HEIGHT))return settings.getInt(HEIGHT, 180);
-        else return -1;
+    public float getTotalDistance(){
+        return settings.getFloat(TOTAL_DISTANCE, 0);
     }
 
     public void saveAchievements(List<Achievement> achievements){
@@ -660,7 +694,6 @@ public class SharedPreference {
         return null;
     }
 
-
     public void saveScore(Score score){
         List<Score> scores = new ArrayList<Score>();
         Gson gson = new Gson();
@@ -705,6 +738,8 @@ public class SharedPreference {
     public boolean isFirstTimeAppUsed(){
         return settings.getBoolean(FIRST_TIME, true);
     }
+
+
 
 
 }

@@ -61,13 +61,6 @@ public class AchievementListFragment extends Fragment implements AdapterView.OnI
     }
 
 
-    @Override
-    public void onResume(){
-        getActivity().setTitle(R.string.txt_achievements);
-        getActivity().getActionBar().setTitle(R.string.txt_achievements);
-        super.onResume();
-    }
-
     public void sendDescriptionDialog(String description){
         AlertDialog.Builder adb = new AlertDialog.Builder(getActivity());
         adb.setTitle(R.string.title_achievement_info);

@@ -11,7 +11,10 @@
     <string name="txt_credits">Credits</string>
     <string name="txt_scores">Scores</string>
     <string name="txt_achievements">Achievements</string>
+    <string name="drawer_open">Drawer Open</string>
+    <string name="drawer_close">Drawer Closed</string>
     <string name="title_activity_main_settings">Main Settings</string>
+    <string name="download_required">Download Required</string>
     <string name="url_songs_xml">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/songs.xml</string>
     <string name="url_general">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/</string>
     <string name="signin_other_error">An error occurred while trying to sign in. Try starting the app again</string>
@@ -25,6 +28,17 @@
     <string name="txt_still_loading">Still loading…</string>
     <string name="txt_close_achievements">Close the achievements first</string>
 
+    <!-- For height/gender dialogs -->
+    <string name="txt_calculate_step_size">Calculate your step size!</string>
+    <string name="txt_enter_height">Enter your height</string>
+    <string name="msg_enter_height">Enter your height (in centimetres).
+        \nThis will allow Songle to estimate your step size, so you can see how far you\'ve walked.
+    </string>
+    <string name="msg_enter_height_try_again">Invalid height
+        \nPlease enter it in centimetres
+        \n(allowed values 40 to 272)</string>
+
+
     <!-- Strings for game settings -->
     <string name="txt_select_song">Select Song</string>
     <string name="txt_select_difficulty">Select Difficulty</string>
@@ -33,12 +47,7 @@
     <string name="msg_diff_error">Difficulty not saved. Please try again.</string>
     <string name="msg_song_number_general">Song #</string>
 
-    <string name="txt_enter_height">Enter your height</string>
-    <string name="msg_enter_height">Please enter your height (in centimetres).\n
-        This is for working out the distance you walk while playing the game.
-        If it isn't entered, walking achievements will not be possible.</string>
-    <string name="msg_enter_height_try_again">An error occurred while entering the height.
-    Please enter your height in centimetres.</string>
+
     <string name="confirm_game_settings">Confirm settings</string>
     <string name="msg_begin_question">Start?</string>
 
@@ -65,7 +74,8 @@
     <string name="msg_location_rationale">Access to your location is required so you can collect the words of the song. Please allow access for the app to work.</string>
     <string name="msg_location_permission_denied">Permission was denied, but is needed to collect words.</string>
     <string name="txt_gps_disabled">GPS disabled</string>
-    <string name="msg_need_gps">Your GPS needs to be switched on to collect words.</string>
+    <string name="msg_gps_disabled">Your GPS needs to be switched on to collect words</string>
+    <string name="txt_switch_on_gps">Switch on GPS</string>
     <string name="txt_location_error">Location error</string>
     <!-- Strings for setting difficulty -->
     <string name="difficulty_insane">Insane</string>
@@ -81,6 +91,12 @@
         <item>Moderate</item>
         <item>Hard</item>
         <item>Insane</item>
+    </string-array>
+
+    <string-array name="select_gender">
+        <item>Male</item>
+        <item>Female</item>
+        <item>Prefer not to say</item>
     </string-array>
 
     <!-- Strings for game setting message -->
@@ -347,33 +363,37 @@
         \n
         Legally speaking there are some ones that I need to give credit to, so let\'s get that out the way first\n
         These include:\n
-        Icons designed by Smashicons, Freepik from flaticon.com\n
-        Sound effects obtained from https://www.zapsplat.com and https://freesound.org\n
+
+        Icons designed by Smashicons, Freepik from <a href="flaticon.com">FlatIcon</a>\n
+
+        Sound effects obtained from <a href="https://www.zapsplat.com">Zapsplat</a> and <a href="https://freesound.org">Freesound</a>\n
+        Some of the ones for freesound were under Creative Commons 0 Licence, ones that I know of which were under the Attribution Licence are shown\n
+        Menu sound for the floating action button was by \"broumbroum\" - entitled sf3-sfx-menu-select.wav.\n
+        It can be found <a href="https://freesound.org/people/broumbroum/sounds/50561/">here</a>.\n
+        Popping sound for the markers was by \"debsound\" - entitled Pop 19.wav
+        It can be found <a href="https://freesound.org/people/debsound/sounds/320549/">here</a>
+
         Google - for using the maps API? I\'m not certain I have to do that but it wouldn\'t hurt.\n
         \n
-        Then there are so, so many people on stackoverflow.com who have provided exactly the solution I needed to fix a bug or add a feature.\n
+        Then there are so, so many people on <a href="stackoverflow.com">StackOverflow</a>  who have provided exactly the solution I needed to fix a bug or add a feature.\n
         I have attributed some of the specific instances that I used a solution from there in the code itself\n
         There may be some I\'ve forgotten - my apologies if this is the case but when I\'ve used so much it does get hard to keep track of what is attributable to where!\n
         In some cases it might just have been a couple of lines that I adapted, but in any case, my thanks to you if it was from you!\n
         \n
         There were a few projects/tutorials online that I did borrow heavily from and adapt, so I want to give them special credit:\n
         \n
-        http://androidopentutorials.com/android-how-to-store-list-of-values-in-sharedpreferences/\n
-        This gave me a great base to work off from for storing the songs.\n
+        This one on <a href="http://androidopentutorials.com/android-how-to-store-list-of-values-in-sharedpreferences/">shared preferences</a> gave me a great base to work off from for storing the songs.\n
         \n
-        https://github.com/googlesamples/android-play-location/\n
-        This provided me with some help regarding location permissions (didn\'t end up using it for the location itself)\n
+        <a href=" https://github.com/googlesamples/android-play-location/">This</a> provided me with some help regarding location permissions (didn\'t end up using it for the location itself)\n
         \n
-        https://developer.android.com/training/\n
-        I used quite a lot of their training examples and projects they linked to get basic functionality.\n
+        I used quite a lot of <a href="https://developer.android.com/training/">these</a> training examples and projects from the Android Developer Training to get basic functionality.\n
+
         \n
-        http://blog.iamsuleiman.com/bottom-navigation-bar-android-tutorial/\n
-        and the associated GitHub project:\n
-        https://github.com/Suleiman19/Bottom-Navigation-Demo/\n
-        This was used to get the bottom navigation bar in the main game screen\n
+        <a href="https://github.com/Suleiman19/Bottom-Navigation-Demo/">This</a> was used to get the bottom navigation bar in the main game screen,
+        I found it and used the tutorial <a href="http://blog.iamsuleiman.com/bottom-navigation-bar-android-tutorial/">here</a>\n
         \n
-        https://github.com/Clans/FloatingActionButton/\n
-        Here is where I got the code for the floating action button on the guessing tab in the game\n
+        \n
+        <a href="https://github.com/Clans/FloatingActionButton/">Here</a> is where I got the code for the floating action button on the guessing tab in the game\n
         \n
         That\'s all that I can think of as far as I know.\n
         Thanks again to everyone!\n

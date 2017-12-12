@@ -2,7 +2,10 @@ package com.example.songle;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -17,54 +20,60 @@ import android.os.Bundle;
 import android.provider.Settings;
 
 import android.support.annotation.NonNull;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.NavUtils;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.text.InputType;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
+import android.widget.EditText;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
-public class HomeActivity extends FragmentActivity implements DownloadCallback, View.OnClickListener,
-FragmentManager.OnBackStackChangedListener{
-    private static final String TAG = "HomeActivity";
-
+//Based on https://stackoverflow.com/questions/32944798/switch-between-fragments-with-onnavigationitem-selected-in-new-navigation-drawer
+//And https://github.com/ChrisRisner/AndroidFragmentNavigationDrawer
+public class HomeActivity extends AppCompatActivity implements
+        NavigationView.OnNavigationItemSelectedListener,
+        DownloadCallback,
+        OnFragmentInteractionListener{
+    private static final String TAG = HomeActivity.class.getSimpleName();
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
-    private int numSongs = 0;
-    private boolean locationGranted;
-    private boolean stopPermissionRequests;
-    private boolean checkSongs;
-    private boolean asyncTaskFinished;
+    private boolean stopPermissionRequests, checkSongs;
+    private int currentViewID;
+    private int oldNumSongs;
     private SharedPreference sharedPreference;
     private static MediaPlayer buttonSound;
     private static MediaPlayer achievementComplete;
+    private static MediaPlayer radioButton;
     private Achievement achHelp;
-    private AchievementListFragment achievementListFragment;
-    private Fragment contentFragment;
-    private FragmentManager fragmentManager = getSupportFragmentManager();
-    private boolean helpVisible;
-    private boolean creditsVisible;
-    private boolean achievementsVisible;
-    private boolean hideMenu;
-    private Menu menu;
-    //Broadcast receiver that tracks network connectivity changes
-    //private NetworkReceiver receiver = new NetworkReceiver();
+    private Vector<AlertDialog> dialogs = new Vector<>();
+    private FragmentManager fragmentManager;
+    private ArrayList<Integer> selectedGender;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private DrawerLayout mDrawerLayout;
+    private Toolbar toolbar;
 
     // Keep a reference to the NetworkFragment which owns the AsyncTask object
     // that is used to execute network ops.
     private NetworkFragment mNetworkFragment;
 
-    private final Object syncObject = new Object();
+    //Listens for if new songs are downloaded and stored. Sends a dialog if they are.
+    private final SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            if (sharedPreference.getAllSongs() != null){
+                int newNumSongs = sharedPreference.getAllSongs().size();
+                if (newNumSongs > oldNumSongs) sendSongsDownloadedDialog();
+            }
+        }
+    };
 
 
     @Override
@@ -72,480 +81,205 @@ FragmentManager.OnBackStackChangedListener{
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super.onCreate() called");
         setContentView(R.layout.home_layout);
+        toolbar = (Toolbar)findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
-        //check for internet access first
-        boolean networkOn = isNetworkAvailable(this);
-        //if there is internet, load as normal
-        if (!networkOn) {
-            sendNetworkWarningDialog();
-        }
         // Used to quit the app from other fragments (otherwise can result in loading_layout errors)
         if (getIntent().getBooleanExtra("LOGOUT", false)) finish();
 
-        // Used to find if it needs to check for new songs or not.
-        if (getIntent().getBooleanExtra("JUST_STARTED", false)) checkSongs = true;
+        // Only check for songs once when the app is started
+        if (getIntent().getBooleanExtra("JUST_STARTED", false)) {
+            checkSongs = true;
+            //Have to avoid case where screen is rotated (which means JUST_STARTED would still be true)
+            getIntent().putExtra("JUST_STARTED", false);
+        }
 
-        locationGranted = checkPermissions();
-        sharedPreference = new SharedPreference(getApplicationContext());
-        setupClickListeners();
+        fragmentManager = getSupportFragmentManager();
+        mNetworkFragment  = NetworkFragment.getInstance(fragmentManager,
+                getString(R.string.url_songs_xml));
 
-        helpVisible = false;
-        creditsVisible = false;
-        achievementsVisible = false;
-        hideMenu = false;
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, toolbar, R.string.drawer_open,
+                R.string.drawer_close);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        mDrawerToggle.syncState();
 
-        //Toolbar toolbar = findViewById(R.id.toolbar);
-        //toolbar.setOverflowIcon(helpIcon);
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
 
         buttonSound = MediaPlayer.create(getApplicationContext(),
                 R.raw.button_click);
         achievementComplete = MediaPlayer.create(getApplicationContext(), R.raw.happy_jingle);
-        achHelp = sharedPreference.getIncompleteAchievement(getString(R.string.ach_read_help_title));
-        /*
-        // Register BroadcastReceiver to track connection changes
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        receiver = new NetworkReceiver();
-        this.registerReceiver(receiver, filter);
-*/
+        radioButton = MediaPlayer.create(getApplicationContext(), R.raw.radio_button);
+
+        sharedPreference = new SharedPreference(this);
+        //Only bother listening if there is a chance the songs will be downloaded
+        if (checkSongs) sharedPreference.registerOnSharedPreferenceChangedListener(listener);
+
         //Load achievements if it is the first time the game has been started, or permission wasn't granted.
         if (sharedPreference.isFirstTimeAppUsed() || !checkPermissions()){
-            asyncTaskFinished = false;
             Log.e(TAG, "First time " + sharedPreference.isFirstTimeAppUsed()
-            + " check permissions: " + checkPermissions());
-            AsyncFirstTimeTask task = new AsyncFirstTimeTask();
+                    + " check permissions: " + checkPermissions());
+            AsyncLoadAchievementsTask task = new AsyncLoadAchievementsTask();
             task.execute();
+            sendEnterHeightDialog(0);
             sharedPreference.saveFirstTimeAppUsed();
+        }
+        achHelp = sharedPreference.getIncompleteAchievement(getString(R.string.ach_read_help_title));
+
+        //For checking if more songs were downloaded
+        oldNumSongs = 0;
+        if (sharedPreference.getAllSongs() != null){
+            oldNumSongs = sharedPreference.getAllSongs().size();
+        }
+/*
+          This is called when the orientation is changed.
+          It retains whatever is on the screen.
+         */
+        if (savedInstanceState != null){
+            currentViewID = savedInstanceState.getInt("PREVIOUS_VIEW_ID", R.id.nav_home);
+            displayView(currentViewID);
         } else {
-            asyncTaskFinished = true;
+            displayView(R.id.nav_home);
         }
 
-        fragmentManager = getSupportFragmentManager();
-        fragmentManager.addOnBackStackChangedListener(this);
 
-        mNetworkFragment  = NetworkFragment.getInstance(getSupportFragmentManager(),
-                getString(R.string.url_songs_xml));
-
-    }
-
-
-    @Override
-    public void onClick(View view) {
-        //Only let the user continue if they grant permission to the location
-        if (locationGranted){
-            if (view.getId() == R.id.btn_achievements){
-                achievementsVisible = true;
-                view.startAnimation(AnimationUtils.loadAnimation(this, R.anim.image_view_click));
-                buttonSound.start();
-                if (sharedPreference.getAchievements() != null){
-                    setFragmentTitle(R.id.btn_achievements);
-                    achievementListFragment = new AchievementListFragment();
-                    switchContent(achievementListFragment, AchievementListFragment.ARG_ITEM_ID);
-                } else {
-                    Toast.makeText(this, "Achievements not loaded yet", Toast.LENGTH_SHORT).show();
-                }
-            } else if (view.getId() == R.id.btn_new_game){
-                Log.e(TAG, "New game button clicked");
-                buttonSound.start();
-                newGame();
-            } else if (view.getId() == R.id.btn_continue_game){
-                buttonSound.start();
-                continueGame();
-            } else if (view.getId() == R.id.btn_load_game){
-                buttonSound.start();
-                loadGame();
-            } else if (view.getId() == R.id.btn_scores){
-                view.startAnimation(AnimationUtils.loadAnimation(this, R.anim.image_view_click));
-                buttonSound.start();
-            } else if (view.getId() == R.id.text_view_help){
-                if (helpVisible){
-                    animateHelpDown();
-                }
-            } else if (view.getId() == R.id.text_view_credit){
-                if (creditsVisible){
-                    Log.e(TAG, "visible");
-                    animateCreditsDown();
-                } else {
-                    Log.e(TAG, "not visible");
-                }
-            }
-        } else {
-            showLocationDeniedDialog(true);
-        }
-
-    }
-
-    private void setupClickListeners(){
-        findViewById(R.id.btn_new_game).setOnClickListener(this);
-        findViewById(R.id.btn_continue_game).setOnClickListener(this);
-        findViewById(R.id.btn_load_game).setOnClickListener(this);
-        findViewById(R.id.btn_achievements).setOnClickListener(this);
-        findViewById(R.id.btn_scores).setOnClickListener(this);
-        findViewById(R.id.text_view_help).setOnClickListener(this);
-    }
-
-    private void setFragmentTitle(int resourceID){
-        setTitle(resourceID);
-    }
-
-    private void switchContent(Fragment fragment, String tag){
-        while (fragmentManager.popBackStackImmediate());
-        if (fragment != null){
-            getActionBar().setIcon(R.color.transparent);
-            getActionBar().setDisplayShowHomeEnabled(false);
-            getActionBar().setTitle(R.string.txt_achievements);
-            FragmentTransaction transaction = fragmentManager.beginTransaction();
-            transaction.replace(R.id.content_frame_home, fragment, tag);
-            transaction.addToBackStack(tag);
-            transaction.commit();
-            contentFragment = fragment;
-        }
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState){
-        if (contentFragment instanceof AchievementListFragment){
-            outState.putString("content", AchievementListFragment.ARG_ITEM_ID);
-        }
+        outState.putInt("PREVIOUS_VIEW_ID", currentViewID);
         super.onSaveInstanceState(outState);
     }
 
-
-
-
     @Override
-    protected void onPause(){
-        Log.d(TAG, "onPause called");
-        super.onPause();
-        //this.unregisterReceiver(receiver);
+    protected void onPostCreate(Bundle savedInstanceState){
+        super.onPostCreate(savedInstanceState);
+        //Sync the toggle stat after onRestoreInstanceState has occured
+        mDrawerToggle.syncState();
+        if (checkSongs && isNetworkAvailable(this)){
+            Log.e(TAG, "Downloading songs");
+            mNetworkFragment.startXmlDownload();
+        } else {
+            //If songs still need to be checked, send a warning
+            if (checkSongs)sendNetworkWarningDialog();
+        }
     }
 
+    @Override
+    public void onConfigurationChanged(Configuration newConfig){
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+    }
 
     @Override
     protected void onResume(){
         Log.d(TAG, "onResume called");
-        setContentView(R.layout.home_layout);
-        setupClickListeners();
- /*       // Register BroadcastReceiver to track connection changes
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        receiver = new NetworkReceiver();
-        this.registerReceiver(receiver, filter);*/
         if (!checkPermissions() && !stopPermissionRequests){
             requestPermissions();
         }
+        //Only bother listening if there's a chance that the songs may be downloaded.
+        if (checkSongs) sharedPreference.registerOnSharedPreferenceChangedListener(listener);
         super.onResume();
     }
 
+    @Override
+    protected void onPause(){
+        sharedPreference.unregisterOnSharedPreferenceChangedListener(listener);
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop(){
+        //Close dialogs to prevent window leaks.
+        closeDialogs();
+        super.onStop();
+    }
 
     @Override
     public void onBackPressed(){
-        if (helpVisible){
-            animateHelpDown();
-            return;
-        } else if (creditsVisible){
-            animateCreditsDown();
-            return;
+        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)){
+            mDrawerLayout.closeDrawer(GravityCompat.START);
         }
-
-        int count = getSupportFragmentManager().getBackStackEntryCount();
-        if (count == 0){
-            super.onBackPressed();
+        if (currentViewID != R.id.nav_home){// If the current fragment is not the Home fragment
+            displayView(R.id.nav_home); // Display the Home fragment
         } else {
-            fragmentManager.popBackStack();
-            //Reset the title if it
-            if (count == 1){
-                achievementsVisible = false;
-                getActionBar().setTitle(R.string.app_name);
-            }
+            moveTaskToBack(true); //If view is in Home fragment, exit application
         }
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        if (!hideMenu){
-            getMenuInflater().inflate(R.menu.menu_main, menu);
-            return true;
-        } else return false;
+    public boolean onNavigationItemSelected(@NonNull MenuItem item){
+        displayView(item.getItemId());
+        return true;
+    }
 
+    public void displayView(int viewId){
+        Fragment fragment = null;
+        String title = getString(R.string.app_name);
+        switch(viewId){
+            case R.id.nav_home:
+                fragment = new HomeFragment();
+                break;
+            case R.id.nav_achievements:
+                fragment = new AchievementListFragment();
+                title = getString(R.string.txt_achievements);
+                break;
+            case R.id.nav_scores:
+                fragment = new ScoresListFragment();
+                title = getString(R.string.txt_scores);
+                break;
+            case R.id.nav_help:
+                if (updateAchievement(achHelp)) achHelp = null;
+                fragment = new HelpFragment();
+                title = getString(R.string.txt_help);
+                break;
+            case R.id.nav_credits:
+                fragment = new CreditsFragment();
+                title = getString(R.string.txt_credits);
+                break;
+        }
+        if (fragment != null){
+            FragmentTransaction ft = fragmentManager.beginTransaction();
+            ft.replace(R.id.fragment_content, fragment);
+            ft.commit();
+        }
+        //Set the toolbar title
+        if (toolbar != null){
+            getSupportActionBar().setTitle(title);
+        }
+        currentViewID = viewId;
+        mDrawerLayout.closeDrawer(GravityCompat.START);
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        switch(item.getItemId()){
-            case R.id.action_help:
-                if (!achievementsVisible){
-                    try{
-                        Log.e(TAG, achHelp.toString());
-                    } catch(NullPointerException e){
-                        Log.e(TAG, "null");
-                    }
-                    if (updateAchievement(achHelp)) achHelp = null;
-                    showHelp();
-                }
-
-                else makeToast(R.string.txt_close_achievements);
-                return true;
-            case R.id.action_credits:
-                if (!achievementsVisible)
-                showCredits();
-                else makeToast(R.string.txt_close_achievements);
-                return true;
-            case android.R.id.home:
-                if (helpVisible){
-                    animateHelpDown();
-                    return true;
-                }
-                if (creditsVisible){
-                    animateCreditsDown();
-                    return true;
-                }
-                int count = getSupportFragmentManager().getBackStackEntryCount();
-                if (count == 0) {
-                    NavUtils.navigateUpFromSameTask(this);
-                    return true;
-                } else {
-                    Log.e(TAG, "Pressed back");
-                    achievementsVisible = false;
-                    return onSupportNavigateUp();
-                }
-
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    private void showHelp(){
-        if (!helpVisible){
-            if (creditsVisible){
-                animateCreditsDown();
-            }
-            getActionBar().setTitle(R.string.txt_help);
-            getActionBar().setDisplayHomeAsUpEnabled(true);
-            getActionBar().setDisplayShowHomeEnabled(true);
-            animateHelpUp();
-
-        } else {
-            animateHelpDown();
-
-        }
-    }
-
-    private void animateHelpUp(){
-        Animation bottomUp = AnimationUtils.loadAnimation(this, R.anim.bottom_up);
-        ViewGroup hiddenPanel = (ViewGroup)findViewById(R.id.hidden_help_panel);
-        hiddenPanel.startAnimation(bottomUp);
-        hiddenPanel.setVisibility(View.VISIBLE);
-        helpVisible = true;
-    }
-
-    private void animateHelpDown(){
-        Animation bottomDown = AnimationUtils.loadAnimation(this, R.anim.bottom_down);
-        ViewGroup hiddenPanel = (ViewGroup)findViewById(R.id.hidden_help_panel);
-        hiddenPanel.startAnimation(bottomDown);
-        hiddenPanel.setVisibility(View.GONE);
-        helpVisible = false;
-        getActionBar().setTitle(R.string.app_name);
-        getActionBar().setDisplayHomeAsUpEnabled(false);
-        getActionBar().setDisplayShowHomeEnabled(false);
-    }
-
-    private void showCredits(){
-        if (!creditsVisible){
-            if (helpVisible){
-                animateHelpDown();
-            }
-            animateCreditsUp();
-            getActionBar().setTitle(R.string.txt_credits);
-            getActionBar().setDisplayHomeAsUpEnabled(true);
-            getActionBar().setDisplayShowHomeEnabled(true);
-        } else {
-            animateCreditsDown();
-        }
-    }
-
-    private void animateCreditsUp(){
-        Animation bottomUp = AnimationUtils.loadAnimation(this, R.anim.bottom_up);
-        ViewGroup creditsPanel = (ViewGroup)findViewById(R.id.hidden_credit_panel);
-        creditsPanel.startAnimation(bottomUp);
-        creditsPanel.setVisibility(View.VISIBLE);
-        creditsVisible = true;
-    }
-
-    private void animateCreditsDown(){
-        Animation bottomDown = AnimationUtils.loadAnimation(this, R.anim.bottom_down);
-        ViewGroup creditsPanel = (ViewGroup)findViewById(R.id.hidden_credit_panel);
-        creditsPanel.startAnimation(bottomDown);
-        creditsPanel.setVisibility(View.GONE);
-        creditsVisible = false;
-        getActionBar().setTitle(R.string.app_name);
-        getActionBar().setDisplayHomeAsUpEnabled(false);
-        getActionBar().setDisplayShowHomeEnabled(false);
-    }
-
-
-
-
-    //called when the New Game button is clicked
-
-    private void newGame(){
-        //check the network is available.
-        boolean networkOn = isNetworkAvailable(this);
-        if (!networkOn){
-            sendNetworkErrorDialog();
-            return;
-        }
-        //For checking if more songs were downloaded
-        int oldNumSongs = 0;
-        if (sharedPreference.getAllSongs() != null){
-            oldNumSongs = sharedPreference.getAllSongs().size();
-        }
-        //Download songs if they need to be checked
-        //Will not parse if the timestamp matches
-        if (checkSongs){
-            Log.e(TAG, "Downloading songs");
-            startDownloadingSongs();
-            synchronized (syncObject){
-                try{
-                    syncObject.wait();
-                } catch (InterruptedException e){
-                    Log.e(TAG, "Interrupted while downloading");
-                    Intent intent = new Intent(this, HomeActivity.class);
-                    startActivity(intent);
-                }
-            }
-            checkSongs = false;
-        }
-
-        if (sharedPreference.getAllSongs() != null){
-            //now ready to start game settings
-            Intent intent = new Intent(this, GameSettingsActivity.class);
-            int newNumSongs = sharedPreference.getAllSongs().size();
-            if (newNumSongs > oldNumSongs){
-                intent.putExtra("NEW_SONGS", true);
-            }
-            //send the game type with the intent so the settings activity loads correctly.
-            intent.putExtra("GAME_TYPE", getString(R.string.txt_new_game));
-            startActivity(intent);
-        }
-    }
-
-    private void continueGame(){
-        Log.v(TAG, "Continue Game button clicked");
-        Song song = sharedPreference.getCurrentSong();
-        String diffLevel = sharedPreference.getCurrentDifficultyLevel();
-        //check there is actually a song in the current song list and a difficulty chosen
-        if (song != null && diffLevel != null){
-            //song is incomplete as expected, check that necessary files are present
-            if (song.isSongIncomplete()){
-                String songNumber = song.getNumber();
-                //If the lyrics are not stored
-                if(!sharedPreference.checkLyricsStored(songNumber)){
-                    Log.e(TAG, "Lyrics not stored correctly");
-                    sendGameNotFoundDialog();
-                    return;
-                }
-                if (!sharedPreference.checkMaps(songNumber)){
-                    Log.e(TAG, "Maps not stored correctly");
-                    sendGameNotFoundDialog();
-                    return;
-                }
-                //Lyrics and map stored correctly, can load game.
-                Intent intent = new Intent(this, MainGameActivity.class);
-                startActivity(intent);
-
-            } else if (song.isSongComplete()) {
-                //send alert dialog that the song has already been done.
-                sendGameCompletedAlreadyDialog();
-
-            } else if (song.isSongNotStarted()){
-                sendGameNotFoundDialog();
-                //error, should have been marked as incomplete if it is in currentSong
-                Log.e(TAG, "Song marked as not started when tried to continue");
-
+    public void onFragmentInteraction(String msg){
+        Log.e(TAG, msg);
+        if (msg.equals(getString(R.string.download_required))){
+            if (!isNetworkAvailable(this)){
+                sendNetworkErrorDialog();
             } else {
-                //error, should be at least one of these!
-                Log.e(TAG, "Unexpected song status tag when tried to load");
-
+                mNetworkFragment.startXmlDownload();
             }
-        } else {
-            //send alert that no game was found
-            sendGameNotFoundDialog();
-
         }
-    }
-
-    private void loadGame(){
-        Log.d(TAG, "loadGame called");
-        //check the network is available - we will probably need to download the maps.
-        boolean networkOn = isNetworkAvailable(this);
-        if (!networkOn){
-            sendNetworkErrorDialog();
-            return;
-        }
-        Log.v(TAG,"Network connection found");
-        //Check that there is at least one old game.
-        if (sharedPreference.getCurrentSong() != null && sharedPreference.getCurrentDifficultyLevel() != null){
-            //now ready to start new activity
-            Intent intent = new Intent(this, GameSettingsActivity.class);
-            //make sure game type is old game for the game settings activity.
-            intent.putExtra("GAME_TYPE", getString(R.string.txt_load_old_game));
-            startActivity(intent);
-        } else {
-            sendGameNotFoundDialog();
-        }
-    }
-
-
-    private void startDownloadingSongs(){
-        mNetworkFragment.startXmlDownload();
     }
 
     @Override
     public void updateFromDownload(Object result) {
-
     }
 
     @Override
     public void onProgressUpdate(int progressCode, int percentComplete) {
-        switch(progressCode) {
-            // You can add UI behavior for progress updates here.
-            case Progress.ERROR:
-                break;
-            case Progress.CONNECT_SUCCESS:
-                break;
-            case Progress.GET_INPUT_STREAM_SUCCESS:
-                break;
-            case Progress.PROCESS_INPUT_STREAM_IN_PROGRESS:
-                //could add something like this
-                //mDataText.setText("" + percentComplete + "%");
-                break;
-            case Progress.PROCESS_INPUT_STREAM_SUCCESS:
-                break;
-        }
     }
 
 
     @Override
     public void finishDownloading() {
         Log.d(TAG, "finishDownloading called");
-        if (mNetworkFragment != null) {
-            mNetworkFragment.cancelDownload();
-        }
-        synchronized (syncObject){
-            syncObject.notify();
-        }
+        checkSongs = false;
+        Log.w(TAG, "Check songs set to false after finished");
     }
 
-    // checks if a network connection is available
-    // Code from https://stackoverflow.com/questions/19240627/how-to-check-internet-connection-available-or-not-when-application-start/19240810#19240810
-    private boolean isNetworkAvailable(Context context)
-    {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
-    }
 
     @Override
     public NetworkInfo getActiveNetworkInfo() {
@@ -554,7 +288,13 @@ FragmentManager.OnBackStackChangedListener{
         return connectivityManager.getActiveNetworkInfo();
     }
 
-
+    // checks if a network connection is available
+    // Code from https://stackoverflow.com/questions/19240627/how-to-check-internet-connection-available-or-not-when-application-start/19240810#19240810
+    private boolean isNetworkAvailable(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+    }
 
 
     private boolean checkPermissions(){
@@ -597,7 +337,6 @@ FragmentManager.OnBackStackChangedListener{
                 // receive empty arrays.
                 Log.i(TAG, "User interaction was cancelled.");
             } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                locationGranted = true;
             } else {
                 Log.d(TAG, "Permission was denied");
                 // Permission denied.
@@ -623,6 +362,7 @@ FragmentManager.OnBackStackChangedListener{
             }
         });
         AlertDialog ad = adb.create();
+        dialogs.add(ad);
         ad.setCancelable(false);
         ad.show();
     }
@@ -641,6 +381,7 @@ FragmentManager.OnBackStackChangedListener{
             }
         });
         AlertDialog ad = adb.create();
+        dialogs.add(ad);
         if (!stopPermissionRequests || override)ad.show();
 
     }
@@ -655,17 +396,19 @@ FragmentManager.OnBackStackChangedListener{
         adb.setPositiveButton(R.string.txt_internet_settings, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
                 startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
             }
         });
         adb.setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
 
-                    }
-                });
-                AlertDialog alertDialog = adb.create();
-        alertDialog.show();
+            }
+        });
+        AlertDialog ad = adb.create();
+        dialogs.add(ad);
+        ad.show();
     }
 
     //use if a network connection will probably be required (but not for certain)
@@ -687,77 +430,122 @@ FragmentManager.OnBackStackChangedListener{
                 finish();
             }
         });
-        AlertDialog alertDialog = adb.create();
-        alertDialog.show();
+        AlertDialog ad = adb.create();
+        dialogs.add(ad);
+        ad.show();
     }
 
-    private void sendGameNotFoundDialog(){
+    //Enter the user height.
+    private void sendEnterHeightDialog(int numTimesShown){
+
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setHint(R.string.txt_enter_height);
+
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
-        adb.setTitle(R.string.loading_error);
-        adb.setMessage(R.string.msg_game_not_found);
-        adb.setNegativeButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+        adb.setTitle(R.string.txt_calculate_step_size);
+        adb.setView(input);
+        if (numTimesShown == 0) adb.setMessage(R.string.msg_enter_height);
+        else adb.setMessage(R.string.msg_enter_height_try_again);
+        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                buttonSound.start();
+                try {
+                    int height = Integer.parseInt(input.getText().toString());
+                    //Pick sensible height cutoffs
+                    if (height > 40 && height < 272){
+                        sendEnterGenderDialog(height);
+                    } else {
+                        sendEnterHeightDialog(1);
+                    }
+                } catch(NumberFormatException e){
+                    sendEnterHeightDialog(1);
+                }
+            }
+        }).setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //dismiss dialog
+                //step size will be default, or whatever it was before.
+            }
+        });
+
+        AlertDialog ad = adb.create();
+        dialogs.add(ad);
+        ad.show();
+    }
+
+    //
+    private void sendEnterGenderDialog(final int height){
+        final CharSequence[] list = getResources().getStringArray(R.array.select_gender);
+        selectedGender = new ArrayList<>();
+        //have default value
+        selectedGender.add(0, 0);
+
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.txt_calculate_step_size);
+        adb.setSingleChoiceItems(list, 0, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                radioButton.start();
+                selectedGender.add(0, which);
+            }
+        }).setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                sharedPreference.saveStepSize(height, selectedGender.get(0));
+            }
+        }).setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //do nothing but save step size based on estimate of gender.
+                sharedPreference.saveStepSize(height, 2);
+            }
+        });
+        AlertDialog ad = adb.create();
+        dialogs.add(ad);
+        ad.show();
+    }
+
+    private void sendSongsDownloadedDialog(){
+        Log.e(TAG, "Dialog builder started");
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.txt_new_songs);
+        adb.setMessage(R.string.msg_new_songs);
+        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int i) {
 
             }
         });
-        AlertDialog alertDialog = adb.create();
-        alertDialog.show();
+        AlertDialog ad = adb.create();
+        dialogs.add(ad);
+        ad.show();
     }
 
-    private void sendGameCompletedAlreadyDialog(){
-        AlertDialog.Builder adb = new AlertDialog.Builder(this);
-        adb.setTitle(R.string.loading_error);
-        adb.setMessage(R.string.msg_game_already_completed);
-        adb.setNegativeButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int i) {
-
-            }
-        });
-        AlertDialog alertDialog = adb.create();
-        alertDialog.show();
-    }
 
     @Override
-    public void onBackStackChanged(){
-        shouldDisplayHomeUp();
+    public boolean onPrepareOptionsMenu(Menu menu){
+        return false;
     }
 
-    private void shouldDisplayHomeUp(){
-        //Enable Up button only if there are entries in the back stack
-        boolean fragmentPresent = getSupportFragmentManager().getBackStackEntryCount() > 0;
-        getActionBar().setDisplayHomeAsUpEnabled(fragmentPresent);
-    }
-
-    private boolean onSupportNavigateUp(){
-        fragmentManager.popBackStack();
-        achievementsVisible = false;
-        getActionBar().setTitle(R.string.app_name);
-        getActionBar().setDisplayShowHomeEnabled(true);
-        return true;
-    }
-
-    private static String readFromAssets(Context context, String filename) throws IOException{
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
-                context.getAssets().open(filename)));
-        StringBuilder sb = new StringBuilder();
-        String mLine = reader.readLine();
-        while (mLine!=null){
-            sb.append(mLine);
-            mLine = reader.readLine();
+    private void closeDialogs(){
+        for (AlertDialog dialog : dialogs){
+            if (dialog.isShowing()) dialog.dismiss();
         }
-        reader.close();
-        return sb.toString();
     }
+
+
+
 
     /**
      * For setting up the achievements list if they aren't already, and getting the help text set up.
-     * Done as an Async Task so that it doesn't hinder user experience
+     * Done as an Async Task so that it doesn't hinder user experience even though it goes quite fast
      * If it's the first time they're loading_layout the game, they shouldn't be able to
      * unlock any achievements by then
      */
-    private class AsyncFirstTimeTask extends AsyncTask<Void, Void, String>{
+    private class AsyncLoadAchievementsTask extends AsyncTask<Void, Void, String>{
 
         @Override
         protected String doInBackground(Void... voids) {
@@ -777,7 +565,7 @@ FragmentManager.OnBackStackChangedListener{
                     fetchInteger(R.integer.ach_words_100_goal),
                     R.drawable.piano_grey,
                     R.drawable.piano_colour,
-                     false);
+                    false);
 
             achievements.add(wordWizard);
 
@@ -924,17 +712,9 @@ FragmentManager.OnBackStackChangedListener{
 
         @Override
         protected void onPostExecute(String result){
-            Toast.makeText(getApplicationContext(), "Got achievements!", Toast.LENGTH_SHORT).show();
-            asyncTaskFinished = true;
+
         }
-    }
 
-    private int fetchInteger(int id){
-        return getResources().getInteger(id);
-    }
-
-    private void makeToast(int toastTextID){
-        Toast.makeText(getApplicationContext(), toastTextID, Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -956,5 +736,12 @@ FragmentManager.OnBackStackChangedListener{
         }
         return false;
     }
+
+    private int fetchInteger(int id){
+        return getResources().getInteger(id);
+    }
+
+
+
 
 }

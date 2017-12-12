@@ -200,13 +200,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
 
     private void startGame(){
-        //check for internet connection again
-        boolean networkOn = isNetworkAvailable(this);
-        if (!networkOn){
-            sendNetworkErrorDialog();
-            return;
-        }
-        setContentView(R.layout.loading_layout);
+
         //save this song status to shared preferences as it has been definitely chosen.
         Song currentSong = sharedPreference.getCurrentSong();
 
@@ -488,6 +482,13 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 buttonClick.start();
+                //check for internet connection again
+                boolean networkOn = isNetworkAvailable(getApplicationContext());
+                if (!networkOn){
+                    sendNetworkErrorDialog();
+                    return;
+                }
+                setContentView(R.layout.loading_layout);
                 startGame();
             }
         }).setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {

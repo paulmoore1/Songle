@@ -2,43 +2,66 @@ package com.example.songle;
 //adapted from https://github.com/Suleiman19/Bottom-Navigation-Demo/blob/master/app/src/main/java/com/grafixartist/bottomnav/MainActivity.java
 
 
-import android.content.DialogInterface;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.annotation.ColorRes;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.Toolbar;
-import android.text.InputType;
 import android.util.Log;
-import android.widget.EditText;
+import android.widget.Toast;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
 import com.aurelhubert.ahbottomnavigation.notification.AHNotification;
 
-public class MainGameActivity extends AppCompatActivity {
+public class MainGameActivity extends AppCompatActivity implements SensorEventListener {
     private static final String TAG = "MainGameActivity";
     private final int[] colors = {R.color.maps_tab, R.color.words_tab, R.color.guess_tab};
-    private boolean permission;
     private Toolbar toolbar;
     private NoSwipePager viewPager;
     private AHBottomNavigation bottomNavigation;
     private BottomBarAdapter pagerAdapter;
-    private static final int MY_PERMISSIONS_REQUEST_FINE_LOCATION = 1;
+
+    //Keep track of shared preferences and any changes
     private SharedPreference sharedPreference;
     private SharedPreferences.OnSharedPreferenceChangeListener listener;
+    //Identifies the song
     private String songNumber;
+    //Holds useful information about the song with the corresponding song number
     private SongInfo songInfo;
+
+    //Tracks steps - used to calculate distance walked
+    private SensorManager sensorManager;
+    private Sensor stepSensor;
+    private int prevSteps = 0;
+    private float stepSize;
+    private boolean waitingFirstStep;
+
+    //Used to detect if a notification should be shown in the words or guessing tab
     private boolean wordsNotificationVisible = false;
     private boolean hintNotificationVisible = false;
     private int lastNumWordsFound = 0;
-    private int lastNumWordsAvailable = 0;
+
+    //Give the user achievements for walking distances while playing
+    private Achievement achWalk500;
+    private Achievement achWalk5k;
+    private Achievement achWalk10k;
+
+    //Play sounds when appropriate.
+    private static MediaPlayer achievementComplete;
+    private static MediaPlayer tabSwitchSound;
+    private static MediaPlayer hintSound;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,15 +81,26 @@ public class MainGameActivity extends AppCompatActivity {
         setupViewPager();
 
         sharedPreference = new SharedPreference(getApplicationContext());
-        if (sharedPreference.getHeight() == -1){
-            Log.e(TAG, "Height not saved");
-            sendRequestHeightDialog(0);
-        }
+
 
         songNumber = sharedPreference.getCurrentSongNumber();
         songInfo = sharedPreference.getSongInfo(songNumber);
         lastNumWordsFound = songInfo.getNumWordsFound();
-        lastNumWordsAvailable = songInfo.getNumWordsAvailable();
+        stepSize = sharedPreference.getStepSize();
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        // Used so that the number of steps to expect is updated to the value it was when the activity is created.
+        // This means that if the step count was updated elsewhere (e.g. on another app )
+        // while the activity wasn't running, this won't affect the counted steps.
+        waitingFirstStep = true;
+
+        achievementComplete = MediaPlayer.create(this, R.raw.happy_jingle);
+        tabSwitchSound = MediaPlayer.create(this, R.raw.tab_click);
+        hintSound = MediaPlayer.create(this, R.raw.hint_notification);
+
+        achWalk500 = sharedPreference.getIncompleteAchievement(getString(R.string.ach_walk_500_title));
+        achWalk5k = sharedPreference.getIncompleteAchievement(getString(R.string.ach_walk_5k_title));
+        achWalk10k = sharedPreference.getIncompleteAchievement(getString(R.string.ach_walk_10k_title));
 
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
         listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -75,16 +109,15 @@ public class MainGameActivity extends AppCompatActivity {
                 //update the song info
                 songInfo = sharedPreference.getSongInfo(songNumber);
                 int newNumWordsFound = songInfo.getNumWordsFound();
-                int newNumWordsAvailable = songInfo.getNumWordsAvailable();
-                if (newNumWordsFound > lastNumWordsFound){
+                int numWordsAvailable = songInfo.getNumWordsAvailable();
+                //Only show notification if more words were found
+                if (newNumWordsFound > lastNumWordsFound) {
                     lastNumWordsFound = newNumWordsFound;
                     createWordsFoundNotification();
                 }
-                if (newNumWordsAvailable > lastNumWordsAvailable){
-                    lastNumWordsAvailable = newNumWordsAvailable;
-                }
+                //Show notification if there are enough words for a hint (for the line)
                 int requiredNumForHint = requiredWordsForLine();
-                if (lastNumWordsAvailable >= requiredNumForHint){
+                if (numWordsAvailable >= requiredNumForHint) {
                     createHintNotification();
                 }
             }
@@ -103,7 +136,7 @@ public class MainGameActivity extends AppCompatActivity {
             @Override
             public boolean onTabSelected(int position, boolean wasSelected) {
 //                fragment.updateColor(ContextCompat.getColor(MainActivity.this, colors[position]));
-
+                tabSwitchSound.start();
                 if (!wasSelected)
                     viewPager.setCurrentItem(position);
                 //allow translucent scrolling for middle position only.
@@ -167,8 +200,9 @@ public class MainGameActivity extends AppCompatActivity {
         return bundle;
     }
 
-    private void createWordsFoundNotification(){
-        Log.d(TAG, "createWordsFoundNotification called");
+    private void createWordsFoundNotification() {
+        Log.v(TAG, "createWordsFoundNotification called");
+        hintSound.start();
         AHNotification notification = new AHNotification.Builder()
                 .setText("!")
                 .setBackgroundColor(getColor(R.color.colorBottomNavigationPrimaryDark))
@@ -178,8 +212,9 @@ public class MainGameActivity extends AppCompatActivity {
         wordsNotificationVisible = true;
     }
 
-    private void createHintNotification(){
-        Log.d(TAG, "createHintNotification called");
+    private void createHintNotification() {
+        Log.v(TAG, "createHintNotification called");
+        hintSound.start();
         AHNotification notification = new AHNotification.Builder()
                 .setText("!")
                 .setBackgroundColor(getColor(R.color.colorBottomNavigationPrimaryDark))
@@ -253,9 +288,9 @@ public class MainGameActivity extends AppCompatActivity {
         return ContextCompat.getColor(this, color);
     }
 
-    private int requiredWordsForLine(){
+    private int requiredWordsForLine() {
         String difficulty = sharedPreference.getCurrentDifficultyLevel();
-        switch(difficulty){
+        switch (difficulty) {
             case "Insane":
                 return fetchInteger(R.integer.hint_line_insane);
             case "Hard":
@@ -272,61 +307,98 @@ public class MainGameActivity extends AppCompatActivity {
         }
     }
 
-    private int fetchInteger(int id){
+    private int fetchInteger(int id) {
         return getResources().getInteger(id);
     }
 
     @Override
-    public void onBackPressed(){
+    public void onBackPressed() {
         Intent intent = new Intent(this, HomeActivity.class);
         startActivity(intent);
     }
 
     @Override
-    public void onPause(){
+    public void onPause() {
         sharedPreference.unregisterOnSharedPreferenceChangedListener(listener);
         super.onPause();
     }
 
     @Override
-    public void onResume(){
+    public void onResume() {
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
+        sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
         super.onResume();
     }
 
-    public void sendRequestHeightDialog(int numTimesShown){
-        AlertDialog.Builder adb = new AlertDialog.Builder(this);
-        adb.setTitle(R.string.txt_enter_height);
-        if (numTimesShown == 0) adb.setMessage(R.string.msg_enter_height);
-        else adb.setMessage(R.string.msg_enter_height_try_again);
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_NUMBER);
-        adb.setView(input);
-
-        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                try {
-                    int height = Integer.parseInt(input.getText().toString());
-                    if (height > 70 && height < 272){
-                        sharedPreference.saveHeight(height);
-                    } else {
-                        sendRequestHeightDialog(1);
-                    }
-
-                } catch(NumberFormatException e){
-                    sendRequestHeightDialog(1);
-                }
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        Sensor sensor = event.sensor;
+        if (sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
+            int steps = 0;
+            float[] values = event.values;
+            if (values.length > 0){
+                steps = (int) values[0];
+                Log.e(TAG, "steps = " + steps);
             }
-        });
-        adb.setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
+            //Update the prevSteps count if the app has just been created.
+            if (waitingFirstStep){
+                Log.e(TAG, "Just made activity");
+                //Subtract 1 for the step before the one that just happened
+                prevSteps = steps-1;
+                waitingFirstStep = false;
             }
-        });
-
+            Log.e(TAG, "Current steps: " + steps + " Previous steps: " + prevSteps);
+            int stepsAdded = steps - prevSteps;
+            float addedDistance = (stepsAdded*stepSize)/100;
+            //Update the previous steps counter.
+            prevSteps = steps;
+            //Add to the distance for this specific song
+            songInfo.addDistance(addedDistance);
+            sharedPreference.saveSongInfo(songNumber, songInfo);
+            //Add to the total distance walked.
+            sharedPreference.addDistanceWalked(addedDistance);
+            checkWalkingAchievements(sharedPreference.getTotalDistance());
+        }
 
     }
 
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    private void checkWalkingAchievements(float totalDistance){
+        if (updateAchievement(achWalk500, totalDistance)) achWalk500 = null;
+        if (updateAchievement(achWalk5k, totalDistance)) achWalk5k = null;
+        if (updateAchievement(achWalk10k, totalDistance)) achWalk10k = null;
+    }
+
+    private void showAchievement(String title){
+        Toast.makeText(getApplicationContext(), "Achievement unlocked: " + title, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Shows the achievement if it is achieved, saves it regardless of progress
+     * @param achievement - achievement to update.
+     * @return true if the achievement is achieved, false otherwise;
+     */
+    private boolean updateAchievement(Achievement achievement, float totalDistance){
+        if (achievement != null){
+            int goal = achievement.getStepsGoal();
+            Log.e(TAG, "Goal" + goal);
+            float progress = totalDistance/goal;
+            Log.e(TAG, "Progress" + progress);
+            achievement.setSteps((int) totalDistance);
+            if (achievement.isAchieved()){
+                achievementComplete.start();
+                showAchievement(achievement.getTitle());
+                sharedPreference.saveAchievement(achievement);
+                return true;
+            } else{
+                Log.e(TAG, "New steps: " + achievement.getSteps());
+                sharedPreference.saveAchievement(achievement);
+            }
+        }
+        return false;
+    }
 }

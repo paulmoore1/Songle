@@ -15,6 +15,7 @@ public class SongInfo {
     private String link;
     private int numWordsFound;
     private int numNumWordsAvailable;
+    private float distanceWalked;
     private boolean incorrectlyGuessed;
     private boolean artistRevealed;
     private boolean lineRevealed;
@@ -26,6 +27,7 @@ public class SongInfo {
         this.link = link;
         numWordsFound= 0;
         numNumWordsAvailable = 0;
+        distanceWalked = 0;
         incorrectlyGuessed = false;
         artistRevealed = false;
         lineRevealed = false;
@@ -61,7 +63,13 @@ public class SongInfo {
         numNumWordsAvailable -= num;
     }
 
+    public void addDistance(float addedDistance){
+        distanceWalked += addedDistance;
+    }
 
+    public float getDistanceWalked(){
+        return distanceWalked;
+    }
 
     public boolean isIncorrectlyGuessed(){
         return incorrectlyGuessed;
@@ -90,9 +98,11 @@ public class SongInfo {
     public void resetSongInfo(){
         numWordsFound = 0;
         numNumWordsAvailable = 0;
+        distanceWalked = 0;
         incorrectlyGuessed = false;
         artistRevealed = false;
         lineRevealed = false;
+        timeStarted = System.currentTimeMillis();
     }
 
     public String getTimeTaken(){
