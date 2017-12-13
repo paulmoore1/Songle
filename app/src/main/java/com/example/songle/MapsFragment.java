@@ -162,9 +162,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         addMarkers();
     }
 
-    /**
-     * Makes marker icons if they do not exist already.
-     */
+    // Makes marker icons if they do not exist already.
     private void makeMarkerIcons(){
         if (IC_UNCLASSIFIED == null){
             IC_UNCLASSIFIED = BitmapDescriptorFactory.fromResource(R.drawable.marker_unclassified);
@@ -184,9 +182,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
     }
 
-    /**
-     * Adds all the markers on to the map.
-     */
+    //Adds all the markers on to the map.
     private void addMarkers(){
         Log.v(TAG, "addMarkers called");
         int n = placemarks.size();
@@ -241,15 +237,13 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         markerPop.start();
         // Only allow click if location is on and permissions are granted
         if (gpsOn && checkPermissions()) {
-            //may change this if necessary
-            double requiredDistance = 50;
-            //find distance between last location and location of marker
+            // How close the user needs to be to collect the marker
+            double requiredDistance = 10;
+            // Find distance between last location and location of marker
             LatLng mLastLatLong = getLatLngFromLastLocation();
-            Log.e(TAG, "current location: " + mLastLatLong);
             if (mLastLatLong != null){
                 double distance = SphericalUtil.computeDistanceBetween(mLastLatLong, marker.getPosition());
-                Log.e(TAG, "Distance is " + distance);
-                //if you are close enough to the marker
+                // If user is close enough to the marker
                 if (distance < requiredDistance) {
 
                     Object obj = marker.getTag();
@@ -262,7 +256,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                     String key = lyric.get(1);
                     Toast.makeText(getContext(), "Found word: " + word,
                             Toast.LENGTH_SHORT).show();
-                    //update lyrics to show that word is found.
+                    // Update lyrics to show that word is found.
                     ArrayList<String> newLyric = new ArrayList<>(Arrays.asList(word, "True"));
                     lyrics.put(key, newLyric);
                     sharedPreference.saveLyrics(songNumber, lyrics);
@@ -272,7 +266,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
                     return true;
 
                 } else {
-                    //too far away from marker, show a Toast but nothing more.
+                    // Too far away from marker, show a Toast but nothing more.
                     Toast.makeText(getContext(), "Too far from marker", Toast.LENGTH_SHORT).show();
                     // Return false to indicate that we have not consumed the event and that we wish
                     // for the default behavior to occur (which is for the camera to move such that the
@@ -303,6 +297,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
     }
 
+    // Get the latitude and longitude from the last known location
     private LatLng getLatLngFromLastLocation(){
         if (mLastLocation != null){
             double mLastLat = mLastLocation.getLatitude();
@@ -313,6 +308,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         }
     }
 
+    // Create a new client for getting location requests
     private synchronized void buildGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
                 .addConnectionCallbacks(this)
@@ -325,7 +321,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         Log.v(TAG, "Setting up GPS listener");
         try {
             lm.addGpsStatusListener(listener);
-
+            // Check when setting up if the GPS is already off (as listener won't be activated by this)
             if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)){
                 sendNoGPSAlertDialog();
             }
@@ -341,6 +337,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         gpsOn = false;
     }
 
+    // Detects if the GPS is switched on/off
     private void createGpsStatusListener(){
         Log.v(TAG, "Gps status listener created");
         listener = new android.location.GpsStatus.Listener(){
@@ -367,12 +364,12 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         mLocationRequest = new LocationRequest();
 
         // Sets the desired interval for active location updates. This interval is
-        // inexact. You may not receive updates at all if no location sources are available, or
-        // you may receive them slower than requested. You may also receive updates faster than
+        // inexact. It may not receive updates at all if no location sources are available, or
+        // may receive them slower than requested. It may also receive updates faster than
         // requested if other applications are requesting location at a faster interval.
         mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
 
-        // Sets the fastest rate for active location updates. This interval is exact, and your
+        // Sets the fastest rate for active location updates. This interval is exact, and the
         // application will never receive updates faster than this value.
         mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
 
@@ -386,7 +383,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         mMapView.onResume();
         mGoogleApiClient.connect();
         mMapView.getMapAsync(this);
-        //avoid any security exceptions
+        // Avoid any possible security exceptions
         if(checkPermissions()){
             setupGpsLocationManagerListener();
         }
@@ -399,7 +396,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         super.onPause();
         mMapView.onPause();
         mGoogleApiClient.disconnect();
-        //avoid any security exceptions
+        // Avoid any possible security exceptions
         if (checkPermissions()){
             removeGpsLocationMangerListener();
         }
@@ -473,9 +470,9 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
     }
 
+    // If location changed, update the last location
     @Override
     public void onLocationChanged(Location location) {
-        Log.e(TAG, "New location: " + location);
         if (location != null) mLastLocation = location;
     }
 

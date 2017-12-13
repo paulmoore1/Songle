@@ -106,10 +106,13 @@ public class SongInfo {
     }
 
     public String getTimeTaken(){
+        long finishTime = System.currentTimeMillis();
+        long timeTaken = finishTime - timeStarted;
+
         return String.format(Locale.getDefault(),"%d:%02d:%02d",
-                TimeUnit.MILLISECONDS.toHours(timeStarted),
-                TimeUnit.MILLISECONDS.toMinutes(timeStarted),
-                TimeUnit.MILLISECONDS.toSeconds(timeStarted));
+                TimeUnit.MILLISECONDS.toHours(timeTaken),
+                TimeUnit.MILLISECONDS.toMinutes(timeTaken),
+                TimeUnit.MILLISECONDS.toSeconds(timeTaken));
     }
 
     int minutesTaken(){
