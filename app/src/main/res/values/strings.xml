@@ -121,7 +121,9 @@
     <string name="words_tab">Words</string>
     <string name="guess_tab">Guess</string>
 
+
     <!--Game strings for the words tab -->
+    <string name="msg_title_maps_fragment">Collect words</string>
     <string name="msg_title_words_fragment">Words you\'ve collected so far</string>
 
     <!--Game strings for the guess tab -->
