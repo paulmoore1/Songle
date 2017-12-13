@@ -18,6 +18,7 @@ import java.util.Map;
  * Created by Paul Moore on 25-Oct-17.
  *
  * Defines methods to save, add, remove and get Songs from SharedPreferences
+ * Majority of methods are package-private.
  */
 
 class SharedPreference {
@@ -52,17 +53,17 @@ class SharedPreference {
 
     //used so that a listener can effectively be registerd and unregistered without needing
     //a separate sharedPreferences object.
-    public void registerOnSharedPreferenceChangedListener(
+    void registerOnSharedPreferenceChangedListener(
             SharedPreferences.OnSharedPreferenceChangeListener listener){
         settings.registerOnSharedPreferenceChangeListener(listener);
     }
 
-    public void unregisterOnSharedPreferenceChangedListener(
+    void unregisterOnSharedPreferenceChangedListener(
             SharedPreferences.OnSharedPreferenceChangeListener listener){
         settings.unregisterOnSharedPreferenceChangeListener(listener);
     }
 
-    public void saveSongs(List<Song> newSongs){
+    void saveSongs(List<Song> newSongs){
         Log.v(TAG, "saveSongs called");
         // this part sets the new song list so that any old ones remain in place
         // important so that progress like completing a song is not overwritten when a new list is downloaded
@@ -87,7 +88,7 @@ class SharedPreference {
      * @param songNumber song number to update
      * @param status - must be "N" (not complete), "I" (incomplete) or "C" complete
      */
-    public void saveSongStatus(String songNumber, String status){
+    void saveSongStatus(String songNumber, String status){
         Log.d(TAG, "saveSongStatus called");
         ArrayList<Song> songs = getAllSongs();
 
@@ -136,7 +137,7 @@ class SharedPreference {
         }
     }
 
-    public ArrayList<Song> getAllSongs(){
+    ArrayList<Song> getAllSongs(){
         List<Song> songs;
         if (settings.contains(SONGS)){
             String jsonSongs = settings.getString(SONGS, null);
@@ -151,7 +152,7 @@ class SharedPreference {
         }
     }
 
-    public ArrayList<Song> getOldSongs(){
+    ArrayList<Song> getOldSongs(){
         Log.v(TAG, "getOldSongs called");
         List<Song> songs;
 
@@ -177,30 +178,24 @@ class SharedPreference {
         }
     }
 
-    public void saveMostRecentTimestamp(String timestamp){
+    void saveMostRecentTimestamp(String timestamp){
         editor.putString(TIMESTAMP, timestamp);
         editor.apply();
 
     }
 
-    public String getMostRecentTimestamp(){
-        String timestamp;
-        if (settings.contains(TIMESTAMP)){
-            timestamp = settings.getString(TIMESTAMP, null);
-            return timestamp;
-        } else {
-            return null;
-        }
+    String getMostRecentTimestamp(){
+        return settings.getString(TIMESTAMP, context.getString(R.string.default_timestamp));
     }
 
     //following are methods for saving and getting the current song number
     //needed to check if maps or lyrics need to be redownloaded.
-    public void saveCurrentSongNumber(String songNum){
+    void saveCurrentSongNumber(String songNum){
         editor.putString(CURRENT_SONG_NUMBER, songNum);
         editor.apply();
     }
 
-    public String getCurrentSongNumber(){
+    String getCurrentSongNumber(){
         String songNum = null;
         if (settings.contains(CURRENT_SONG_NUMBER)){
             songNum = settings.getString(CURRENT_SONG_NUMBER, null);
@@ -212,7 +207,7 @@ class SharedPreference {
      * Save the current difficulty level. Input difficulty must be valid or nothing happens.
      * @param diffLevel - difficulty level to save as.
      */
-    public void saveCurrentDifficultyLevel(String diffLevel){
+    void saveCurrentDifficultyLevel(String diffLevel){
         //check diffLevel is one of the appropriate ones for difficulty level
         if (diffLevel.equals(context.getString(R.string.difficulty_insane))
                 || diffLevel.equals(context.getString(R.string.difficulty_hard))
@@ -230,7 +225,7 @@ class SharedPreference {
      * Get the current difficulty level
      * @return current difficulty level
      */
-    public String getCurrentDifficultyLevel(){
+    String getCurrentDifficultyLevel(){
         String diffLevel = null;
         if (settings.contains(CURRENT_DIFFICULTY_LEVEL)){
             diffLevel = settings.getString(CURRENT_DIFFICULTY_LEVEL, null);
@@ -243,7 +238,7 @@ class SharedPreference {
      * Get the map number based on the current difficulty setting
      * @return number of the map for that difficulty, 1 by default.
      */
-    public String getCurrentMapNumber(){
+    String getCurrentMapNumber(){
         Log.v(TAG, "getCurrentMapNumber called");
         if (settings.contains(CURRENT_DIFFICULTY_LEVEL)){
             String text = settings.getString(CURRENT_DIFFICULTY_LEVEL, null);
@@ -272,7 +267,7 @@ class SharedPreference {
         }
     }
 
-    public void saveCurrentSong(Song song){
+    void saveCurrentSong(Song song){
         Log.v(TAG, "saveCurrentSong called");
         Gson gson = new Gson();
         String jsonSong = gson.toJson(song);
@@ -281,7 +276,7 @@ class SharedPreference {
         editor.apply();
     }
 
-    public Song getCurrentSong(){
+    Song getCurrentSong(){
         Log.v(TAG, "getCurrentSong called");
         Song song;
 
@@ -302,7 +297,7 @@ class SharedPreference {
      * @param mapNumber - the map number that should be saved to
      * @param songNumber - the song number of this map
      */
-    public void saveMap(List<Placemark> placemarks, String mapNumber, String songNumber){
+    void saveMap(List<Placemark> placemarks, String mapNumber, String songNumber){
         Log.v(TAG, "saveMap called");
         HashMap<String, List<Placemark>> allMaps = new HashMap<>();
         Gson gson = new Gson();
@@ -341,7 +336,7 @@ class SharedPreference {
      * @param mapNum - number of the map
      * @return - placemarks if they exist, null otherwise
      */
-    public ArrayList<Placemark> getMap(String mapNum){
+    ArrayList<Placemark> getMap(String mapNum){
         Log.v(TAG, "getMap called for map #" + mapNum);
         Gson gson = new Gson();
         String jsonAllMaps = settings.getString(MAPS, null);
@@ -391,7 +386,7 @@ class SharedPreference {
      * @param songNumber - target song number
      * @return true if all the maps for that song are stored; false otherwise
      */
-    public boolean checkMaps(String songNumber){
+    boolean checkMaps(String songNumber){
         Log.v(TAG, "checkMaps called");
         //convert to integer for easy comparison
         int songNum = Integer.parseInt(songNumber);
@@ -422,7 +417,7 @@ class SharedPreference {
      * @param mapNumber - number of the map being queried
      * @return the number of words if that map is valid, 1 otherwise
      */
-    public int getMapNumWords(String mapNumber){
+    int getMapNumWords(String mapNumber){
         Log.v(TAG, "getMapNumWords called");
         Gson gson = new Gson();
         String jsonMapInfo = settings.getString(MAPS_INFO, null);
@@ -444,7 +439,7 @@ class SharedPreference {
      * @param songNumber - number of song being checked
      * @return true if the song is stored in the lyrics, false otherwise
      */
-    public boolean checkLyricsStored(String songNumber){
+    boolean checkLyricsStored(String songNumber){
         Log.v(TAG, "checkLyricsStored called");
         return getLyrics(songNumber) != null;
     }
@@ -454,7 +449,7 @@ class SharedPreference {
      * @param songNumber - number associated with the song
      * @param lyrics - the lyrics for that song
      */
-    public void saveLyrics(String songNumber, HashMap<String, ArrayList<String>> lyrics){
+    void saveLyrics(String songNumber, HashMap<String, ArrayList<String>> lyrics){
         HashMap<String, HashMap<String, ArrayList<String>>> allLyrics = new HashMap<>();
         Gson gson = new Gson();
         //If there are no lyrics previously saved make a new object and save it
@@ -482,7 +477,7 @@ class SharedPreference {
      * @param songNumber - number of the song the lyrics are being looked for
      * @return the lyrics if they are there, null otherwise
      */
-    public HashMap<String, ArrayList<String>> getLyrics(String songNumber){
+    HashMap<String, ArrayList<String>> getLyrics(String songNumber){
         String jsonAllLyrics = settings.getString(LYRICS, null);
         if (jsonAllLyrics != null){
             Gson gson = new Gson();
@@ -498,7 +493,7 @@ class SharedPreference {
      * Mark a song as completed. This updates its status and resets its associated information
      * @param songNumber - song to mark as complete
      */
-    public void completeSong(String songNumber){
+    void completeSong(String songNumber){
         Log.v(TAG, "completeSong called");
         //indicate the song as completed
         saveSongStatus(songNumber, "C");
@@ -512,7 +507,7 @@ class SharedPreference {
      * @param songNumber - number of that song
      * @param info - all the necessary information about it
      */
-    public void saveSongInfo(String songNumber, SongInfo info){
+    void saveSongInfo(String songNumber, SongInfo info){
         //create a place to save the info if it isn't there already
         HashMap<String, SongInfo> songInfos = new HashMap<>();
         Gson gson = new Gson();
@@ -541,7 +536,7 @@ class SharedPreference {
      * @param songNumber - number of that song
      * @return - the information if it exists, null otherwise
      */
-    public SongInfo getSongInfo(String songNumber){
+    SongInfo getSongInfo(String songNumber){
         String jsonInfo = settings.getString(SONG_INFO, null);
         if (jsonInfo != null){
             Gson gson = new Gson();
@@ -560,7 +555,7 @@ class SharedPreference {
      * @param height - height of user
      * @param gender - gender of user
      */
-    public void saveStepSize(int height, int gender){
+    void saveStepSize(int height, int gender){
         Log.v(TAG, "saveStepSize called. Height:" + height + " Gender: " + gender);
         //Multiplier estimates step size based on height. Different for male/female.
         float multiplier;
@@ -596,50 +591,55 @@ class SharedPreference {
         //Else do nothing
     }
 
-    public float getStepSize(){
+    float getStepSize(){
         return settings.getFloat(STEP_SIZE, 74f);
     }
 
-    public void addDistanceWalked(float addedDistance){
+    void addDistanceWalked(float addedDistance){
         float oldDistance = settings.getFloat(TOTAL_DISTANCE, 0);
         oldDistance += addedDistance;
         editor.putFloat(TOTAL_DISTANCE, oldDistance);
         editor.apply();
     }
 
-    public float getTotalDistance(){
+    float getTotalDistance(){
         return settings.getFloat(TOTAL_DISTANCE, 0);
     }
 
-    public void saveAchievements(List<Achievement> achievements){
+    void saveAchievements(List<Achievement> achievements){
         Gson gson = new Gson();
         String jsonAchievements = gson.toJson(achievements);
         editor.putString(ACHIEVEMENTS, jsonAchievements);
         editor.apply();
     }
 
-    public List<Achievement> getAchievements(){
+    List<Achievement> getAchievements(boolean showHidden){
         if (settings.contains(ACHIEVEMENTS)){
             Gson gson = new Gson();
             String jsonAchievements = settings.getString(ACHIEVEMENTS, null);
             Type type = new TypeToken<List<Achievement>>(){}.getType();
             List<Achievement> achievements = gson.fromJson(jsonAchievements, type);
-            //only return achievements which aren't hidden/have been achieved
-            if (achievements != null){
-                Iterator<Achievement> i = achievements.iterator();
-                while (i.hasNext()){
-                    Achievement a = i.next();
-                    if (a.isHidden() && !a.isAchieved()) i.remove();
+
+            if(!showHidden){
+                //only return achievements which aren't hidden/have been achieved
+                if (achievements != null){
+                    Iterator<Achievement> i = achievements.iterator();
+                    while (i.hasNext()){
+                        Achievement a = i.next();
+                        if (a.isHidden() && !a.isAchieved()) i.remove();
+                    }
                 }
+                return achievements;
+            } else {
+                return achievements;
             }
-            return achievements;
+
         } else {
             return null;
         }
     }
 
-
-    public void saveAchievement(Achievement newAchievement){
+    void saveAchievement(Achievement newAchievement){
         if (settings.contains(ACHIEVEMENTS)){
             String achievementTitle = newAchievement.getTitle();
             Gson gson = new Gson();
@@ -669,7 +669,7 @@ class SharedPreference {
      * @param achievementTitle - title of achievement
      * @return - the achievement if it is there, null if it isn't, or has been achieved already
      */
-    public Achievement getIncompleteAchievement(String achievementTitle) {
+    Achievement getIncompleteAchievement(String achievementTitle) {
         if (settings.contains(ACHIEVEMENTS)) {
             Gson gson = new Gson();
             String jsonAchievements = settings.getString(ACHIEVEMENTS, null);
@@ -695,7 +695,7 @@ class SharedPreference {
      * @param achievementTitle - title of achievement
      * @return - the achievement if it is there.
      */
-    public Achievement getAchievement(String achievementTitle){
+    Achievement getAchievement(String achievementTitle){
         if (settings.contains(ACHIEVEMENTS)) {
             Gson gson = new Gson();
             String jsonAchievements = settings.getString(ACHIEVEMENTS, null);
@@ -716,7 +716,7 @@ class SharedPreference {
         return null;
     }
 
-    public void saveScore(Score score){
+    void saveScore(Score score){
         List<Score> scores = new ArrayList<>();
         Gson gson = new Gson();
         //If scores not previously saved then save them
@@ -748,7 +748,7 @@ class SharedPreference {
     }
 
 
-    public List<Score> getScores(){
+    List<Score> getScores(){
         if (settings.contains(SCORES)){
             String jsonScores = settings.getString(SCORES, null);
             if (jsonScores != null){
@@ -761,15 +761,16 @@ class SharedPreference {
         return null;
     }
 
-    public void saveFirstTimeAppUsed(){
+    void saveFirstTimeAppUsed(){
         editor.putBoolean(FIRST_TIME, false);
+        editor.apply();
     }
 
-    public boolean isFirstTimeAppUsed(){
+    boolean isFirstTimeAppUsed(){
         return settings.getBoolean(FIRST_TIME, true);
     }
 
-    public void resetSong(String songNumber, boolean markIncomplete){
+    void resetSong(String songNumber, boolean markIncomplete){
         //Reset the lyrics
         HashMap<String, ArrayList<String>> lyrics = getLyrics(songNumber);
         if (lyrics != null) lyrics = resetLyrics(lyrics);
@@ -789,11 +790,36 @@ class SharedPreference {
     private HashMap<String, ArrayList<String>> resetLyrics(HashMap<String, ArrayList<String>> lyrics){
         for (Map.Entry<String, ArrayList<String>> entry : lyrics.entrySet()){
             ArrayList<String> lyric = entry.getValue();
-            lyric.set(1, "False");
-            lyrics.put(entry.getKey(), lyric);
+            String key = entry.getKey();
+            if (!key.equals("SIZE")){
+                lyric.set(1, "False");
+                lyrics.put(entry.getKey(), lyric);
+            }
+
         }
         return lyrics;
     }
+
+    void resetScores(){
+        editor.putString(SCORES, null);
+        editor.apply();
+    }
+
+    void resetAllSongs(){
+        List<Song> allSongs = getAllSongs();
+        for (Song song: allSongs){
+            resetSong(song.getNumber(), false);
+        }
+    }
+
+    void resetAchievements(){
+        List<Achievement> achievements = getAchievements(true);
+        for (Achievement achievement : achievements){
+            achievement.resetAchievement();
+        }
+        saveAchievements(achievements);
+    }
+
 
 
 

@@ -72,6 +72,11 @@ public class Achievement {
         achieved = steps >= stepsGoal;
     }
 
+    void resetAchievement(){
+        steps = 0;
+        achieved = false;
+    }
+
     String getPercentProgress(){
         float percent = ((float) steps / (float) stepsGoal)*100;
         if (percent < 100) return String.valueOf(Math.round(percent)) + "% complete";

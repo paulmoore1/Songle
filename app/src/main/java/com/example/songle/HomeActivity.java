@@ -108,10 +108,7 @@ public class HomeActivity extends AppCompatActivity implements
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        buttonSound = MediaPlayer.create(getApplicationContext(),
-                R.raw.button_click);
-        achievementComplete = MediaPlayer.create(getApplicationContext(), R.raw.happy_jingle);
-        radioButton = MediaPlayer.create(getApplicationContext(), R.raw.radio_button);
+
 
         sharedPreference = new SharedPreference(this);
         //Only bother listening if there is a chance the songs will be downloaded
@@ -141,6 +138,7 @@ public class HomeActivity extends AppCompatActivity implements
             currentViewID = savedInstanceState.getInt("PREVIOUS_VIEW_ID", R.id.nav_home);
             displayView(currentViewID);
         } else {
+            Log.d(TAG, "Displaying home");
             displayView(R.id.nav_home);
         }
 
@@ -181,12 +179,14 @@ public class HomeActivity extends AppCompatActivity implements
         }
         //Only bother listening if there's a chance that the songs may be downloaded.
         if (checkSongs) sharedPreference.registerOnSharedPreferenceChangedListener(listener);
+        setupSounds();
         super.onResume();
     }
 
     @Override
     protected void onPause(){
         sharedPreference.unregisterOnSharedPreferenceChangedListener(listener);
+        releaseSounds();
         super.onPause();
     }
 
@@ -221,6 +221,9 @@ public class HomeActivity extends AppCompatActivity implements
         switch(viewId){
             case R.id.nav_home:
                 fragment = new HomeFragment();
+                Bundle bundle = new Bundle();
+                bundle.putBoolean(getString(R.string.location_permission), checkPermissions());
+                fragment.setArguments(bundle);
                 break;
             case R.id.nav_achievements:
                 fragment = new AchievementsFragment();//new AchievementListFragment();
@@ -263,6 +266,11 @@ public class HomeActivity extends AppCompatActivity implements
             } else {
                 mNetworkFragment.startXmlDownload();
             }
+        } else if (msg.equals(getString(R.string.location_permission))){
+            //If permission requests have not been denied, request them.
+            if (!stopPermissionRequests) requestPermissions();
+            //If they are denied, show that dialog
+            else showLocationDeniedDialog(true);
         }
     }
 
@@ -339,6 +347,8 @@ public class HomeActivity extends AppCompatActivity implements
                 // receive empty arrays.
                 Log.i(TAG, "User interaction was cancelled.");
             } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                //Refresh the view so that the home fragment is updated.
+                displayView(R.id.nav_home);
             } else {
                 Log.d(TAG, "Permission was denied");
                 // Permission denied.
@@ -369,6 +379,7 @@ public class HomeActivity extends AppCompatActivity implements
         ad.show();
     }
 
+    //
     private void showLocationDeniedDialog(Boolean override){
         Log.d(TAG, "Show location denied dialog called");
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
@@ -526,12 +537,13 @@ public class HomeActivity extends AppCompatActivity implements
         ad.show();
     }
 
-
+    //Stops there from being an additional unnecessary menu at the side
     @Override
     public boolean onPrepareOptionsMenu(Menu menu){
         return false;
     }
 
+    // Closes any visible dialogs. Prevents window leaks.
     private void closeDialogs(){
         for (AlertDialog dialog : dialogs){
             if (dialog.isShowing()) dialog.dismiss();
@@ -750,5 +762,20 @@ public class HomeActivity extends AppCompatActivity implements
             }
         }
         return false;
+    }
+
+
+    //These two functions set up and release the sounds to avoid memory leaks
+    private void setupSounds(){
+        buttonSound = MediaPlayer.create(getApplicationContext(),
+                R.raw.button_click);
+        achievementComplete = MediaPlayer.create(getApplicationContext(), R.raw.happy_jingle);
+        radioButton = MediaPlayer.create(getApplicationContext(), R.raw.radio_button);
+    }
+
+    private void releaseSounds(){
+        buttonSound.release();
+        achievementComplete.release();
+        radioButton.release();
     }
 }

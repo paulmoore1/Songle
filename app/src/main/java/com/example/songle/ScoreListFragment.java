@@ -63,7 +63,7 @@ public class ScoreListFragment extends Fragment implements AdapterView.OnItemCli
         AlertDialog.Builder adb = new AlertDialog.Builder(getActivity());
         adb.setTitle(R.string.title_score_info);
         String formatMsg = getString(R.string.msg_score_info_format);
-        String msg = String.format(formatMsg, songTitle, distanceWalked, points, date, rank);
+        String msg = String.format(formatMsg, songTitle, distanceWalked, points, date, timeTaken, rank);
         adb.setMessage(msg);
         AlertDialog ad = adb.create();
         ad.show();

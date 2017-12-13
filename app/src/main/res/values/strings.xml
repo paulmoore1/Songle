@@ -13,6 +13,7 @@
     <string name="drawer_open">Drawer Open</string>
     <string name="drawer_close">Drawer Closed</string>
     <string name="download_required">Download Required</string>
+    <string name="location_permission">Location Permission</string>
     <string name="url_songs_xml">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/songs.xml</string>
     <string name="url_general">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/</string>
     <string name="msg_welcome_songle">Welcome to Songle!</string>
@@ -25,6 +26,15 @@
     <string name="continue_icon">Continue</string>
     <string name="load_icon">Load</string>
     <string name="loading">Loading…</string>
+    <string name="reset">Reset</string>
+    <string name="warning">Warning</string>
+    <string name="msg_reset">Select which items you want to reset</string>
+
+    <string-array name="reset_options">
+        <item>Reset songs</item>
+        <item>Reset scores</item>
+        <item>Reset achievements</item>
+    </string-array>
 
     <!-- For showing scores -->
     <string name="title_score_info">Information</string>
@@ -145,7 +155,7 @@
     <string name="txt_words_to_line_enough">You can reveal a line using your words!</string>
     <string name="txt_words_to_artist_enough">You can reveal the artist using your words!</string>
 
-    <string name="msg_enter_guess">Name of the song</string>
+    <string name="msg_enter_guess">Song title</string>
     <string name="txt_are_you_sure">Are you sure?</string>
     <string name="msg_check_give_up">Do you really want to give up?</string>
     <string name="msg_check_give_up_very_easy">Do you really want to give up?\n

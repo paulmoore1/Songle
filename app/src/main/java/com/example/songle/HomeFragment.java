@@ -13,6 +13,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import java.util.ArrayList;
+
 
 /**
  * Created by Paul on 12/12/2017.
@@ -22,11 +24,13 @@ import android.widget.Button;
 public class HomeFragment extends Fragment implements View.OnClickListener{
     private static final String TAG = HomeFragment.class.getSimpleName();
     private static MediaPlayer buttonSound;
+    private static MediaPlayer radioButton;
     private Context mContext;
     private SharedPreference sharedPreference;
     //Stops more than one button being clicked at a time if for some reason one takes a while to respond.
-    private boolean buttonClicked;
+    private boolean buttonClicked, locationGranted;
     private FragmentListener mListener;
+
 
 
     @Override
@@ -34,9 +38,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         super.onCreate(savedInstanceState);
         mContext = getActivity().getApplicationContext();
         sharedPreference = new SharedPreference(mContext);
-        buttonSound = MediaPlayer.create(mContext, R.raw.button_click);
-
-
     }
 
     @Override
@@ -56,27 +57,56 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
             if (loadGame != null){
                 loadGame.setOnClickListener(this);
             }
+            Button resetGame = view.findViewById(R.id.btn_reset);
+            if (resetGame != null) {
+                resetGame.setOnClickListener(this);
+            }
         }
+        Bundle args = getArguments();
+        locationGranted = args.getBoolean(getString(R.string.location_permission));
         return view;
     }
 
     @Override
+    public void onResume(){
+        super.onResume();
+        setupSounds();
+    }
+
+    @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.btn_new_game){
+        if(locationGranted){
+            if (v.getId() == R.id.btn_new_game){
+                buttonSound.start();
+                newGame();
+            } else if (v.getId() == R.id.btn_continue_game){
+                buttonSound.start();
+                continueGame();
+            } else if (v.getId() == R.id.btn_load_game){
+                buttonSound.start();
+                loadGame();
+            }
+        } else {
+            notifyPermissionsRequired();
+        }
+        if (v.getId() == R.id.btn_reset){
             buttonSound.start();
-            newGame();
-        } else if (v.getId() == R.id.btn_continue_game){
-            buttonSound.start();
-            continueGame();
-        } else if (v.getId() == R.id.btn_load_game){
-            buttonSound.start();
-            loadGame();
+            sendResetGameDialog();
         }
     }
 
+    // Notifies the home activity that the game needs to be downloaded
     private void notifyGameNeedsDownload(){
         if (mListener!= null){
             String msg = getString(R.string.download_required);
+            mListener.onFragmentInteraction(msg);
+        }
+    }
+
+    // Notifies the home activity that location permissions are required.
+    private void notifyPermissionsRequired(){
+        if (mListener != null){
+            String msg = getString(R.string.location_permission);
             mListener.onFragmentInteraction(msg);
         }
     }
@@ -89,15 +119,20 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         } else {
             Log.e(TAG, "Must implement FragmentListener");
         }
+
     }
 
     @Override
     public void onDetach(){
         super.onDetach();
         mListener = null;
+        releaseSounds();
     }
 
+    // Start a new game.
     private void newGame(){
+        // This checks for all the buttons that one was not previously clicked.
+        // Prevents multiple clicks from being acted on while a task is being done.
         if (!buttonClicked){
             buttonClicked = true;
             if (sharedPreference.getAllSongs() != null){
@@ -114,18 +149,19 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
 
     }
 
+    // Continue the most recently saved game
     private void continueGame(){
         Log.v(TAG, "Continue Game button clicked");
         if (!buttonClicked){
             buttonClicked = true;
             Song song = sharedPreference.getCurrentSong();
             String diffLevel = sharedPreference.getCurrentDifficultyLevel();
-            //check there is actually a song in the current song list and a difficulty chosen
+            // Check there is actually a song in the current song list and a difficulty chosen
             if (song != null && diffLevel != null){
-                //song is incomplete as expected, check that necessary files are present
+                // Check song is incomplete
                 if (song.isSongIncomplete()){
                     String songNumber = song.getNumber();
-                    //If the lyrics are not stored
+                    // Check the lyrics and map are stored correctly
                     if(!sharedPreference.checkLyricsStored(songNumber) ||
                             !sharedPreference.checkMaps(songNumber)){
                         Log.e(TAG, "Lyrics/maps not stored correctly");
@@ -133,34 +169,29 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                         buttonClicked = false;
                         return;
                     }
-                    //Lyrics and map stored correctly, can load game.
+                    // Lyrics and map stored correctly, can load game.
                     Intent intent = new Intent(mContext, MainGameActivity.class);
                     startActivity(intent);
 
                 } else if (song.isSongComplete()) {
-                    //send alert dialog that the song has already been done.
+                    // Send alert dialog that the song has already been done.
                     sendGameCompletedAlreadyDialog();
 
                 } else if (song.isSongNotStarted()){
                     sendGameNotFoundDialog();
-                    //error, should have been marked as incomplete if it is in currentSong
+                    // Error, should have been marked as incomplete if it is in currentSong
                     Log.e(TAG, "Song marked as not started when tried to continue");
-
-                } else {
-                    //error, should be at least one of these!
-                    Log.e(TAG, "Unexpected song status tag when tried to load");
-
                 }
             } else {
-                //send alert that no game was found
+                // Send alert that no game was found
                 sendGameNotFoundDialog();
-
             }
         }
+        // Allow buttons to be clicked again
         buttonClicked = false;
-
     }
 
+    // Loads an old game
     private void loadGame(){
         Log.d(TAG, "loadGame called");
         if (!buttonClicked){
@@ -206,6 +237,57 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         });
         AlertDialog alertDialog = adb.create();
         alertDialog.show();
+    }
+
+    private void sendResetGameDialog(){
+        AlertDialog.Builder adb = new AlertDialog.Builder(getActivity());
+        adb.setTitle(R.string.warning);
+        final CharSequence[] resetOptions = getResources().getStringArray(R.array.reset_options);
+        final ArrayList selectedItems = new ArrayList();
+
+        adb.setMultiChoiceItems(resetOptions, null, new DialogInterface.OnMultiChoiceClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+                radioButton.start();
+                if(isChecked){
+                    selectedItems.add(which);
+                } else if (selectedItems.contains(which)){
+                    selectedItems.remove(Integer.valueOf(which));
+                }
+            }
+        }).setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                buttonSound.start();
+                if (selectedItems.contains(0)){
+                    sharedPreference.resetAllSongs();
+                }
+                if (selectedItems.contains(1)){
+                    sharedPreference.resetScores();
+                }
+                if (selectedItems.contains(2)){
+                    sharedPreference.resetAchievements();
+                }
+            }
+        }). setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                buttonSound.start();
+            }
+        });
+        AlertDialog ad = adb.create();
+        ad.show();
+
+    }
+
+    private void setupSounds(){
+        buttonSound = MediaPlayer.create(mContext, R.raw.button_click);
+        radioButton = MediaPlayer.create(mContext, R.raw.radio_button);
+    }
+
+    private void releaseSounds(){
+        buttonSound.release();
+        radioButton.release();
     }
 
 }

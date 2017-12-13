@@ -50,20 +50,13 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState){
-
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
         View view = inflater.inflate(R.layout.song_list_fragment, container, false);
-        findViewsById(view);
-
+        songListView = view.findViewById(R.id.list_song);
         SongListAdapter songListAdapter = new SongListAdapter(activity, songs);
         songListView.setAdapter(songListAdapter);
         songListView.setOnItemClickListener(this);
         return view;
-    }
-
-    private void findViewsById(View view){
-        songListView = view.findViewById(R.id.list_song);
     }
 
     @Override

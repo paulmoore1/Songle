@@ -27,7 +27,7 @@ public class AchievementsFragment extends Fragment{
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         sharedPreference = new SharedPreference(getActivity().getApplicationContext());
-        List<Achievement> achievements = sharedPreference.getAchievements();
+        List<Achievement> achievements = sharedPreference.getAchievements(false);
         if (achievements != null){
             int n = achievements.size();
             gridViewString = new String[n];

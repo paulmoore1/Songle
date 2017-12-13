@@ -32,7 +32,7 @@ class XmlSongParser {
     void parse(InputStream in) throws XmlPullParserException,
             IOException{
         try {
-            Log.d(TAG, "parse called");
+            Log.v(TAG, "parse called");
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(in, null);
@@ -43,23 +43,18 @@ class XmlSongParser {
             }
         } finally {
             in.close();
-            Log.d(TAG, "input stream closed");
+            Log.v(TAG, "input stream closed");
         }
     }
 
     private List<Song> readSongs(XmlPullParser parser) throws
             XmlPullParserException, IOException{
-        Log.d(TAG, "readSongs called");
+        Log.v(TAG, "readSongs called");
         String timestamp = readTimestamp(parser);
-        Log.d(TAG, "timestamp: " + timestamp);
+        Log.d(TAG, "timestamp on XML: " + timestamp);
 
         //get oldTimestamp to compare and check.
         String oldTimestamp = sharedPreference.getMostRecentTimestamp();
-        if (oldTimestamp == null){
-            oldTimestamp = mContext.getString(R.string.default_timestamp);
-        }
-
-        Log.d(TAG, "Comparing with old timestamp: " + oldTimestamp);
         if (timestamp.equals(oldTimestamp)){
             Log.d(TAG, "Matches old timestamp. Stop parsing");
             return null;
@@ -79,8 +74,7 @@ class XmlSongParser {
                     skip(parser);
                 }
             }
-            Log.d(TAG, "Finished parsing achievements");
-            //update timestamp
+            // Update timestamp
             sharedPreference.saveMostRecentTimestamp(timestamp);
             return songs;
         }
@@ -189,9 +183,6 @@ class XmlSongParser {
             timestamp = parser.getAttributeValue(null, "timestamp");
 
         }
-
         return timestamp;
-
     }
-
 }

@@ -1,7 +1,5 @@
 package com.example.songle;
 
-import java.text.DateFormat;
-import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -15,7 +13,7 @@ public class SongInfo {
     private final String artist;
     private final String link;
     private int numWordsFound;
-    private int numNumWordsAvailable;
+    private int numWordsAvailable;
     private float distanceWalked;
     private boolean incorrectlyGuessed;
     private boolean artistRevealed;
@@ -27,7 +25,7 @@ public class SongInfo {
         this.artist = artist;
         this.link = link;
         numWordsFound= 0;
-        numNumWordsAvailable = 0;
+        numWordsAvailable = 0;
         distanceWalked = 0;
         incorrectlyGuessed = false;
         artistRevealed = false;
@@ -52,16 +50,17 @@ public class SongInfo {
     }
 
     int getNumWordsAvailable(){
-        return  numNumWordsAvailable;
+        return numWordsAvailable;
     }
 
     void incrementNumWordsFound(){
         numWordsFound++;
-        numNumWordsAvailable++;
+        numWordsAvailable++;
     }
 
     void removeNumWordsAvailable(int num){
-        numNumWordsAvailable -= num;
+        if (numWordsAvailable >= num) numWordsAvailable -= num;
+        else numWordsAvailable = 0;
     }
 
     void addDistance(float addedDistance){
@@ -98,7 +97,7 @@ public class SongInfo {
 
     void resetSongInfo(){
         numWordsFound = 0;
-        numNumWordsAvailable = 0;
+        numWordsAvailable = 0;
         distanceWalked = 0;
         incorrectlyGuessed = false;
         artistRevealed = false;

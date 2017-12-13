@@ -39,8 +39,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     private String songNumber;
     private String diffLevel;
     private final Object syncObject = new Object();
-    private static MediaPlayer buttonClick;
-    private static MediaPlayer radioButton;
+    private MediaPlayer buttonClickSound;
+    private MediaPlayer radioButtonSound;
 
 
     private final SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -78,8 +78,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         txtViewSong = findViewById(R.id.txt_selected_song);
         txtViewDiff = findViewById(R.id.txt_current_difficulty);
 
-        buttonClick = MediaPlayer.create(this, R.raw.button_click);
-        radioButton = MediaPlayer.create(this, R.raw.radio_button);
+
         //get the game type to pass on to the songList fragment, so it loads the correct games.
         gameType = getIntent().getStringExtra("GAME_TYPE");
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
@@ -121,7 +120,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.btn_select_song){
-            //buttonClick.start();
+            //buttonClickSound.start();
             //show the song selection fragment
             setFragmentTitle(R.id.btn_select_song);
             SongListFragment songListFragment = new SongListFragment();
@@ -131,10 +130,10 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             songListFragment.setArguments(bundle);
             switchContent(songListFragment, SongListFragment.ARG_ITEM_ID);
         } else if (view.getId() == R.id.btn_select_difficulty){
-            //buttonClick.start();
+            //buttonClickSound.start();
             sendSelectDifficultyDialog();
         } else if (view.getId() == R.id.btn_start_game){
-            //buttonClick.start();
+            //buttonClickSound.start();
             if (songNumber == null){
                 Toast.makeText(getApplicationContext(),
                         getString(R.string.msg_no_song_selected), Toast.LENGTH_SHORT).show();
@@ -147,39 +146,19 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         }
     }
 
-    private void setFragmentTitle(int resourceID){
-        setTitle(resourceID);
-        getActionBar().setTitle(resourceID);
-    }
-
-    private void switchContent(Fragment fragment, String tag){
-        while (fragmentManager.popBackStackImmediate());
-
-        if (fragment != null){
-            setTitle(R.string.txt_select_song);
-            getActionBar().setTitle(R.string.txt_select_song);
-            FragmentTransaction transaction = fragmentManager.beginTransaction();
-            transaction.replace(R.id.content_frame, fragment, tag);
-            transaction.addToBackStack(tag);
-            transaction.commit();
-            contentFragment = fragment;
-
-        }
-
-    }
 
     @Override
     protected void onResume(){
         super.onResume();
-        //If new songs were downloaded, notify the user.
-        if (getIntent().getBooleanExtra("NEW_SONGS", false)) sendSongsDownloadedDialog();
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
+        setupSounds();
 
     }
 
     @Override
     protected void onPause(){
         sharedPreference.unregisterOnSharedPreferenceChangedListener(listener);
+        releaseSounds();
         super.onPause();
     }
 
@@ -191,71 +170,77 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         super.onSaveInstanceState(outState);
     }
 
-
+    // Starts the game by downloading needed files.
     private void startGame(){
-        //save this song status to shared preferences as it has been definitely chosen.
         Song currentSong = sharedPreference.getCurrentSong();
-
         String number = currentSong.getNumber();
+        // Save this song status to shared preferences.
         sharedPreference.saveSongStatus(number, "I");
-        //Override old info only if a new game has been chosen.
-        if (gameType.equals(getString(R.string.txt_new_game))){
+
+        // Create new info if a new game has been chosen and it wasn't started before.
+        if (gameType.equals(getString(R.string.txt_new_game)) && currentSong.isSongNotStarted()){
             String title = currentSong.getTitle();
             String artist = currentSong.getArtist();
             String link = currentSong.getLink();
             SongInfo newInfo = new SongInfo(title, artist, link);
             sharedPreference.saveSongInfo(number, newInfo);
+        } else if ((gameType.equals(getString(R.string.txt_new_game)) && currentSong.isSongIncomplete()) ||
+                currentSong.isSongComplete()) {// Reset the song if it's a new game and the song was incomplete, or if the song was completed before.
+            sharedPreference.resetSong(number, true);
         }
 
-        //use this just in case it gets stuck downloading for more than 10s - resets loading_layout screen
-        Handler handler = new Handler();
-        handler.postDelayed(resetSettingsActivity, 10000);
-
-        //check lyrics are stored - if not then download them
+        // Check lyrics are stored - if not then download them
         if (!sharedPreference.checkLyricsStored(songNumber)){
+            Log.d(TAG, "Started downloading lyrics");
             mNetworkFragment.startLyricsDownload();
             //do nothing further until download is finished
             synchronized (syncObject){
                 try {
-                    syncObject.wait();
+                    //Wait up to 15 seconds, will trigger reset otherwise
+                    syncObject.wait(15000);
                 } catch (InterruptedException e){
                     Log.e(TAG, "Interrupted: " + e);
-                    //reset the activity and notify the user that there was an error.
+                    // Reset the activity and notify the user that there was an error.
                     resetSettingsActivity.run();
                 }
             }
+            if (!sharedPreference.checkLyricsStored(songNumber)) resetSettingsActivity.run();
 
             Log.d(TAG, "Lyrics downloaded");
         } else {
             Log.d(TAG, "Lyrics already stored");
         }
 
-        //check maps are stored - if not then download them.
+        // Check maps are stored - if not then download them.
         if (!sharedPreference.checkMaps(songNumber)){
             Log.d(TAG, "Started downloading Maps");
-            startMapsDownload();
-            //do nothing further until download is finished
+            mNetworkFragment.startKmlDownload();
+            // Do nothing further until download is finished
             synchronized (syncObject){
                 try {
-                    syncObject.wait();
+                    //Wait up to 15 seconds, will trigger reset otherwise
+                    syncObject.wait(15000);
                 } catch (InterruptedException e){
                     Log.e(TAG, "Interrupted: " + e);
-                    //reset the activity and notify the user that there was an error
+                    // Reset the activity and notify the user that there was an error
                     resetSettingsActivity.run();
                 }
             }
+            if (!sharedPreference.checkMaps(songNumber)) resetSettingsActivity.run();
+
+
             Log.d(TAG, "Maps downloaded");
         } else {
             Log.d(TAG, "Maps already stored");
         }
-        Log.d(TAG, "Downloaded maps and lyrics, ready to start");
-        //now ready to start game
+
+
+        // Now ready to start game
         Intent intent = new Intent(GameSettingsActivity.this, MainGameActivity.class);
-        //all data loaded, cancel handler
-        handler.removeCallbacks(resetSettingsActivity);
         startActivity(intent);
     }
 
+    // Resets the settings activity and notifies it that there was an error while downloading.
     private final Runnable resetSettingsActivity = new Runnable() {
         @Override
         public void run() {
@@ -274,9 +259,11 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             case android.R.id.home:
                 int count = getSupportFragmentManager().getBackStackEntryCount();
                 if (count == 0) {
+                    // Go back to parent activity
                     NavUtils.navigateUpFromSameTask(this);
                     return true;
                 } else {
+                    // Remove the fragment (the songs list)
                     getSupportFragmentManager().popBackStack();
                     return true;
                 }
@@ -288,6 +275,25 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     @Override
     public void onBackStackChanged(){
 
+    }
+
+    private void setFragmentTitle(int resourceID){
+        setTitle(resourceID);
+        getActionBar().setTitle(resourceID);
+    }
+
+    private void switchContent(Fragment fragment, String tag){
+        while (fragmentManager.popBackStackImmediate());
+
+        if (fragment != null){
+            setTitle(R.string.txt_select_song);
+            getActionBar().setTitle(R.string.txt_select_song);
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.replace(R.id.content_frame, fragment, tag);
+            transaction.addToBackStack(tag);
+            transaction.commit();
+            contentFragment = fragment;
+        }
     }
 
     @Override
@@ -304,21 +310,10 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
     // checks if a network connection is available
     // Code from https://stackoverflow.com/questions/19240627/how-to-check-internet-connection-available-or-not-when-application-start/19240810#19240810
-    private boolean isNetworkAvailable(Context context)
-    {
+    private boolean isNetworkAvailable(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
-    }
-
-
-    private void startLyricsDownload(){
-        Log.d(TAG, "startLyricsDownload called");
-        mNetworkFragment.startLyricsDownload();
-    }
-
-    private void startMapsDownload(){
-        mNetworkFragment.startKmlDownload();
     }
 
     @Override
@@ -373,14 +368,14 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         adb.setPositiveButton(R.string.txt_internet_settings, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                buttonClick.start();
+                buttonClickSound.start();
                 startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
             }
         });
         adb.setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                buttonClick.start();
+                buttonClickSound.start();
             }
         });
         AlertDialog alertDialog = adb.create();
@@ -395,7 +390,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                buttonClick.start();
+                buttonClickSound.start();
             }
         });
         AlertDialog alertDialog = adb.create();
@@ -412,7 +407,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        radioButton.start();
+                        radioButtonSound.start();
                         String chosenDiff = diffList[i].toString();
                         mChosenDifficulty.add(0, chosenDiff);
 
@@ -420,7 +415,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
                 }).setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                buttonClick.start();
+                buttonClickSound.start();
                 if (mChosenDifficulty.size() > 0){
                     String chosenDiff = mChosenDifficulty.get(0);
                     //save value in private string
@@ -442,50 +437,53 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     private void sendConfirmGameDialog(final String chosenSongNumber, final String chosenDiff){
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         adb.setTitle(R.string.confirm_game_settings);
-        String beginQuestion = getString(R.string.msg_begin_question);
-        String beginMessage = "Song number: " + chosenSongNumber + "\nDifficulty level: " +
-                chosenDiff + "\n" + beginQuestion;
+        String beginMessage = getString(R.string.msg_begin_question);
+        Song chosenSong = sharedPreference.getCurrentSong();
+        // If the song was completed before, or was incomplete but a new game is being started,
+        // notify the user that this will reset any progress.
+        if (chosenSong.isSongComplete() ||
+                (chosenSong.isSongIncomplete() && gameType.equals(getString(R.string.txt_new_game)))){
+            beginMessage = "Song number: " + chosenSongNumber + "\nDifficulty level: " +
+                    chosenDiff + "\nPrevious progress will be reset\n" + beginMessage;
+        } else {
+            // Song is incomplete or not started, can just confirm the choice with no warning.
+            beginMessage = "Song number: " + chosenSongNumber + "\nDifficulty level: " +
+                    chosenDiff + "\n" + beginMessage;
+        }
         adb.setMessage(beginMessage);
-        //if user is happy with settings, start the game
+        // If user is happy with settings, start the game
         adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                buttonClick.start();
-                //check for internet connection again
+                buttonClickSound.start();
+                // Check for internet connection again
                 boolean networkOn = isNetworkAvailable(getApplicationContext());
                 if (!networkOn){
                     sendNetworkErrorDialog();
                     return;
                 }
+                // Going to start the game, so switch to the loading layout
                 setContentView(R.layout.loading_layout);
                 startGame();
             }
         }).setNegativeButton(R.string.txt_cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                buttonClick.start();
+                buttonClickSound.start();
             }
         });
         AlertDialog ad = adb.create();
         ad.show();
     }
 
-    private void sendSongsDownloadedDialog(){
-        Log.e(TAG, "Dialog builder started");
-        AlertDialog.Builder adb = new AlertDialog.Builder(this);
-        adb.setTitle(R.string.txt_new_songs);
-        adb.setMessage(R.string.msg_new_songs);
-        adb.setPositiveButton(R.string.txt_okay, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int i) {
-
-            }
-        });
-        AlertDialog alertDialog = adb.create();
-        alertDialog.show();
+    // Sets up and releases the sounds to avoid memory leaks
+    private void setupSounds(){
+        buttonClickSound = MediaPlayer.create(this, R.raw.button_click);
+        radioButtonSound = MediaPlayer.create(this, R.raw.radio_button);
     }
 
-
-
-
+    private void releaseSounds(){
+        buttonClickSound.release();
+        radioButtonSound.release();
+    }
 }
