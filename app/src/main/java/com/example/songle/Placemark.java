@@ -4,14 +4,15 @@ import com.google.android.gms.maps.model.LatLng;
 
 /**
  * Created by Paul Moore on 28-Oct-17.
+ * Class for storing Placemarks.
  */
 
-public class Placemark {
-    private String key;
-    private String description;
-    private LatLng location;
+class Placemark {
+    private final String key;
+    private final String description;
+    private final LatLng location;
 
-    public Placemark(String key, String description, LatLng location){
+    Placemark(String key, String description, LatLng location){
         this.key = key;
         this.description = description;
         this.location = location;
@@ -21,11 +22,11 @@ public class Placemark {
         return key;
     }
 
-    public String getDescription(){
+    String getDescription(){
         return description;
     }
 
-    public LatLng getLocation(){
+    LatLng getLocation(){
         return location;
     }
 

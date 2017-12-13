@@ -14,6 +14,7 @@ import java.util.HashMap;
 
 /**
  * Created by Paul on 21/11/2017.
+ * Fragment that displays the words of the song in the main game
  */
 
 public class WordsFragment extends Fragment {
@@ -31,7 +32,6 @@ public class WordsFragment extends Fragment {
         this.sharedPreference = new SharedPreference(getActivity().getApplicationContext());
         sharedPreference.registerOnSharedPreferenceChangedListener(listener);
         songNumber = sharedPreference.getCurrentSongNumber();
-        Log.v(TAG, "songNumber " + songNumber);
         lyrics = sharedPreference.getLyrics(songNumber);
 
 
@@ -49,7 +49,7 @@ public class WordsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView called");
         View rootView = inflater.inflate(R.layout.words_tab_fragment, container, false);
-        wordsTextView = (TextView) rootView.findViewById(R.id.wordsTextView);
+        wordsTextView = rootView.findViewById(R.id.wordsTextView);
         wordsTextView.setText(lyricsToString());
         return rootView;
     }

@@ -39,17 +39,14 @@ import java.util.List;
  * Implementation of headless Fragment that runs an AsyncTask to fetch data from the network.
  */
 public class NetworkFragment extends Fragment {
-    public static final String TAG = "NetworkFragment";
-
+    private static final String TAG = "NetworkFragment";
     private static final String URL_KEY = "UrlKey";
-
     private DownloadCallback mCallback;
     private DownloadLyricsTask mDownloadLyricsTask;
     private DownloadXmlTask mDownloadXmlTask;
     private DownloadKmlTask mDownloadKmlTask;
     private String mUrlString;
     private String downloadType;
-    private static int numRetries;
 
     /**
      * Static initializer for NetworkFragment that sets the URL of the host it will be downloading
@@ -78,7 +75,6 @@ public class NetworkFragment extends Fragment {
         super.onCreate(savedInstanceState);
         // Retain this Fragment across configuration changes in the host Activity.
         setRetainInstance(true);
-        numRetries = 5;
         mUrlString = getArguments().getString(URL_KEY);
     }
 
@@ -174,7 +170,7 @@ public class NetworkFragment extends Fragment {
      * Implementation of AsyncTask that runs a network operation on a background thread.
      */
     private class DownloadLyricsTask extends AsyncTask<String, Integer, String> {
-        private String TAG = DownloadLyricsTask.class.getSimpleName();
+        private final String TAG = DownloadLyricsTask.class.getSimpleName();
         private SharedPreference sharedPreferenceLyrics =
                 new SharedPreference(getActivity().getApplicationContext());
 
@@ -201,24 +197,19 @@ public class NetworkFragment extends Fragment {
         @Override
         protected String doInBackground(String... urls) {
             Log.v(TAG, "Started loading_layout lyrics in the background");
-            String result = null;
-            try {
-                result = loadLyricsFromNetwork();
-            } catch (IOException e){
-                Log.e(TAG, "Unable to load content");
-            }
+            String result = loadLyricsFromNetwork();
             if (result != null && result.equals("Parsed")){
+                Log.e(TAG,"Was parsed");
                 onPostExecute("Updated");
                 return "Updated";
             } else {
+                Log.e(TAG, "Was not parsed");
                 onPostExecute("Not updated");
                 return "Not updated";
             }
-
         }
 
-        private String loadLyricsFromNetwork() throws
-        IOException{
+        private String loadLyricsFromNetwork(){
             Log.v(TAG, "loadLyricsFromNetwork called");
             String songNumber = sharedPreferenceLyrics.getCurrentSongNumber();
             String mUrlString = getString(R.string.url_general) +
@@ -326,21 +317,11 @@ public class NetworkFragment extends Fragment {
         @Override
         protected String doInBackground(String... urls){
             Log.v(TAG, "doInBackground called");
-            try {
-                loadXmlFromNetwork(urls[0]);
-            }catch (XmlPullParserException e){
-                Log.e(TAG,"Error parsing XML: " + e);
-                return null;
-            } catch (IOException e){
-                Log.e(TAG,"IO exception thrown: " + e);
-                return null;
-            }
+            loadXmlFromNetwork(urls[0]);
             return "Updated";
-
         }
 
-        private void loadXmlFromNetwork(String urlString) throws
-                XmlPullParserException, IOException{
+        private void loadXmlFromNetwork(String urlString){
             Log.v(TAG, "loadXmlFromNetwork called on string: " + urlString);
             try {
                 downloadUrl(urlString);
@@ -360,7 +341,7 @@ public class NetworkFragment extends Fragment {
          * The simplest solution was to download and parse in the same function, so that the stream
          * could be fully parsed, and the connection fully disconnected at the end.
          * @param urlString - URL to download
-         * @throws IOException
+         * @throws IOException - exception if there is an error
          */
         private void downloadUrl(String urlString) throws IOException {
             Log.v(TAG, "downloadUrl called");
@@ -434,13 +415,9 @@ public class NetworkFragment extends Fragment {
                 String mapNumber = Integer.toString(i);
                 String urlString = baseUrl + songNumber + "/map" + mapNumber + ".kml";
                 Log.d(TAG, "Map URL: " + urlString);
-                try {
-                    placemarks = loadKmlFromNetwork(urlString);
-                } catch (IOException e){
-                    Log.e(TAG, "IOException: " + e);
-                } catch (XmlPullParserException e){
-                    Log.e(TAG, "XML Exception: " + e);
-                }
+
+                placemarks = loadKmlFromNetwork(urlString);
+
                 if (placemarks != null){
                     Log.d(TAG, "Downloaded map#" + i);
                     sharedPreferenceKml.saveMap(
@@ -459,14 +436,9 @@ public class NetworkFragment extends Fragment {
             }
         }
 
-        private List<Placemark> loadKmlFromNetwork(String urlString) throws
-                XmlPullParserException, IOException{
+        private List<Placemark> loadKmlFromNetwork(String urlString){
             Log.v(TAG, "loadKmlFromNetwork called");
-            InputStream stream = null;
-            //Instantiate the parser.
-            XmlMapParser parser = new XmlMapParser();
             List<Placemark> placemarks = null;
-
             try {
                 placemarks = downloadPlacemarks(urlString);
             } catch(Exception e){

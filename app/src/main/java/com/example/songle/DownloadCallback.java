@@ -7,7 +7,7 @@ import android.net.NetworkInfo;
  * From https://developer.android.com/training/basics/network-ops/connecting.html
  */
 
-public interface DownloadCallback<T> {
+interface DownloadCallback<T> {
     interface Progress {
         int ERROR = -1;
         int CONNECT_SUCCESS = 0;

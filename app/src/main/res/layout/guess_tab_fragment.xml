@@ -5,15 +5,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <TextView
+        android:id="@+id/textViewGuessFragmentTitle"
+        android:layout_width="match_parent"
+        android:layout_height="68dp"
+        android:background="@drawable/box_blue"
+        android:gravity="center"
+        android:text="@string/msg_guess_fragment_title"
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        android:elevation="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <Button
         android:id="@+id/btn_guess"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="24dp"
-        android:layout_marginTop="68dp"
+        android:layout_marginTop="16dp"
         android:text="@string/btn_txt_guess"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewGuessFragmentTitle" />
 
     <Button
         android:id="@+id/btn_give_up"
@@ -30,8 +45,8 @@
         android:id="@+id/ic_artist"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="20dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextGuess"
         app:srcCompat="@drawable/ic_artist_black"
@@ -43,10 +58,10 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="24dp"
         android:text="@string/txt_default_artist"
         app:layout_constraintEnd_toStartOf="@+id/btn_guess"
-        app:layout_constraintHorizontal_bias="0.071"
+        app:layout_constraintHorizontal_bias="0.105"
         app:layout_constraintStart_toEndOf="@+id/ic_artist"
         app:layout_constraintTop_toBottomOf="@+id/editTextGuess" />
 
@@ -105,23 +120,23 @@
         android:layout_marginTop="8dp"
         android:paddingBottom="@dimen/activity_horizontal_margin"
         android:paddingRight="@dimen/activity_horizontal_margin"
+        app:fab_colorNormal="@color/fab_menu_hint"
+        app:fab_colorPressed="@color/fab_menu_hint_pressed"
+        app:fab_colorRipple="#99FFFFFF"
+        app:fab_shadowColor="#66000000"
+        app:fab_showShadow="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toEndOf="@+id/hintArtistTextView"
         app:layout_constraintTop_toBottomOf="@+id/btn_give_up"
-        app:layout_constraintVertical_bias="0.135"
-        app:fab_colorRipple="#99FFFFFF"
-        app:fab_shadowColor="#66000000"
-        app:fab_showShadow="true"
+        app:layout_constraintVertical_bias="0.0"
+        app:menu_backgroundColor="@color/transparent"
+        app:menu_buttonToggleAnimation="@anim/fab_scale_up"
         app:menu_colorNormal="@color/fab_menu_hint"
         app:menu_colorPressed="@color/fab_menu_hint_pressed"
-        app:fab_colorNormal="@color/fab_menu_hint"
-        app:fab_colorPressed="@color/fab_menu_hint_pressed"
-        app:menu_buttonToggleAnimation="@anim/fab_scale_up"
-        app:menu_icon="@drawable/ic_hint"
-        app:menu_backgroundColor="@color/transparent"
         app:menu_fab_label="@string/fam_get_hint"
+        app:menu_icon="@drawable/ic_hint"
         app:menu_labels_colorNormal="@color/colorPrimary"
         app:menu_labels_colorPressed="@color/colorPrimaryDark"
         app:menu_labels_colorRipple="#66FFFFFF"
@@ -157,13 +172,13 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="68dp"
+        android:layout_marginTop="16dp"
         android:ems="10"
         android:hint="@string/msg_enter_guess"
         android:inputType="text"
         app:layout_constraintEnd_toStartOf="@+id/btn_guess"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="0.283"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewGuessFragmentTitle" />
 
 </android.support.constraint.ConstraintLayout>

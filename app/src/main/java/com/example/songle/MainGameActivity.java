@@ -5,6 +5,7 @@ package com.example.songle;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -13,12 +14,12 @@ import android.hardware.SensorManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.annotation.ColorRes;
-import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
@@ -28,10 +29,8 @@ import com.aurelhubert.ahbottomnavigation.notification.AHNotification;
 public class MainGameActivity extends AppCompatActivity implements SensorEventListener {
     private static final String TAG = "MainGameActivity";
     private final int[] colors = {R.color.maps_tab, R.color.words_tab, R.color.guess_tab};
-    private Toolbar toolbar;
     private NoSwipePager viewPager;
     private AHBottomNavigation bottomNavigation;
-    private BottomBarAdapter pagerAdapter;
 
     //Keep track of shared preferences and any changes
     private SharedPreference sharedPreference;
@@ -72,12 +71,7 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super onCreate called");
         setContentView(R.layout.main_game_layout);
-/*
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        //noinspection ConstantConditions
-        getSupportActionBar().setTitle("Let's play!");
-*/
+
         setupViewPager();
 
         sharedPreference = new SharedPreference(getApplicationContext());
@@ -124,12 +118,21 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
         };
 
 
-        bottomNavigation = (AHBottomNavigation) findViewById(R.id.bottom_navigation);
+        bottomNavigation = findViewById(R.id.bottom_navigation);
         setupBottomNavBehaviors();
         setupBottomNavStyle();
 
         addBottomNavigationItems();
         bottomNavigation.setCurrentItem(0);
+
+        UiChangeListener();
+/*
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
+            View decorView = getWindow().getDecorView();
+            int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+            decorView.setSystemUiVisibility(uiOptions);
+        }
+*/
 
 
         bottomNavigation.setOnTabSelectedListener(new AHBottomNavigation.OnTabSelectedListener() {
@@ -139,6 +142,7 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
                 tabSwitchSound.start();
                 if (!wasSelected)
                     viewPager.setCurrentItem(position);
+
                 //allow translucent scrolling for middle position only.
                 //    if(position == 1) bottomNavigation.setTranslucentNavigationEnabled(true);
                 //    else bottomNavigation.setTranslucentNavigationEnabled(false);
@@ -158,46 +162,18 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
 
     private void setupViewPager() {
         Log.v(TAG, "setupViewPager called");
-        viewPager = (NoSwipePager) findViewById(R.id.viewpager);
+        viewPager = findViewById(R.id.viewpager);
         viewPager.setPagingEnabled(false);
-        pagerAdapter = new BottomBarAdapter(getSupportFragmentManager());
-        pagerAdapter.addFragments(createMapFragment(R.color.maps_tab));
-        pagerAdapter.addFragments(createWordsFragment(R.color.words_tab));
-        pagerAdapter.addFragments(createGuessFragment(R.color.guess_tab));
+        BottomBarAdapter pagerAdapter = new BottomBarAdapter(getSupportFragmentManager());
+        pagerAdapter.addFragments(new MapsFragment());
+        pagerAdapter.addFragments(new WordsFragment());
+        pagerAdapter.addFragments(new GuessFragment());
         /*
         pagerAdapter.addFragments(createMapFragment(R.color.maps_tab));
         pagerAdapter.addFragments(createWordsFragment(R.color.words_tab));
         pagerAdapter.addFragments(createGuessFragment(R.color.guess_tab));
 */
         viewPager.setAdapter(pagerAdapter);
-    }
-
-    @NonNull
-    private MapsFragment createMapFragment(int color) {
-        MapsFragment fragment = new MapsFragment();
-        fragment.setArguments(passFragmentArguments(fetchColor(color)));
-        return fragment;
-    }
-
-    @NonNull
-    private WordsFragment createWordsFragment(int color) {
-        WordsFragment fragment = new WordsFragment();
-        fragment.setArguments(passFragmentArguments(fetchColor(color)));
-        return fragment;
-    }
-
-    @NonNull
-    private GuessFragment createGuessFragment(int color) {
-        GuessFragment fragment = new GuessFragment();
-        fragment.setArguments(passFragmentArguments(fetchColor(color)));
-        return fragment;
-    }
-
-    @NonNull
-    private Bundle passFragmentArguments(int color) {
-        Bundle bundle = new Bundle();
-        bundle.putInt("color", color);
-        return bundle;
     }
 
     private void createWordsFoundNotification() {
@@ -225,7 +201,7 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
     }
 
 
-    public void setupBottomNavBehaviors() {
+    private void setupBottomNavBehaviors() {
         Log.v(TAG, "setupBottomNavBehaviours called");
 //       bottomNavigation.setBehaviorTranslationEnabled(false);
 
@@ -233,7 +209,41 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
         Warning: Toolbar Clipping might occur. Solve this by wrapping it in a LinearLayout with a top
         View of 24dp (status bar size) height.
          */
-        bottomNavigation.setTranslucentNavigationEnabled(true);
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
+            bottomNavigation.setTranslucentNavigationEnabled(false);
+        } else {
+            bottomNavigation.setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
+                @Override
+                public void onSystemUiVisibilityChange(int visibility) {
+                    //System bars are visible
+                    if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0){
+                        bottomNavigation.setTranslucentNavigationEnabled(true);
+                    } else {
+                        bottomNavigation.setTranslucentNavigationEnabled(false);
+                    }
+                }
+            });
+            //bottomNavigation.setTranslucentNavigationEnabled(true);
+        }
+
+    }
+
+    private void UiChangeListener(){
+        final View decorView = getWindow().getDecorView();
+            decorView.setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
+                @Override
+                public void onSystemUiVisibilityChange(int visibility) {
+                    if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0){
+                        decorView.setSystemUiVisibility(
+                                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                    }
+                }
+            });
     }
 
     /**
@@ -359,7 +369,6 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
             sharedPreference.addDistanceWalked(addedDistance);
             checkWalkingAchievements(sharedPreference.getTotalDistance());
         }
-
     }
 
     @Override
@@ -368,9 +377,9 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
     }
 
     private void checkWalkingAchievements(float totalDistance){
-        if (updateAchievement(achWalk500, totalDistance)) achWalk500 = null;
-        if (updateAchievement(achWalk5k, totalDistance)) achWalk5k = null;
-        if (updateAchievement(achWalk10k, totalDistance)) achWalk10k = null;
+        if (updateWalkingAchievement(achWalk500, totalDistance)) achWalk500 = null;
+        if (updateWalkingAchievement(achWalk5k, totalDistance)) achWalk5k = null;
+        if (updateWalkingAchievement(achWalk10k, totalDistance)) achWalk10k = null;
     }
 
     private void showAchievement(String title){
@@ -382,12 +391,8 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
      * @param achievement - achievement to update.
      * @return true if the achievement is achieved, false otherwise;
      */
-    private boolean updateAchievement(Achievement achievement, float totalDistance){
+    private boolean updateWalkingAchievement(Achievement achievement, float totalDistance){
         if (achievement != null){
-            int goal = achievement.getStepsGoal();
-            Log.e(TAG, "Goal" + goal);
-            float progress = totalDistance/goal;
-            Log.e(TAG, "Progress" + progress);
             achievement.setSteps((int) totalDistance);
             if (achievement.isAchieved()){
                 achievementComplete.start();
@@ -395,10 +400,11 @@ public class MainGameActivity extends AppCompatActivity implements SensorEventLi
                 sharedPreference.saveAchievement(achievement);
                 return true;
             } else{
-                Log.e(TAG, "New steps: " + achievement.getSteps());
+                Log.v(TAG, "New steps: " + achievement.getSteps());
                 sharedPreference.saveAchievement(achievement);
             }
         }
         return false;
     }
+
 }

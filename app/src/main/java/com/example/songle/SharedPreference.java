@@ -2,21 +2,17 @@ package com.example.songle;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.util.Log;
-
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
 import java.lang.reflect.Type;
-import java.nio.channels.AsynchronousChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Paul Moore on 25-Oct-17.
@@ -24,7 +20,7 @@ import java.util.List;
  * Defines methods to save, add, remove and get Songs from SharedPreferences
  */
 
-public class SharedPreference {
+class SharedPreference {
     private final Context context;
     private final SharedPreferences settings;
     private final SharedPreferences.Editor editor;
@@ -43,7 +39,6 @@ public class SharedPreference {
     private static final String ACHIEVEMENTS = "Achievements";
     private static final String SCORES = "Scores";
     private static final String FIRST_TIME = "FirstTime";
-    private static final String HELP_TEXT = "HelpText";
     private static final String TOTAL_DISTANCE = "TotalDistance";
 
 
@@ -643,6 +638,7 @@ public class SharedPreference {
         }
     }
 
+
     public void saveAchievement(Achievement newAchievement){
         if (settings.contains(ACHIEVEMENTS)){
             String achievementTitle = newAchievement.getTitle();
@@ -694,8 +690,34 @@ public class SharedPreference {
         return null;
     }
 
+    /**
+     * Get the Achievement regardless of whether it's completed or not
+     * @param achievementTitle - title of achievement
+     * @return - the achievement if it is there.
+     */
+    public Achievement getAchievement(String achievementTitle){
+        if (settings.contains(ACHIEVEMENTS)) {
+            Gson gson = new Gson();
+            String jsonAchievements = settings.getString(ACHIEVEMENTS, null);
+            Type type = new TypeToken<List<Achievement>>() {}.getType();
+            List<Achievement> achievements = gson.fromJson(jsonAchievements, type);
+            if (achievements != null) {
+                int n = achievements.size();
+                for (int i = 0; i < n; i++) {
+                    Achievement achievement = achievements.get(i);
+                    //Return achievement
+                    if (achievement.getTitle().equals(achievementTitle)) {
+                        return achievement;
+                    }
+                }
+            }
+        }
+        //Will return null if there was no achievement
+        return null;
+    }
+
     public void saveScore(Score score){
-        List<Score> scores = new ArrayList<Score>();
+        List<Score> scores = new ArrayList<>();
         Gson gson = new Gson();
         //If scores not previously saved then save them
         if (!settings.contains(SCORES)){
@@ -709,7 +731,15 @@ public class SharedPreference {
             if (oldJsonScores != null){
                 Type type = new TypeToken<List<Score>>(){}.getType();
                 scores = gson.fromJson(oldJsonScores, type);
-                scores.add(score);
+                boolean scoreAdded = false;
+                for (int i = 0; i < scores.size(); i++){
+                    if (scores.get(i).getScore() < score.getScore()){
+                        scores.add(i, score);
+                        scoreAdded = true;
+                        break;
+                    }
+                }
+                if(!scoreAdded) scores.add(score);
                 String newJsonScores = gson.toJson(scores);
                 editor.putString(SCORES, newJsonScores);
                 editor.apply();
@@ -737,6 +767,32 @@ public class SharedPreference {
 
     public boolean isFirstTimeAppUsed(){
         return settings.getBoolean(FIRST_TIME, true);
+    }
+
+    public void resetSong(String songNumber, boolean markIncomplete){
+        //Reset the lyrics
+        HashMap<String, ArrayList<String>> lyrics = getLyrics(songNumber);
+        if (lyrics != null) lyrics = resetLyrics(lyrics);
+        saveLyrics(songNumber, lyrics);
+        //Reset the song information
+        SongInfo songInfo = getSongInfo(songNumber);
+        if(songInfo != null) songInfo.resetSongInfo();
+        saveSongInfo(songNumber, songInfo);
+        //Mark the song appropriately (NB this updates the current song too if that is the one being reset)
+        if (markIncomplete){
+            saveSongStatus(songNumber, "I");
+        } else {
+            saveSongStatus(songNumber, "N");
+        }
+    }
+
+    private HashMap<String, ArrayList<String>> resetLyrics(HashMap<String, ArrayList<String>> lyrics){
+        for (Map.Entry<String, ArrayList<String>> entry : lyrics.entrySet()){
+            ArrayList<String> lyric = entry.getValue();
+            lyric.set(1, "False");
+            lyrics.put(entry.getKey(), lyric);
+        }
+        return lyrics;
     }
 
 

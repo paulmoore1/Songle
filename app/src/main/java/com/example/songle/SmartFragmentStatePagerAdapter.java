@@ -1,10 +1,6 @@
 package com.example.songle;
 
-/**
- * Created by Paul on 21/11/2017.
- * From https://github.com/Suleiman19/Bottom-Navigation-Demo/blob/master/app/src/main/java/com/grafixartist/bottomnav/SmartFragmentStatePagerAdapter.java
- *
- */
+
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -12,16 +8,19 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.SparseArray;
 import android.view.ViewGroup;
 
-/*
+
+/**
+ * Created by Paul on 21/11/2017.
+ * From https://github.com/Suleiman19/Bottom-Navigation-Demo/blob/master/app/src/main/java/com/grafixartist/bottomnav/SmartFragmentStatePagerAdapter.java
    Extension of FragmentStatePagerAdapter which intelligently caches
    all active fragments and manages the fragment lifecycles.
    Usage involves extending from SmartFragmentStatePagerAdapter as you would any other PagerAdapter.
 */
-public abstract class SmartFragmentStatePagerAdapter extends FragmentStatePagerAdapter {
+abstract class SmartFragmentStatePagerAdapter extends FragmentStatePagerAdapter {
     // Sparse array to keep track of registered fragments in memory
-    private SparseArray<Fragment> registeredFragments = new SparseArray<Fragment>();
+    private final SparseArray<Fragment> registeredFragments = new SparseArray<>();
 
-    public SmartFragmentStatePagerAdapter(FragmentManager fragmentManager) {
+    SmartFragmentStatePagerAdapter(FragmentManager fragmentManager) {
         super(fragmentManager);
     }
 
@@ -38,10 +37,5 @@ public abstract class SmartFragmentStatePagerAdapter extends FragmentStatePagerA
     public void destroyItem(ViewGroup container, int position, Object object) {
         registeredFragments.remove(position);
         super.destroyItem(container, position, object);
-    }
-
-    // Returns the fragment for the position (if instantiated)
-    public Fragment getRegisteredFragment(int position) {
-        return registeredFragments.get(position);
     }
 }

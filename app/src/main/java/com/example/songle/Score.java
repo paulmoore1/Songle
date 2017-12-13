@@ -2,34 +2,36 @@ package com.example.songle;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
 /**
  * Created by Paul on 07/12/2017.
+ * A Class for keeping track of scores and interesting related information.
  */
 
 public class Score {
-    private int score;
-    private float distance;
-    private String title;
-    private String date;
+    private final int score;
+    private final float distance;
+    private final String timeTaken;
+    private final String title;
+    private final String date;
 
-    public Score(int score, float distance, String title){
+    Score(int score, float distance, String title, String timeTaken){
         this.score = score;
         this.distance = distance;
         this.title = title;
-        DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm", Locale.getDefault());
-        Calendar calendar = Calendar.getInstance();
-        this.date = df.format(calendar);
+        this.timeTaken = timeTaken;
+        DateFormat df = new SimpleDateFormat("dd/MM/yy", Locale.getDefault());
+        Date date = new Date();
+        this.date = df.format(date);
     }
 
-    public int getScore(){
+    int getScore(){
         return score;
     }
 
-    public float getDistance(){
+    float getDistance(){
         return  distance;
     }
 
@@ -37,8 +39,14 @@ public class Score {
         return title;
     }
 
-    public String getDate(){
+    public String getTimeTaken(){
+        return timeTaken;
+    }
+
+    String getDate(){
         return date;
     }
+
+
 
 }

@@ -5,7 +5,6 @@ import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -22,15 +21,13 @@ import java.util.List;
  */
 
 public class SongListFragment extends Fragment implements AdapterView.OnItemClickListener {
-    public static final String TAG = "SongListFragment";
+    private static final String TAG = "SongListFragment";
     public static final String ARG_ITEM_ID = "song_list";
+    private Activity activity;
+    private ListView songListView;
+    private List<Song> songs;
+    private SharedPreference sharedPreference;
 
-    Activity activity;
-    ListView songListView;
-    List<Song> songs;
-    SongListAdapter songListAdapter;
-
-    SharedPreference sharedPreference;
     @Override
     public void onCreate(Bundle savedInstanceState){
         Log.d(TAG, "onCreate called");
@@ -59,7 +56,7 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
         View view = inflater.inflate(R.layout.song_list_fragment, container, false);
         findViewsById(view);
 
-        songListAdapter = new SongListAdapter(activity, songs);
+        SongListAdapter songListAdapter = new SongListAdapter(activity, songs);
         songListView.setAdapter(songListAdapter);
         songListView.setOnItemClickListener(this);
         return view;
@@ -83,23 +80,9 @@ public class SongListFragment extends Fragment implements AdapterView.OnItemClic
     }
 
     @Override
-    public void onResume(){
+    public void onResume() {
         getActivity().setTitle(R.string.txt_select_song);
         getActivity().getActionBar().setTitle(R.string.txt_select_song);
         super.onResume();
     }
-
-    @Override
-    public void onPrepareOptionsMenu(Menu menu){
-        menu.findItem(R.id.action_help).setVisible(false);
-        menu.findItem(R.id.action_credits).setVisible(false);
-        super.onPrepareOptionsMenu(menu);
-    }
-
-
-
-
-
-
-
 }

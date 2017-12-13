@@ -1,8 +1,5 @@
 package com.example.songle;
 
-/**
- * Created by Paul on 21/11/2017.
- */
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -12,11 +9,11 @@ import java.util.List;
 
 /**
  * BottomNav
- * Created by Suleiman19 on 6/12/17.
+ * Created by Suleiman19 on 6/12/17, used by Paul on 21/11/2017.
  * Copyright (c) 2017. Suleiman Ali Shakir. All rights reserved.
  */
 
-public class BottomBarAdapter extends SmartFragmentStatePagerAdapter {
+class BottomBarAdapter extends SmartFragmentStatePagerAdapter {
     private final List<Fragment> fragments = new ArrayList<>();
 
     public BottomBarAdapter(FragmentManager fragmentManager) {

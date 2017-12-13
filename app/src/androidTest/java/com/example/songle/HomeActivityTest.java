@@ -12,6 +12,7 @@ import static android.support.test.espresso.matcher.ViewMatchers.withId;
 
 /**
  * Created by Paul on 04/12/2017.
+ * Tests the HomeActivity behaves as it should.
  */
 
 public class HomeActivityTest {

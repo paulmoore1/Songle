@@ -1,14 +1,11 @@
 package com.example.songle;
 
 import android.Manifest;
-import android.app.Activity;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.GnssStatus.Callback;
 import android.location.GpsStatus;
 import android.location.Location;
 import com.google.android.gms.location.LocationListener;
@@ -18,25 +15,17 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.Toast;
-
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -73,10 +62,8 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     private MapView mMapView;
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
-    private final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-    private boolean mLocationPermissionGranted = false;
     private boolean gpsOn = false;
-    private Activity activity;
+
     private SharedPreference sharedPreference;
     private static final LatLngBounds UNIVERSITY_EDINBURGH = new LatLngBounds(
             new LatLng(55.942617, -3.192473), new LatLng(55.946233, -3.184319)
@@ -86,7 +73,6 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
     private HashMap<String, ArrayList<String>> lyrics;
     private ArrayList<Placemark> placemarks;
-    private String mapNumber;
     private String songNumber;
     //BitmapDescriptors for the icons
     private BitmapDescriptor IC_UNCLASSIFIED;
@@ -98,62 +84,32 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
     private LocationManager lm;
     private GpsStatus.Listener listener;
-    private Callback gnssCallback;
 
-
-
-
-
-    // Code used in requesting runtime permissions
-    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
-    //Constant used in the location settings dialog
-    private static final int REQUEST_CHECK_SETTINGS = 0x1;
     //Desired interval for location updates. Inexact. Updates may be more or less frequent
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
     //Fastest rate for active location updates. Exact. Updates will never be more frequent than this value.
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS/2;
-    //Keys for storing activity state in the Bundle
-    private static final String KEY_REQUESTING_LOCATION_UPDATES = "requesting-location-updates";
-    private final static String KEY_LOCATION = "location";
-    private final static String KEY_LAST_UPDATED_TIME_STRING = "last-updated-time-string";
 
-    //Provides access to the Location Settings API
-    private SettingsClient mSettingsClient;
+
 
     // Stores parameters for requests to the FusedLocationProviderApi.
     private LocationRequest mLocationRequest;
 
-    // Stores the types of location services the client is interested in using. Used for checking
-    // settings to determine if the device has optimal location settings.
-    private LocationSettingsRequest mLocationSettingsRequest;
-
-    //Callback for Location events
-    private LocationCallback mLocationCallback;
-
     private Location mLastLocation;
-
-    private Boolean mRequestingLocationUpdates;
 
     @Override
     public void onCreate(Bundle savedInstanceState){
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
         MapsInitializer.initialize(getActivity().getApplicationContext());
-        activity = getActivity();
         sharedPreference = new SharedPreference(getActivity().getApplicationContext());
-        mapNumber = sharedPreference.getCurrentMapNumber();
+        String mapNumber = sharedPreference.getCurrentMapNumber();
         songNumber = sharedPreference.getCurrentSongNumber();
         lyrics = sharedPreference.getLyrics(songNumber);
         songInfo = sharedPreference.getSongInfo(songNumber);
 
         placemarks = sharedPreference.getMap(mapNumber);
-
-        mSettingsClient = LocationServices.getSettingsClient(getContext());
-
-        //createLocationCallback();
-        //createLocationRequest();
-        //buildLocationSettingsRequest();
 
         buildGoogleApiClient();
 
@@ -161,21 +117,8 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         createGpsStatusListener();
 
         if (!checkPermissions()){
-            Toast.makeText(getActivity(), "Location permissions unexpectedly removed", Toast.LENGTH_SHORT).show();
+           makeShortToast("Location permissions unexpectedly removed");
         }
-
-        IC_BORING = BitmapDescriptorFactory.fromResource(
-                R.drawable.marker_boring);
-        IC_UNCLASSIFIED = BitmapDescriptorFactory.fromResource(
-                R.drawable.marker_unclassified);
-        IC_NOTBORING  = BitmapDescriptorFactory.fromResource(
-                R.drawable.marker_notboring);
-        IC_INTERESTING = BitmapDescriptorFactory.fromResource(
-                R.drawable.marker_interesting);
-        IC_VERYINTERESTING = BitmapDescriptorFactory.fromResource(
-                R.drawable.marker_veryinteresting);
-
-        markerPop = MediaPlayer.create(getContext(), R.raw.marker_pop);
     }
 
 
@@ -183,15 +126,9 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
         Log.v(TAG, "onCreateView called");
         View rootView = inflater.inflate(R.layout.maps_tab_fragment, container, false);
-        mMapView = (MapView) rootView.findViewById(R.id.mapView);
+        mMapView = rootView.findViewById(R.id.mapView);
         mMapView.onCreate(savedInstanceState);
         mMapView.onResume(); //needed to get the map to display immediately
-/*
-        try {
-            MapsInitializer.initialize(getActivity().getApplicationContext());
-        } catch (Exception e){
-            e.printStackTrace();
-        }*/
         return rootView;
     }
 
@@ -203,6 +140,9 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
 
         //Remove any old markers.
         mMap.clear();
+
+        //Create the icons for the markers if they aren't set up already.
+        makeMarkerIcons();
 
         //For showing a move to my location button
         try{
@@ -220,6 +160,28 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(EDINBURGH_POSITION, 17.0f));
         }
         addMarkers();
+    }
+
+    /**
+     * Makes marker icons if they do not exist already.
+     */
+    private void makeMarkerIcons(){
+        if (IC_UNCLASSIFIED == null){
+            IC_UNCLASSIFIED = BitmapDescriptorFactory.fromResource(R.drawable.marker_unclassified);
+        }
+        if (IC_BORING == null){
+            IC_BORING = BitmapDescriptorFactory.fromResource(R.drawable.marker_boring);
+        }
+        if (IC_NOTBORING == null){
+            IC_NOTBORING  = BitmapDescriptorFactory.fromResource(R.drawable.marker_notboring);
+        }
+        if (IC_INTERESTING == null){
+            IC_INTERESTING = BitmapDescriptorFactory.fromResource(R.drawable.marker_interesting);
+        }
+        if (IC_VERYINTERESTING == null){
+            IC_VERYINTERESTING = BitmapDescriptorFactory.fromResource(R.drawable.marker_veryinteresting);
+        }
+
     }
 
     /**
@@ -270,7 +232,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
             }
         }
         //set a listener for marker clicks.
-        mMap.setOnMarkerClickListener((GoogleMap.OnMarkerClickListener) this);
+        mMap.setOnMarkerClickListener(this);
     }
 
 
@@ -351,7 +313,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         }
     }
 
-    protected synchronized void buildGoogleApiClient() {
+    private synchronized void buildGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -385,7 +347,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
             public void onGpsStatusChanged(int event) {
                 switch (event) {
                     case GPS_EVENT_STARTED:
-                        Log.d(TAG, "GPS is switched on");
+                        Log.v(TAG, "GPS is switched on");
                         gpsOn = true;
                         break;
                     case GPS_EVENT_STOPPED:
@@ -428,6 +390,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         if(checkPermissions()){
             setupGpsLocationManagerListener();
         }
+        markerPop = MediaPlayer.create(getContext(), R.raw.marker_pop);
 
     }
 
@@ -440,6 +403,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
         if (checkPermissions()){
             removeGpsLocationMangerListener();
         }
+        markerPop.release();
     }
 
     @Override
@@ -458,7 +422,7 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     private void sendNoGPSAlertDialog(){
         AlertDialog.Builder adb = new AlertDialog.Builder(getContext());
         adb.setTitle(R.string.txt_gps_disabled);
-        adb.setMessage(R.string.txt_switch_on_gps);
+        adb.setMessage(R.string.msg_gps_disabled);
         adb.setCancelable(false);
         adb.setPositiveButton(R.string.txt_switch_on_gps, new DialogInterface.OnClickListener() {
             @Override
@@ -498,11 +462,9 @@ public class MapsFragment extends Fragment implements GoogleMap.OnMarkerClickLis
     public void onConnectionSuspended(int i) {
         switch(i){
             case CAUSE_NETWORK_LOST:
-
                 Log.e(TAG, "Network connection lost");
             case CAUSE_SERVICE_DISCONNECTED:
-
-
+                Log.e(TAG, "Service disconnected");
         }
     }
 

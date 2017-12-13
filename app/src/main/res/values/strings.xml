@@ -1,7 +1,6 @@
 <resources>
+    <!-- Strings for the home screen -->
     <string name="app_name">Songle</string>
-    <string name="action_settings">Settings</string>
-    <string name="title_activity_maps">Map</string>
     <string name="txt_new_game">New Game</string>
     <string name="txt_continue_game">Continue Game</string>
     <string name="txt_load_old_game">Load Previous Game</string>
@@ -13,20 +12,32 @@
     <string name="txt_achievements">Achievements</string>
     <string name="drawer_open">Drawer Open</string>
     <string name="drawer_close">Drawer Closed</string>
-    <string name="title_activity_main_settings">Main Settings</string>
     <string name="download_required">Download Required</string>
     <string name="url_songs_xml">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/songs.xml</string>
     <string name="url_general">http://www.inf.ed.ac.uk/teaching/courses/selp/data/songs/</string>
-    <string name="signin_other_error">An error occurred while trying to sign in. Try starting the app again</string>
     <string name="msg_welcome_songle">Welcome to Songle!</string>
-    <string name="msg_start_select_option">Select an option to get started!</string>
     <string name="txt_continue">Continue</string>
     <string name="txt_cancel">Cancel</string>
     <string name="txt_exit">Exit</string>
     <string name="txt_new_songs">New Songs!</string>
     <string name="msg_new_songs">New songs have been downloaded!</string>
-    <string name="txt_still_loading">Still loading…</string>
-    <string name="txt_close_achievements">Close the achievements first</string>
+    <string name="play_icon">Play</string>
+    <string name="continue_icon">Continue</string>
+    <string name="load_icon">Load</string>
+    <string name="loading">Loading…</string>
+
+    <!-- For showing scores -->
+    <string name="title_score_info">Information</string>
+    <string name="msg_score_info_format">Song title: %1$s\n
+        Distance walked: %2$s\n
+        Points scored: %3$s\n
+        Date: %4$s\n
+        Time taken: %5$s\n
+        Rank: %6$s</string>
+    <string name="header_date">Date</string>
+    <string name="header_points">Points</string>
+    <string name="header_rank">Rank</string>
+    <string name="msg_score_header">Click on an entry to see more information</string>
 
     <!-- For height/gender dialogs -->
     <string name="txt_calculate_step_size">Calculate your step size!</string>
@@ -65,7 +76,6 @@
     <!-- Strings for Loading error dialogs -->
     <string name="loading_error">Loading Error</string>
     <string name="msg_game_not_found">Game could not be found! Please start a new game.</string>
-    <string name="msg_lyrics_not_found">Lyrics file not found! Please connect to the internet.</string>
     <string name="msg_game_already_completed">Game already completed! If you want to play it again, please connect to the internet.</string>
 
 
@@ -102,8 +112,6 @@
     <!-- Strings for game setting message -->
     <string name="msg_no_song_selected">No song selected</string>
     <string name="msg_no_difficulty_selected">No difficulty selected</string>
-    <string name="msg_no_songs_found">No songs found. Make sure you are connected to the internet
-    and wait for the song list to download.</string>
     <string name="default_no_difficulty_selected">No difficulty selected yet.</string>
     <string name="default_no_song_selected">No song selected yet.</string>
 
@@ -117,6 +125,7 @@
     <string name="msg_title_words_fragment">Words you\'ve collected so far</string>
 
     <!--Game strings for the guess tab -->
+    <string name="msg_guess_fragment_title">What\'s the song?</string>
     <string name="btn_txt_guess">Guess</string>
     <string name="btn_txt_give_up">Give up?</string>
     <string name="txt_default_artist">Artist unknown!</string>
@@ -134,7 +143,7 @@
     <string name="txt_words_to_line_enough">You can reveal a line using your words!</string>
     <string name="txt_words_to_artist_enough">You can reveal the artist using your words!</string>
 
-    <string name="msg_enter_guess">What\'s the song called?</string>
+    <string name="msg_enter_guess">Name of the song</string>
     <string name="txt_are_you_sure">Are you sure?</string>
     <string name="msg_check_give_up">Do you really want to give up?</string>
     <string name="msg_check_give_up_very_easy">Do you really want to give up?\n
@@ -147,11 +156,17 @@
     <string name="txt_home">Home</string>
 
     <string name="congratulations">Congratulations!</string>
-    <string name="msg_game_win">You\'ve won this game!\nWould you like to see the music video or start a new game?</string>
+    <string name="msg_game_win">You\'ve won this game!\nScore: %1$d\nWould you like to see the music video or start a new game?</string>
     <string name="watch_video">Watch video</string>
     <string name="quit">Quit</string>
 
-    <!-- Strings related to Settings -->
+    <!-- Strings for serious errors -->
+    <string name="oh_dear">Oh dear…</string>
+    <string name="msg_crash">The app ran into an unexpected error.\n
+    Please send the key information so I can fix it.\n
+    After that you can try again if you like!</string>
+    <string name="send_logs">Send logs</string>
+    <string name="restart">Restart</string>
 
 
 
@@ -161,8 +176,6 @@
     <string name="song">Songs</string>
     <string name="title_activity_new_game_settings">Game Settings</string>
     <string name="title_activity_main_game">Let\'s Play!</string>
-    <string name="section_format">Hello World from section: %1$d</string>
-    <string name="title_activity_maps2">Map</string>
 
     <!-- Strings for achievements -->
     <string name="ach_words_1_title">First Word!</string>
@@ -204,6 +217,8 @@
     <string name="ach_rickrolled_title">Get Rickrolled</string>
     <string name="ach_rickrolled_msg">Watch the video for Never Gonna Give You Up</string>
     <string name="title_achievement_info">Requirements</string>
+    <string name="msg_achievement_description_format">Requirements: %1$s\n
+                                                Progress: %2$s</string>
 
 
 
@@ -213,8 +228,6 @@
         In this game you will collect words belonging to a song, and need to guess what the song is.\n
         To collect a word you simply walk up to it on the map and tap the marker.\n
         It\'s simple as that, so feel free to get stuck in and figure it out (it\'s not complicated)!\n
-        \n
-        Tap this message to close it and get started.\n
         \n
         If you want more information though, keep reading.\n
         \n
@@ -356,51 +369,14 @@
         \n
         \n</string>
 
-    <string name="msg_credits">
-        \n
-        Where to begin? I am indebted to so many people for this to be possible\n
-        Some of them may not even know it!\n
-        \n
-        Legally speaking there are some ones that I need to give credit to, so let\'s get that out the way first\n
-        These include:\n
-
-        Icons designed by Smashicons, Freepik from <a href="flaticon.com">FlatIcon</a>\n
-
+    <string name="msg_credits">\n
+        Icons designed by <a href="https://smashicons.com">Smashicons</a>, <a href="https://www.freepik.com">Freepik</a>, <a href="https://roundicons.com">Roundicons</a> from <a href="flaticon.com">FlatIcon</a>\n
         Sound effects obtained from <a href="https://www.zapsplat.com">Zapsplat</a> and <a href="https://freesound.org">Freesound</a>\n
         Some of the ones for freesound were under Creative Commons 0 Licence, ones that I know of which were under the Attribution Licence are shown\n
         Menu sound for the floating action button was by \"broumbroum\" - entitled sf3-sfx-menu-select.wav.\n
         It can be found <a href="https://freesound.org/people/broumbroum/sounds/50561/">here</a>.\n
         Popping sound for the markers was by \"debsound\" - entitled Pop 19.wav
         It can be found <a href="https://freesound.org/people/debsound/sounds/320549/">here</a>
-
-        Google - for using the maps API? I\'m not certain I have to do that but it wouldn\'t hurt.\n
-        \n
-        Then there are so, so many people on <a href="stackoverflow.com">StackOverflow</a>  who have provided exactly the solution I needed to fix a bug or add a feature.\n
-        I have attributed some of the specific instances that I used a solution from there in the code itself\n
-        There may be some I\'ve forgotten - my apologies if this is the case but when I\'ve used so much it does get hard to keep track of what is attributable to where!\n
-        In some cases it might just have been a couple of lines that I adapted, but in any case, my thanks to you if it was from you!\n
-        \n
-        There were a few projects/tutorials online that I did borrow heavily from and adapt, so I want to give them special credit:\n
-        \n
-        This one on <a href="http://androidopentutorials.com/android-how-to-store-list-of-values-in-sharedpreferences/">shared preferences</a> gave me a great base to work off from for storing the songs.\n
-        \n
-        <a href=" https://github.com/googlesamples/android-play-location/">This</a> provided me with some help regarding location permissions (didn\'t end up using it for the location itself)\n
-        \n
-        I used quite a lot of <a href="https://developer.android.com/training/">these</a> training examples and projects from the Android Developer Training to get basic functionality.\n
-
-        \n
-        <a href="https://github.com/Suleiman19/Bottom-Navigation-Demo/">This</a> was used to get the bottom navigation bar in the main game screen,
-        I found it and used the tutorial <a href="http://blog.iamsuleiman.com/bottom-navigation-bar-android-tutorial/">here</a>\n
-        \n
-        \n
-        <a href="https://github.com/Clans/FloatingActionButton/">Here</a> is where I got the code for the floating action button on the guessing tab in the game\n
-        \n
-        That\'s all that I can think of as far as I know.\n
-        Thanks again to everyone!\n
-        \n
-        Paul\n
-
-
     </string>
 
 

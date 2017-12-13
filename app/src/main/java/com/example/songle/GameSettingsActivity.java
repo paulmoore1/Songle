@@ -20,7 +20,6 @@ import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,11 +33,9 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     private String gameType;
     private Fragment contentFragment;
     private FragmentManager fragmentManager = getSupportFragmentManager();
-    private SongListFragment songListFragment;
     private SharedPreference sharedPreference;
     private TextView txtViewSong, txtViewDiff;
-    private NetworkFragment mNetworkFragmentLyrics;
-    private NetworkFragment mNetworkFragmentMaps;
+    private NetworkFragment mNetworkFragment;
     private String songNumber;
     private String diffLevel;
     private final Object syncObject = new Object();
@@ -89,10 +86,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
         fragmentManager = getSupportFragmentManager();
         fragmentManager.addOnBackStackChangedListener(this);
-        shouldDisplayHomeUp();
-        mNetworkFragmentLyrics = NetworkFragment.getInstance(fragmentManager,
-                getString(R.string.url_general));
-        mNetworkFragmentMaps = NetworkFragment.getInstance(fragmentManager,
+        mNetworkFragment = NetworkFragment.getInstance(fragmentManager,
                 getString(R.string.url_general));
 
         //shows the last chosen song (if there is one) - avoids bug where clicking an old song
@@ -130,7 +124,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             //buttonClick.start();
             //show the song selection fragment
             setFragmentTitle(R.id.btn_select_song);
-            songListFragment = new SongListFragment();
+            SongListFragment songListFragment = new SongListFragment();
             Bundle bundle = new Bundle();
             bundle.putString("GAME_TYPE", gameType);
             Log.d(TAG, "Select song button clicked");
@@ -198,9 +192,7 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     }
 
 
-
     private void startGame(){
-
         //save this song status to shared preferences as it has been definitely chosen.
         Song currentSong = sharedPreference.getCurrentSong();
 
@@ -215,19 +207,13 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
             sharedPreference.saveSongInfo(number, newInfo);
         }
 
-
         //use this just in case it gets stuck downloading for more than 10s - resets loading_layout screen
         Handler handler = new Handler();
         handler.postDelayed(resetSettingsActivity, 10000);
 
         //check lyrics are stored - if not then download them
         if (!sharedPreference.checkLyricsStored(songNumber)){
-   /*     // Register BroadcastReceiver to track connection changes
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        NetworkReceiver receiver = new NetworkReceiver();
-        this.registerReceiver(receiver, filter);
-*/
-            startLyricsDownload();
+            mNetworkFragment.startLyricsDownload();
             //do nothing further until download is finished
             synchronized (syncObject){
                 try {
@@ -267,9 +253,6 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         Intent intent = new Intent(GameSettingsActivity.this, MainGameActivity.class);
         //all data loaded, cancel handler
         handler.removeCallbacks(resetSettingsActivity);
-
-        //finished downloading, unregister.
-       // this.unregisterReceiver(receiver);
         startActivity(intent);
     }
 
@@ -285,7 +268,6 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
         }
     };
 
-    //TODO fix bug where pressing back button in the Action Bar for the SongListFragment returns to HomeActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
         switch(item.getItemId()){
@@ -295,8 +277,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
                     NavUtils.navigateUpFromSameTask(this);
                     return true;
                 } else {
-                    Log.e(TAG, "Pressed back");
-                    return onSupportNavigateUp();
+                    getSupportFragmentManager().popBackStack();
+                    return true;
                 }
             default:
                 return super.onOptionsItemSelected(item);
@@ -305,28 +287,17 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
     @Override
     public void onBackStackChanged(){
-        shouldDisplayHomeUp();
-    }
 
-    private void shouldDisplayHomeUp(){
-        //Enable Up button only if there are entries in the back stack
-        boolean fragmentPresent = getSupportFragmentManager().getBackStackEntryCount() > 0;
-        getActionBar().setDisplayHomeAsUpEnabled(fragmentPresent);
-    }
-
-    private boolean onSupportNavigateUp(){
-        getSupportFragmentManager().popBackStack();
-        return true;
     }
 
     @Override
     public void onBackPressed(){
-        int count = getFragmentManager().getBackStackEntryCount();
+        int count = fragmentManager.getBackStackEntryCount();
         if (count == 0){
             finishDownloading();
             super.onBackPressed();
         } else {
-            getFragmentManager().popBackStack();
+            fragmentManager.popBackStack();
         }
     }
 
@@ -343,11 +314,11 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
 
     private void startLyricsDownload(){
         Log.d(TAG, "startLyricsDownload called");
-        mNetworkFragmentLyrics.startLyricsDownload();
+        mNetworkFragment.startLyricsDownload();
     }
 
     private void startMapsDownload(){
-        mNetworkFragmentMaps.startKmlDownload();
+        mNetworkFragment.startKmlDownload();
     }
 
     @Override
@@ -377,10 +348,8 @@ public class GameSettingsActivity extends FragmentActivity implements DownloadCa
     @Override
     public void finishDownloading() {
         Log.d(TAG, "finishDownloading called");
-        if (mNetworkFragmentLyrics != null) {
-            mNetworkFragmentLyrics.cancelDownload();
-        } else if (mNetworkFragmentMaps != null){
-            mNetworkFragmentMaps.cancelDownload();
+        if (mNetworkFragment != null) {
+            mNetworkFragment.cancelDownload();
         }
         //Notify the main thread that the download is complete
         synchronized (syncObject){

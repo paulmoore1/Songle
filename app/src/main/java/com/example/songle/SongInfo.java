@@ -7,12 +7,13 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Paul on 06/12/2017.
+ * A class for storing information about the songs
  */
 
 public class SongInfo {
-    private String name;
-    private String artist;
-    private String link;
+    private final String name;
+    private final String artist;
+    private final String link;
     private int numWordsFound;
     private int numNumWordsAvailable;
     private float distanceWalked;
@@ -21,7 +22,7 @@ public class SongInfo {
     private boolean lineRevealed;
     private long timeStarted;
 
-    public SongInfo(String name, String artist, String link){
+    SongInfo(String name, String artist, String link){
         this.name = name;
         this.artist = artist;
         this.link = link;
@@ -38,64 +39,64 @@ public class SongInfo {
         return name;
     }
 
-    public String getArtist(){
+    String getArtist(){
         return artist;
     }
 
-    public String getLink(){
+    String getLink(){
         return link;
     }
 
-    public int getNumWordsFound(){
+    int getNumWordsFound(){
         return numWordsFound;
     }
 
-    public int getNumWordsAvailable(){
+    int getNumWordsAvailable(){
         return  numNumWordsAvailable;
     }
 
-    public void incrementNumWordsFound(){
+    void incrementNumWordsFound(){
         numWordsFound++;
         numNumWordsAvailable++;
     }
 
-    public void removeNumWordsAvailable(int num){
+    void removeNumWordsAvailable(int num){
         numNumWordsAvailable -= num;
     }
 
-    public void addDistance(float addedDistance){
+    void addDistance(float addedDistance){
         distanceWalked += addedDistance;
     }
 
-    public float getDistanceWalked(){
+    float getDistanceWalked(){
         return distanceWalked;
     }
 
-    public boolean isIncorrectlyGuessed(){
+    boolean isIncorrectlyGuessed(){
         return incorrectlyGuessed;
     }
 
-    public void setIncorrectlyGuessed(){
+    void setIncorrectlyGuessed(){
         incorrectlyGuessed = true;
     }
 
-    public boolean isArtistRevealed(){
+    boolean isArtistRevealed(){
         return artistRevealed;
     }
 
-    public void setArtistRevealed(){
+    void setArtistRevealed(){
         artistRevealed = true;
     }
 
-    public boolean isLineRevealed(){
+    boolean isLineRevealed(){
         return lineRevealed;
     }
 
-    public void setLineRevealed(){
+    void setLineRevealed(){
         lineRevealed = true;
     }
 
-    public void resetSongInfo(){
+    void resetSongInfo(){
         numWordsFound = 0;
         numNumWordsAvailable = 0;
         distanceWalked = 0;
@@ -112,7 +113,7 @@ public class SongInfo {
                 TimeUnit.MILLISECONDS.toSeconds(timeStarted));
     }
 
-    public int minutesTaken(){
+    int minutesTaken(){
         long timeFinished = System.currentTimeMillis();
         long timeTaken = timeFinished - timeStarted;
         //safe to cast to int - don't expect it to take 65,000 minutes!

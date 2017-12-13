@@ -3,31 +3,30 @@ package com.example.songle;
 import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import java.util.List;
 
 /**
  * Created by Paul Moore on 25-Oct-17.
+ * Displays the songs currently saved as a list.
  */
 
-public class SongListAdapter extends ArrayAdapter<Song> {
-    private static final String TAG = "SongListAdapater";
-    private Context context;
+class SongListAdapter extends ArrayAdapter<Song> {
+    private final Context context;
     private int currentSongNumber = -1;
-    private List<Song> songs;
-    private SharedPreference sharedPreference;
+    private final List<Song> songs;
 
-    public SongListAdapter(Context context, List<Song> songs){
+    SongListAdapter(Context context, List<Song> songs){
         super(context, R.layout.song_list_item, songs);
         this.context = context;
         this.songs = songs;
-        sharedPreference = new SharedPreference(context);
+        SharedPreference sharedPreference = new SharedPreference(context);
         String strLastSong = sharedPreference.getCurrentSongNumber();
         if (strLastSong != null) {
             currentSongNumber = Integer.parseInt(strLastSong);
@@ -42,7 +41,8 @@ public class SongListAdapter extends ArrayAdapter<Song> {
 
     @Override
     public int getCount(){
-        return songs.size();
+        if (songs != null) return songs.size();
+        else return 0;
     }
 
     @Override
@@ -66,14 +66,13 @@ public class SongListAdapter extends ArrayAdapter<Song> {
                     .getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.song_list_item, null);
             holder = new ViewHolder();
-            holder.songNumberTxt = (TextView) convertView.findViewById(R.id.txt_song_number);
-            holder.songStatusTxt = (TextView) convertView.findViewById(R.id.txt_song_status);
-            holder.songImg = (ImageView) convertView.findViewById(R.id.imgbtn_music);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
-
         }
+        holder.songNumberTxt = convertView.findViewById(R.id.txt_song_number);
+        holder.songStatusTxt = convertView.findViewById(R.id.txt_song_status);
+        holder.songImg = convertView.findViewById(R.id.imgbtn_music);
         Song song = getItem(position);
         holder.songNumberTxt.setText(song.getNumber());
         holder.songStatusTxt.setText(song.showStatus());
@@ -86,18 +85,15 @@ public class SongListAdapter extends ArrayAdapter<Song> {
         } else {
             holder.songImg.setImageResource(R.drawable.music_note_grey);
         }
-       /* //TODO fix weird coloring bug here
+
        //show last chosen song as the primary color
         if (currentSongNumber != -1){
             if (currentSongNumber == position) {
-                holder.achievementTitle.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
-                holder.achievementProgress.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+                holder.songNumberTxt.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+                holder.songStatusTxt.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
             }
-
         }
-        */
         return convertView;
-
     }
 
     @Override

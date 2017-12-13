@@ -4,19 +4,20 @@ import android.util.Log;
 
 /**
  * Created by Paul Moore on 25-Oct-17.
+ * Class for storing and using songs from the XML file
  */
 
 public class Song {
-    private String number;
-    private String artist;
-    private String title;
-    private String link;
+    private final String number;
+    private final String artist;
+    private final String title;
+    private final String link;
     private String status; //"N" = not started, "I" = INCOMPLETE, "C" = COMPLETE
     private final String NOT_STARTED = "N";
     private final String INCOMPLETE = "I";
     private final String COMPLETE = "C";
 
-    public Song(String number, String artist, String title, String link){
+    Song(String number, String artist, String title, String link){
             this.number = number;
             this.artist = artist;
             this.title = title;
@@ -34,7 +35,7 @@ public class Song {
         return number;
     }
 
-    public String getArtist() {
+    String getArtist() {
         return artist;
     }
 
@@ -42,7 +43,7 @@ public class Song {
         return title;
     }
 
-    public String getLink() {
+    String getLink() {
         return link;
     }
 
@@ -64,41 +65,30 @@ public class Song {
         }
     }
 
-    //may use to display list of achievements to choose from
-    public String showSong(){
-        return "Song #" + number + " Status: " + showStatus();
-    }
-
-    public String showArtist(){
-        return "Artist: " + artist;
-    }
-
-    public String showStatus(){
-        if (status.equals(NOT_STARTED)){
-            return "Not Started";
-        } else if (status.equals(INCOMPLETE)){
-            return "Incomplete";
-        } else if (status.equals(COMPLETE)){
-            return "Complete";
-        } else {
-            Log.e("Song", "Invalid status shown");
-            return "Error: invalid status";
+    String showStatus(){
+        switch (status) {
+            case NOT_STARTED:
+                return "Not Started";
+            case INCOMPLETE:
+                return "Incomplete";
+            case COMPLETE:
+                return "Complete";
+            default:
+                Log.e("Song", "Invalid status shown");
+                return "Error: invalid status";
         }
     }
 
-    public boolean isSongComplete(){
-        if (status.equals(COMPLETE)) return true;
-        else return false;
+    boolean isSongComplete(){
+        return status.equals(COMPLETE);
     }
 
-    public boolean isSongIncomplete(){
-        if (status.equals(INCOMPLETE)) return true;
-        else return false;
+    boolean isSongIncomplete(){
+        return status.equals(INCOMPLETE);
     }
 
-    public boolean isSongNotStarted(){
-        if (status.equals(NOT_STARTED)) return true;
-        else return false;
+    boolean isSongNotStarted(){
+        return status.equals(NOT_STARTED);
     }
 
     public String toString(){

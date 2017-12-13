@@ -14,23 +14,23 @@ import java.util.List;
 
 /**
  * Created by Paul Moore on 18-Oct-17.
+ * Parses an XML containing (hopefully) songs.
  */
 
-public class XmlSongParser {
+class XmlSongParser {
     private static final String TAG = "XmlSongParser";
-    private SharedPreference sharedPreference;
-    Context c;
+    private final SharedPreference sharedPreference;
+    private final Context mContext;
     //Don't use namespaces
     private static final String ns = null;
 
-    public XmlSongParser(Context context){
-        this.c = context;
+    XmlSongParser(Context context){
+        this.mContext = context;
         sharedPreference = new SharedPreference(context);
     }
 
-    public void parse(InputStream in) throws XmlPullParserException,
+    void parse(InputStream in) throws XmlPullParserException,
             IOException{
-
         try {
             Log.d(TAG, "parse called");
             XmlPullParser parser = Xml.newPullParser();
@@ -41,12 +41,10 @@ public class XmlSongParser {
             if(songs != null){
                 sharedPreference.saveSongs(songs);
             }
-
         } finally {
             in.close();
             Log.d(TAG, "input stream closed");
         }
-
     }
 
     private List<Song> readSongs(XmlPullParser parser) throws
@@ -58,7 +56,7 @@ public class XmlSongParser {
         //get oldTimestamp to compare and check.
         String oldTimestamp = sharedPreference.getMostRecentTimestamp();
         if (oldTimestamp == null){
-            oldTimestamp = c.getString(R.string.default_timestamp);
+            oldTimestamp = mContext.getString(R.string.default_timestamp);
         }
 
         Log.d(TAG, "Comparing with old timestamp: " + oldTimestamp);
@@ -66,7 +64,7 @@ public class XmlSongParser {
             Log.d(TAG, "Matches old timestamp. Stop parsing");
             return null;
         } else {
-            List<Song> songs = new ArrayList<Song>();
+            List<Song> songs = new ArrayList<>();
             parser.require(XmlPullParser.START_TAG, ns, "Songs");
             while (parser.next() != XmlPullParser.END_TAG) {
                 if (parser.getEventType() != XmlPullParser.START_TAG) {
@@ -88,6 +86,7 @@ public class XmlSongParser {
         }
     }
 
+    // Reads a single song from the XML
     private Song readSong(XmlPullParser parser) throws
             XmlPullParserException, IOException {
         parser.require(XmlPullParser.START_TAG, ns, "Song");
@@ -96,16 +95,22 @@ public class XmlSongParser {
             if (parser.getEventType() != XmlPullParser.START_TAG)
                 continue;
             String name = parser.getName();
-            if(name.equals("Number")){
-                number = readNumber(parser);
-            } else if (name.equals("Artist")){
-                artist = readArtist(parser);
-            } else if (name.equals("Title")){
-                title = readTitle(parser);
-            } else if (name.equals("Link")){
-                link = readLink(parser);
-            } else {
-                skip(parser);
+            switch (name) {
+                case "Number":
+                    number = readNumber(parser);
+                    break;
+                case "Artist":
+                    artist = readArtist(parser);
+                    break;
+                case "Title":
+                    title = readTitle(parser);
+                    break;
+                case "Link":
+                    link = readLink(parser);
+                    break;
+                default:
+                    skip(parser);
+                    break;
             }
         }
         return new Song(number, artist, title, link);

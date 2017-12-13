@@ -18,12 +18,12 @@ import java.util.List;
  * Parses an input KML file into placemarks which can be used to create markers later.
  */
 
-public class XmlMapParser {
+class XmlMapParser {
     private static final String TAG = "XmlMapParser";
     //Don't use namespaces
     private static final String ns = null;
 
-    public List<Placemark> parse(InputStream in) throws XmlPullParserException,
+    List<Placemark> parse(InputStream in) throws XmlPullParserException,
             IOException {
         try {
             Log.d(TAG, "Parsing started");
@@ -61,7 +61,7 @@ public class XmlMapParser {
     private List<Placemark> readPlacemarks(XmlPullParser parser) throws
             XmlPullParserException, IOException {
         Log.d(TAG, "readPlacemarks called");
-        List<Placemark> placemarks = new ArrayList<Placemark>();
+        List<Placemark> placemarks = new ArrayList<>();
         parser.require(XmlPullParser.START_TAG, ns, "Document");
 
         while (parser.next() != XmlPullParser.END_TAG) {
@@ -91,14 +91,19 @@ public class XmlMapParser {
             if (parser.getEventType() != XmlPullParser.START_TAG)
                 continue;
             String name = parser.getName();
-            if (name.equals("name")) {
-                key = readName(parser);
-            } else if (name.equals("description")) {
-                description = readDescription(parser);
-            } else if (name.equals("Point")) {
-                location = readPoint(parser);
-            } else {
-                skip(parser);
+            switch (name) {
+                case "name":
+                    key = readName(parser);
+                    break;
+                case "description":
+                    description = readDescription(parser);
+                    break;
+                case "Point":
+                    location = readPoint(parser);
+                    break;
+                default:
+                    skip(parser);
+                    break;
             }
         }
         return new Placemark(key, description, location);

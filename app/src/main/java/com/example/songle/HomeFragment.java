@@ -26,7 +26,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     private SharedPreference sharedPreference;
     //Stops more than one button being clicked at a time if for some reason one takes a while to respond.
     private boolean buttonClicked;
-    private OnFragmentInteractionListener mListener;
+    private FragmentListener mListener;
 
 
     @Override
@@ -60,12 +60,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         return view;
     }
 
-
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState){
-        super.onViewCreated(view, savedInstanceState);
-    }
-
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.btn_new_game){
@@ -80,7 +74,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         }
     }
 
-    public void notifyGameNeedsDownload(){
+    private void notifyGameNeedsDownload(){
         if (mListener!= null){
             String msg = getString(R.string.download_required);
             mListener.onFragmentInteraction(msg);
@@ -90,10 +84,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     @Override
     public void onAttach(Context context){
         super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener){
-            mListener = (OnFragmentInteractionListener) context;
+        if (context instanceof FragmentListener){
+            mListener = (FragmentListener) context;
         } else {
-            Log.e(TAG, "Must implement OnFragmentInteractionListener");
+            Log.e(TAG, "Must implement FragmentListener");
         }
     }
 

@@ -4,6 +4,7 @@ import android.util.Log;
 
 /**
  * Created by Paul on 05/12/2017.
+ * Class for tracking and updating achievements.
  */
 
 public class Achievement {
@@ -17,7 +18,7 @@ public class Achievement {
     private boolean achieved;
     private boolean hidden;
 
-    public Achievement(String title, String description, int stepsGoal, int greyPictureID,
+    Achievement(String title, String description, int stepsGoal, int greyPictureID,
                        int colorPictureID, boolean hidden){
         if (stepsGoal > 0){
             this.title = title;
@@ -37,56 +38,41 @@ public class Achievement {
         return title;
     }
 
-    public String getDescription(){
+    String getDescription(){
         return description;
     }
 
-    public int getSteps(){
+    int getSteps(){
         return steps;
     }
 
-    public int getStepsGoal(){
-        return stepsGoal;
-    }
-
-    public int getGreyPictureID(){
+    int getGreyPictureID(){
         return greyPictureID;
     }
 
-    public int getColorPictureID(){
+    int getColorPictureID(){
         return colorPictureID;
     }
 
-    public boolean isAchieved(){
+    boolean isAchieved(){
         return achieved;
     }
 
-    public boolean isHidden(){
+    boolean isHidden(){
         return hidden;
     }
 
-    public void incrementSteps(){
+    void incrementSteps(){
         steps++;
         if (steps >= stepsGoal) achieved = true;
     }
 
-    public void addSteps(int numToAdd){
-        steps = steps + numToAdd;
-        if (steps >= stepsGoal) achieved = true;
-        else achieved = false;
-    }
-
-    public void setSteps(int steps){
+    void setSteps(int steps){
         this.steps = steps;
-        if (steps >= stepsGoal) achieved = true;
-        else achieved = false;
+        achieved = steps >= stepsGoal;
     }
 
-    public void setAchieved(){
-        achieved = true;
-    }
-
-    public String getPercentProgress(){
+    String getPercentProgress(){
         float percent = ((float) steps / (float) stepsGoal)*100;
         if (percent < 100) return String.valueOf(Math.round(percent)) + "% complete";
         else return "Completed!";

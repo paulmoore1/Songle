@@ -13,7 +13,6 @@
         <item name="android:colorAccent">@color/colorAccent</item>
         <item name="android:textColorPrimary">@color/textColorPrimary</item>
         <item name="android:actionBarStyle">@style/AppTheme.ActionBarStyle</item>
-        <item name="android:actionOverflowButtonStyle">@style/MyActionButtonOverflow</item>
     </style>
 
     <style name="AppTheme.ActionBarStyle" parent="@android:style/Widget.Material.ActionBar">
@@ -26,11 +25,6 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorSecondary">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
-    </style>
-
-    <style name="AppTheme.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
@@ -55,19 +49,13 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
-    <style name="MyTheme.Detail" parent="MyTheme">
-        <item name="android:statusBarColor">@android:color/transparent</item>
-    </style>
 
     <style name="MyTheme.TranslucentNavigation" parent="MyTheme">
         <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowFullscreen">true</item>
     </style>
 
     <style name="splashScreenTheme" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
-    </style>
-
-    <style name="MyActionButtonOverflow" parent="android:style/Widget.Holo.Light.ActionButton.Overflow">
-        <item name="android:background">?android:attr/actionBarItemBackground</item>
     </style>
 
 

@@ -33,6 +33,7 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -42,7 +43,7 @@ import java.util.Vector;
 public class HomeActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener,
         DownloadCallback,
-        OnFragmentInteractionListener{
+        FragmentListener {
     private static final String TAG = HomeActivity.class.getSimpleName();
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
     private boolean stopPermissionRequests, checkSongs;
@@ -81,7 +82,7 @@ public class HomeActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         Log.d(TAG, "super.onCreate() called");
         setContentView(R.layout.home_layout);
-        toolbar = (Toolbar)findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         // Used to quit the app from other fragments (otherwise can result in loading_layout errors)
@@ -98,13 +99,13 @@ public class HomeActivity extends AppCompatActivity implements
         mNetworkFragment  = NetworkFragment.getInstance(fragmentManager,
                 getString(R.string.url_songs_xml));
 
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout = findViewById(R.id.drawer_layout);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, toolbar, R.string.drawer_open,
                 R.string.drawer_close);
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         buttonSound = MediaPlayer.create(getApplicationContext(),
@@ -120,7 +121,7 @@ public class HomeActivity extends AppCompatActivity implements
         if (sharedPreference.isFirstTimeAppUsed() || !checkPermissions()){
             Log.e(TAG, "First time " + sharedPreference.isFirstTimeAppUsed()
                     + " check permissions: " + checkPermissions());
-            AsyncLoadAchievementsTask task = new AsyncLoadAchievementsTask();
+            AsyncLoadAchievementsTask task = new AsyncLoadAchievementsTask(this);
             task.execute();
             sendEnterHeightDialog(0);
             sharedPreference.saveFirstTimeAppUsed();
@@ -214,7 +215,7 @@ public class HomeActivity extends AppCompatActivity implements
         return true;
     }
 
-    public void displayView(int viewId){
+    private void displayView(int viewId){
         Fragment fragment = null;
         String title = getString(R.string.app_name);
         switch(viewId){
@@ -222,11 +223,11 @@ public class HomeActivity extends AppCompatActivity implements
                 fragment = new HomeFragment();
                 break;
             case R.id.nav_achievements:
-                fragment = new AchievementListFragment();
+                fragment = new AchievementsFragment();//new AchievementListFragment();
                 title = getString(R.string.txt_achievements);
                 break;
             case R.id.nav_scores:
-                fragment = new ScoresListFragment();
+                fragment = new ScoreListFragment();
                 title = getString(R.string.txt_scores);
                 break;
             case R.id.nav_help:
@@ -241,6 +242,7 @@ public class HomeActivity extends AppCompatActivity implements
         }
         if (fragment != null){
             FragmentTransaction ft = fragmentManager.beginTransaction();
+            ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right);
             ft.replace(R.id.fragment_content, fragment);
             ft.commit();
         }
@@ -537,15 +539,28 @@ public class HomeActivity extends AppCompatActivity implements
     }
 
 
-
-
     /**
      * For setting up the achievements list if they aren't already, and getting the help text set up.
      * Done as an Async Task so that it doesn't hinder user experience even though it goes quite fast
      * If it's the first time they're loading_layout the game, they shouldn't be able to
      * unlock any achievements by then
      */
-    private class AsyncLoadAchievementsTask extends AsyncTask<Void, Void, String>{
+    private static class AsyncLoadAchievementsTask extends AsyncTask<Void, Void, String>{
+
+        private WeakReference<HomeActivity> activityReference;
+        private SharedPreference sharedPreferenceTask;
+        AsyncLoadAchievementsTask(HomeActivity context){
+            activityReference = new WeakReference<>(context);
+            sharedPreferenceTask = new SharedPreference(activityReference.get().getApplicationContext());
+        }
+
+        private String getString(int resID){
+            return activityReference.get().getString(resID);
+        }
+
+        private int fetchInteger(int resID){
+            return activityReference.get().getResources().getInteger(resID);
+        }
 
         @Override
         protected String doInBackground(Void... voids) {
@@ -617,6 +632,14 @@ public class HomeActivity extends AppCompatActivity implements
                     false);
             achievements.add(theSongfather);
 
+            Achievement procrastinate = new Achievement(getString(R.string.ach_watch_video_title),
+                    getString(R.string.ach_watch_video_msg),
+                    fetchInteger(R.integer.ach_watch_video_goal),
+                    R.drawable.video_player_grey,
+                    R.drawable.video_player_colour,
+                    false);
+            achievements.add(procrastinate);
+
             Achievement walk500 = new Achievement(getString(R.string.ach_walk_500_title),
                     getString(R.string.ach_walk_500_msg),
                     fetchInteger(R.integer.ach_walk_500_goal),
@@ -665,14 +688,6 @@ public class HomeActivity extends AppCompatActivity implements
                     false);
             achievements.add(artistHelp);
 
-            Achievement procrastinate = new Achievement(getString(R.string.ach_watch_video_title),
-                    getString(R.string.ach_watch_video_msg),
-                    fetchInteger(R.integer.ach_watch_video_goal),
-                    R.drawable.video_player_grey,
-                    R.drawable.video_player_colour,
-                    false);
-            achievements.add(procrastinate);
-
             Achievement fasterBullet = new Achievement(getString(R.string.ach_time_title),
                     getString(R.string.ach_time_msg),
                     fetchInteger(R.integer.ach_time_goal),
@@ -696,7 +711,6 @@ public class HomeActivity extends AppCompatActivity implements
                     R.drawable.headphones_colour,
                     true);
             achievements.add(readInstructions);
-            achHelp = readInstructions;
 
             Achievement rickrolled = new Achievement(getString(R.string.ach_rickrolled_title),
                     getString(R.string.ach_rickrolled_msg),
@@ -706,15 +720,16 @@ public class HomeActivity extends AppCompatActivity implements
                     true);
             achievements.add(rickrolled);
 
-            sharedPreference.saveAchievements(achievements);
+            sharedPreferenceTask.saveAchievements(achievements);
             return null;
         }
 
         @Override
         protected void onPostExecute(String result){
-
+            // get a reference to the activity if it is still there
+            HomeActivity activity = activityReference.get();
+            if (activity == null) return;
         }
-
     }
 
     /**
@@ -736,12 +751,4 @@ public class HomeActivity extends AppCompatActivity implements
         }
         return false;
     }
-
-    private int fetchInteger(int id){
-        return getResources().getInteger(id);
-    }
-
-
-
-
 }
