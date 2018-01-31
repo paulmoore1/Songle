@@ -32,7 +32,7 @@ public class Splash extends Activity {
         /*New Handler to start the Home Activity, and close Splash-screen
            after some seconds
          */
-        int SPLASH_DISPLAY_LENGTH = 100;
+        int SPLASH_DISPLAY_LENGTH = 2000;
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {

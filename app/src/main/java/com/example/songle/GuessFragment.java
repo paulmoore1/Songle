@@ -160,8 +160,6 @@ public class GuessFragment extends Fragment implements View.OnClickListener{
             if (checkGuess(str)){
                 winGame();
             } else {
-                //TODO - remove - being used for testing.
-                songInfo.incrementNumWordsFound();
                 sharedPreference.saveSongInfo(songNumber, songInfo);
                 //If this is the first time the word has been guessed wrong.
                 if (!songInfo.isIncorrectlyGuessed())
@@ -621,18 +619,16 @@ public class GuessFragment extends Fragment implements View.OnClickListener{
             if (lyrics == null) return;
             ArrayList<String> sizes = lyrics.get("SIZE");
 
-            // Pick a random line by making a list of the number of blank words in each line
-            // e.g. blanks(2) = 5 means line 3 (add one) has 5 blank words.
+            // Pick a random line by making a list of lines with more than one blank word
             ArrayList<Integer> blanks = getNumBlankWords(sizes, lyrics);
-            // Remove blank lines of length one as they aren't useful at all
-            blanks = filterLengthOne(blanks);
+
 
             //Check that there are still lines left to reveal
             if (blanks.size() > 0){
                 // Randomize the order
                 Collections.shuffle(blanks);
                 // Pick a random line
-                String lineNum = String.valueOf(blanks.get(0) + 1);
+                String lineNum = String.valueOf(blanks.get(0));
                 Log.v(TAG, "Revealed line #" + lineNum);
 
                 int lineLength = Integer.parseInt(sizes.get(Integer.parseInt(lineNum) - 1));
@@ -675,22 +671,13 @@ public class GuessFragment extends Fragment implements View.OnClickListener{
                 ArrayList<String> lyric = lyrics.get(key);
                 if (isLyricBlank(lyric)) numBlanks++;
             }
-            blanks.add(numBlanks);
+            if (numBlanks > 1)blanks.add(line);
         }
         return blanks;
     }
 
     private boolean isLyricBlank(ArrayList<String> lyric){
         return !Boolean.valueOf(lyric.get(1));
-    }
-
-    private ArrayList<Integer> filterLengthOne(ArrayList<Integer> blanks){
-        ArrayList<Integer> filtered = new ArrayList<>();
-        int n = blanks.size();
-        for (int i = 0; i < n; i++){
-            if (blanks.get(i) != 1) filtered.add(i);
-        }
-        return filtered;
     }
 
 
